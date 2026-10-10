@@ -22,7 +22,6 @@
     --pos: #1C7F52; --pos-soft: #E1F3E9; --neg: #B9402B; --neg-soft: #FBE7E2; --neutral-soft: #ECE9E3;
     --est: #8A5A00; --est-soft: #FBEFD5;
     --dnf: #7A6A9C;
-    --f-hollanov: #2C79BE; --f-drarry: #1F8C66; --f-asoiaf: #C24E36;
     --shadow: 0 1px 2px rgba(24, 20, 40, .05), 0 6px 20px rgba(24, 20, 40, .05);
     --radius: 18px; --radius-sm: 12px;
     color-scheme: light;
@@ -35,7 +34,6 @@
       --pos: #52C690; --pos-soft: #183326; --neg: #F07D66; --neg-soft: #3A1E19; --neutral-soft: #26262D;
       --est: #E8B654; --est-soft: #3A2E12;
       --dnf: #A797CC;
-      --f-hollanov: #64A9E8; --f-drarry: #4CC79B; --f-asoiaf: #EF8068;
       --shadow: 0 1px 2px rgba(0, 0, 0, .3);
       color-scheme: dark;
     }
@@ -47,7 +45,6 @@
     --pos: #52C690; --pos-soft: #183326; --neg: #F07D66; --neg-soft: #3A1E19; --neutral-soft: #26262D;
     --est: #E8B654; --est-soft: #3A2E12;
     --dnf: #A797CC;
-    --f-hollanov: #64A9E8; --f-drarry: #4CC79B; --f-asoiaf: #EF8068;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3);
     color-scheme: dark;
   }
@@ -200,11 +197,63 @@
   .notes li { margin-bottom: 6px; }
   .check { display: flex; align-items: center; gap: 10px; font-size: 14.5px; }
   .check input { width: 20px; height: 20px; accent-color: var(--accent); }
+  .srcline { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; color: var(--ink-2); min-width: 0; line-height: 1.35; }
+  .srcline > i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .srcline > span { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .srcline.one > span { -webkit-line-clamp: 1; }
+  .srcline.full > span { display: block; -webkit-line-clamp: unset; }
+  .srcline b { font-weight: 600; color: var(--ink); }
+  .wrap-chips .chip { white-space: normal; text-align: left; flex-shrink: 1; max-width: 100%; }
+  .chip .cdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+  .wrap-th th { white-space: normal; min-width: 104px; vertical-align: bottom; text-transform: none; letter-spacing: 0; font-size: 12px; }
+  .group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 22px 2px 0; }
   .center-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; text-align: center; }
 </style>
 </head>
 <body>
 <div id="root"></div>
+<script>
+// ============================================================================================
+// SOURCES — one entry per Google Sheet. Adding a Sheet = adding one entry here. Nothing else.
+//   id          internal only, never shown (caching, and matching Reading Log rows to fics)
+//   sheetId     from the Sheet's link: docs.google.com/spreadsheets/d/<sheetId>/edit
+//   fandom      shown everywhere. Sheets with exactly the same fandom text merge into one fandom.
+//   pairing     'fixed': the pairing of every fic in the Sheet.
+//               'perFic': a label for the Sheet only; each fic's pairing is the FIRST tag in its
+//               Relationships column, and fics with none show "Gen / no pairing".
+//   pairingMode 'fixed' | 'perFic'
+//   color       the fandom's accent: '#RRGGBB' (dark mode gets a lighter version automatically),
+//               or { light: '#RRGGBB', dark: '#RRGGBB' }. Pairings use shades of it. When two
+//               Sheets share a fandom, the first one's colour is used.
+// ============================================================================================
+const SOURCES = [
+  {
+    id: 'hollanov',
+    sheetId: '1vsJxSpJFZaiBh540318Jq_yqIYG9h9ucTR_7AZ87L2I',
+    fandom: 'Heated Rivalry / Game Changers (Rachel Reid)',
+    pairing: 'Ilya Rozanov/Shane Hollander',
+    pairingMode: 'fixed',
+    color: { light: '#2C79BE', dark: '#64A9E8' },
+  },
+  {
+    id: 'asoiaf',
+    sheetId: '1SQIBxxO8XgpvpR5vjSJS1Nu3l5Pq0z2v2W0uSYx_aMI',
+    fandom: 'A Song of Ice and Fire (incl. Game of Thrones, House of the Dragon)',
+    pairing: 'Multiple pairings',
+    pairingMode: 'perFic',
+    color: { light: '#C24E36', dark: '#EF8068' },
+  },
+  {
+    id: 'drarry',
+    sheetId: '1XDO0bKnLPmeURufZ4mwyifeJynwFVszCfayA_FEtKPY',
+    fandom: 'Harry Potter',
+    pairing: 'Draco Malfoy/Harry Potter',
+    pairingMode: 'fixed',
+    color: { light: '#1F8C66', dark: '#4CC79B' },
+  },
+];
+</script>
+
 <script>
 // ============================================================================================
 // <shelf-rules>
@@ -252,10 +301,37 @@ const ShelfRules = (() => {
   // A cell as a date, or null. Last Read holds "YYYY-MM-DD HH:MM", so only the first token is the date.
   // Dates are plain Melbourne calendar dates already (the apps write Melbourne time), so no timezone maths here.
   function cellDate(raw) {
+    if (typeof raw === 'number') return serialToIso(raw);
     const s = String(raw || '').trim();
     if (!s) return null;
     const d = normIsoDate(s.split(/\s+/)[0]);
-    return isIso(d) ? d : null;
+    if (isIso(d)) return d;
+    return looseDate(s);
+  }
+  // Google Sheets date serials (days since 30 Dec 1899) -> 'YYYY-MM-DD'. Used for real date cells,
+  // which Shelf Life asks the API for as serials so the sheet's display format can't confuse it.
+  function serialToIso(n) {
+    if (typeof n !== 'number' || !isFinite(n) || n < 1 || n > 2958465) return null;
+    return new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86400000).toISOString().slice(0, 10);
+  }
+  function serialToStamp(n) {
+    const d = serialToIso(n); if (!d) return '';
+    const mins = Math.round((n - Math.floor(n)) * 1440);
+    return mins ? `${d} ${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}` : d;
+  }
+  // Other display formats a date cell can come back in: d/m/yy, d.m.yyyy, "8 Dec 2025", "Dec 8, 2025",
+  // "Monday, 8 December 2025". Day-first for slashes (Australian order), as in the apps.
+  function looseDate(s) {
+    const mon = (t) => MONTH_MAP[t.slice(0, 1).toUpperCase() + t.slice(1, 3).toLowerCase()];
+    const year = (y) => { y = parseInt(y, 10); return y < 100 ? y + 2000 : y; };
+    const ok = (y, m, d) => (m >= 0 && m < 12 && d >= 1 && d <= 31) ? `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
+    let m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})(?:\s.*)?$/.exec(s);
+    if (m) return ok(year(m[3]), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+    m = /(\d{1,2})(?:st|nd|rd|th)?[\s\-]+([A-Za-z]{3,})\.?,?[\s\-]+(\d{2,4})/.exec(s);
+    if (m && mon(m[2]) !== undefined) return ok(year(m[3]), mon(m[2]), parseInt(m[1], 10));
+    m = /([A-Za-z]{3,})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/.exec(s);
+    if (m && mon(m[1]) !== undefined) return ok(year(m[3]), mon(m[1]), parseInt(m[2], 10));
+    return null;
   }
   // Same as the apps' parseFicDate, for Date Published ("30-Oct-25").
   function parseFicDate(str) {
@@ -296,7 +372,9 @@ const ShelfRules = (() => {
 
   // One Data List row -> one fic. Columns are found by header name only, never by position.
   // Rows with no Title are skipped, exactly as the apps skip them.
-  function ficFromRow(headerIndex, row, rowNumber, fandom) {
+  // `source` is the SOURCES id. Fandom and pairing are attached later by buildModel, from SOURCES,
+  // so editing a fandom or pairing name takes effect without re-syncing.
+  function ficFromRow(headerIndex, row, rowNumber, source) {
     const get = (name) => { const i = headerIndex[name]; return i !== undefined ? String(row[i] ?? '') : ''; };
     const title = get('Title').trim();
     if (!title) return null;
@@ -308,7 +386,7 @@ const ShelfRules = (() => {
     const dateCol = (col, raw) => { const d = cellDate(raw); if (!d && String(raw).trim()) badDates.push({ col, value: String(raw).trim() }); return d; };
     const lastReadRaw = get('Last Read').trim();
     return {
-      key: fandom + '|' + id, fandom, id, rowNumber, title, link,
+      key: source + '|' + id, source, id, rowNumber, title, link,
       authors: splitList(get('Author')),
       datePublished: get('Date Published').trim(),
       publishedMs: parseFicDate(get('Date Published')),
@@ -338,7 +416,7 @@ const ShelfRules = (() => {
 
   // Reading Log rows -> events. Columns found by header name when there's a header row; otherwise the
   // apps' own write order (Timestamp, Link, Title, Event, Chapters Read, Read Number).
-  function parseLogRows(rows, fandom) {
+  function parseLogRows(rows, source) {
     if (!rows || !rows.length) return [];
     let start = 0;
     let col = { ts: 0, link: 1, title: 2, event: 3, ch: 4, rn: 5 };
@@ -358,7 +436,7 @@ const ShelfRules = (() => {
       const ts = String(r[col.ts] ?? '').trim();
       const chRaw = String(r[col.ch] ?? '').trim();
       out.push({
-        fandom, key: fandom + '|' + m[1], seq: i, ts, date: cellDate(ts), event,
+        source, key: source + '|' + m[1], seq: i, ts, date: cellDate(ts), event,
         title: String(r[col.title] ?? '').trim(),
         chaptersRead: chRaw === '' ? null : num(chRaw),
         readNumber: num(r[col.rn]) || 1,
@@ -368,36 +446,62 @@ const ShelfRules = (() => {
   }
 
   // ------------------------------------------------------------------------------------------
-  // 2. READINGS
-  // A "reading" is one time through a fic that ended in Read or DNF.
-  //   - Data List Status says how the CURRENT read (read number = Times Read, min 1) ended:
-  //       Read -> a finished reading dated by Date Read.
-  //       DNF  -> a DNF reading dated by Last Read.
-  //       Currently Reading / Paused -> still in progress, no reading yet.
-  //   - EARLIER reads (read numbers below the current one) come from the Reading Log where it shows
-  //     them (dated by their Finished / DNF event). Where Times Read says a read happened but the log
-  //     doesn't show it, it's a finished read with no date: it counts in "all time", never in a period.
-  //     The one exception: the read just before an in-progress or DNF'd re-read still has its finish
-  //     date in Date Read (the apps only overwrite it at the next finish), so that date is used.
-  //   - A fic whose Status isn't Read/DNF but whose log shows the current read ending still counts,
-  //     from the log ("a fic ... with Reading Log events").
-  // Fallbacks: a Read with no Date Read uses its Finished event's date; a DNF with no Last Read uses its
-  // DNF event's date. Anything still undated is "all time" only.
-  // est. badge: a finished reading (Read) with no Finished event for that read number. DNFs never get it.
+  // 1b. FANDOM + PAIRING — two levels, both taken from SOURCES.
+  //   fandom:  the source's fandom text. Sources with the same text are one fandom.
+  //   pairing: 'fixed' sources -> the source's pairing; 'perFic' -> first Relationships tag,
+  //            or "Gen / no pairing" when there isn't one.
+  //   pairingKey identifies a pairing WITHIN a fandom (the same pairing name in two fandoms is two pairings).
+  // ------------------------------------------------------------------------------------------
+  const NO_PAIRING = 'Gen / no pairing';
+  const pairingKey = (fandom, pairing) => fandom + ' \u203A ' + pairing;
+  function pairingFor(source, ships) {
+    if (source && source.pairingMode === 'perFic') return (ships && ships[0]) || NO_PAIRING;
+    return (source && source.pairing) || NO_PAIRING;
+  }
+  function assignGroups(fics, source) {
+    for (const f of fics) {
+      f.fandom = source.fandom;
+      f.pairing = pairingFor(source, f.ships);
+      f.pairingKey = pairingKey(f.fandom, f.pairing);
+    }
+  }
+  // Fandom names drop a trailing "(…)" where space is tight: "Harry Potter", "A Song of Ice and Fire".
+  const shortFandom = (name) => String(name || '').replace(/\s*\([^)]*\)\s*$/, '') || String(name || '');
+  // How a source is named in data notes and the per-Sheet counts (never its internal id).
+  function sourceLabel(src, sources) {
+    const shared = (sources || []).filter(x => x.fandom === src.fandom).length > 1;
+    return shared ? `${shortFandom(src.fandom)} · ${src.pairing}` : shortFandom(src.fandom);
+  }
+
+  // ------------------------------------------------------------------------------------------
+  // 2. READINGS — the Data List is the source; the Reading Log only adds detail.
+  //   - Every Data List row with Status Read or DNF is one reading, logged or not.
+  //       Read -> dated by Date Read (falls back to its Finished event's date).
+  //       DNF  -> dated by Last Read (falls back to its DNF event's date).
+  //       No date at all -> "All time" and the library only, never a dated period.
+  //   - Log events are matched to the fic by the work ID in Link and enrich that reading
+  //     (start date, timeline). They never create a second copy of it.
+  //   - Extra readings for re-reads exist only where the log shows them: "Re-read started" or any
+  //     event with Read Number > 1. The Data List row is then the latest read; earlier read numbers
+  //     become their own readings, dated by their Finished/DNF event when the log has one, else undated.
+  //   - Times Read > 1 with no log evidence: still ONE reading. The fic shows "Read N times".
+  //   - est.: a Read with no Finished event for that read, or a DNF with no DNF event.
+  //   - Currently Reading / Paused are not readings (they're the "Currently reading" strip).
+  //     The one exception: a re-read in progress whose earlier read the log shows.
   // Words: Read = full Words. DNF = Words × Chapters Read ÷ chapters (capped at 100%) when Chapters Read
   //   is filled in (above 0); otherwise words = null and the reading is left out of word totals.
   // ------------------------------------------------------------------------------------------
-  const TERMINAL = { Finished: 'Read', DNF: 'DNF' };
-  const REOPENS = new Set(['Started', 'Progress', 'Paused', 'Re-read started']);
+  const IS_READING = new Set(['Read', 'DNF']);
 
-  function makeReading(fic, readNumber, kind, date, est, dnfChapters, source) {
+  // origin: where the reading came from — 'dataList' (the row itself) or 'log' (an earlier read the log shows).
+  function makeReading(fic, readNumber, kind, date, est, dnfChapters, origin, started, events) {
     let words = null;
     if (kind === 'Read') words = fic.words;
     else if (dnfChapters && dnfChapters > 0 && fic.chapters > 0) words = Math.round(fic.words * Math.min(1, dnfChapters / fic.chapters));
     return {
-      id: fic.key + '#' + readNumber, ficKey: fic.key, fandom: fic.fandom, fic, readNumber, kind,
+      id: fic.key + '#' + readNumber, ficKey: fic.key, source: fic.source, fandom: fic.fandom, pairing: fic.pairing, pairingKey: fic.pairingKey, fic, readNumber, kind,
       date: date || null, est: !!est, dnfChapters: kind === 'DNF' ? (dnfChapters || null) : null,
-      words, source,
+      words, origin, started: started || null, events: events || [],
     };
   }
 
@@ -405,51 +509,51 @@ const ShelfRules = (() => {
     const byKey = new Map();
     for (const e of events) { if (!byKey.has(e.key)) byKey.set(e.key, []); byKey.get(e.key).push(e); }
     const readings = [];
-    let logOnly = 0;
+    let logNotStatus = 0;
     for (const fic of fics) {
       const evs = (byKey.get(fic.key) || []).slice().sort((a, b) => a.seq - b.seq);
-      if (!evs.length && fic.status !== 'Read' && fic.status !== 'DNF' && !(fic.timesRead > 1)) continue;
-      // Per read number, the last Finished/DNF event — unless the same read was picked up again afterwards.
-      const terminal = new Map();
-      const finishedFor = new Set();
-      let maxLogRead = 0;
-      for (const e of evs) {
-        maxLogRead = Math.max(maxLogRead, e.readNumber);
-        if (e.event === 'Finished') finishedFor.add(e.readNumber);
-        if (TERMINAL[e.event]) terminal.set(e.readNumber, e);
-        else if (REOPENS.has(e.event)) terminal.delete(e.readNumber);
+      const isReading = IS_READING.has(fic.status);
+      const maxLogRead = evs.reduce((m, e) => Math.max(m, e.readNumber), 0);
+      const logShowsReread = evs.some(e => e.event === 'Re-read started' || e.readNumber > 1);
+      // Which read the Data List row describes: the log's read number when it shows a re-read, else 1.
+      const current = logShowsReread ? Math.max(maxLogRead, 2) : 1;
+      if (!isReading && !(logShowsReread && IN_PROGRESS.has(fic.status))) {
+        if (!IN_PROGRESS.has(fic.status) && evs.some(e => e.event === 'Finished' || e.event === 'DNF')) logNotStatus++;
+        continue;
       }
-      const current = Math.max(fic.timesRead || 1, maxLogRead || 1);
-      const inProgress = IN_PROGRESS.has(fic.status);
+      const forRead = (r) => logShowsReread ? evs.filter(e => e.readNumber === r) : evs; // no re-read: every event is this read's
+      const last = (list, name) => { for (let i = list.length - 1; i >= 0; i--) if (list[i].event === name) return list[i]; return null; };
+      const startOf = (list) => { const e = list.find(x => x.event === 'Started' || x.event === 'Re-read started'); return e ? e.date : null; };
 
-      // Earlier reads.
+      // Earlier reads the log shows (re-reads only).
       for (let r = 1; r < current; r++) {
-        const t = terminal.get(r);
-        const usesDateRead = r === current - 1 && fic.status !== 'Read' && fic.dateRead;
-        if (t) {
-          const kind = TERMINAL[t.event];
-          const date = kind === 'Read' && usesDateRead ? fic.dateRead : t.date;
-          readings.push(makeReading(fic, r, kind, date, kind === 'Read' && !finishedFor.has(r), kind === 'DNF' ? t.chaptersRead : null, 'log'));
+        const list = forRead(r);
+        const fin = last(list, 'Finished'), dnf = last(list, 'DNF');
+        const end = fin && dnf ? (fin.seq > dnf.seq ? fin : dnf) : (fin || dnf);
+        if (end) {
+          const kind = end.event === 'Finished' ? 'Read' : 'DNF';
+          readings.push(makeReading(fic, r, kind, end.date, false, kind === 'DNF' ? end.chaptersRead : null, 'log', startOf(list), list));
         } else {
-          readings.push(makeReading(fic, r, 'Read', usesDateRead ? fic.dateRead : null, !finishedFor.has(r), null, usesDateRead ? 'dateRead' : 'timesRead'));
+          // The log shows a later read, so this one happened, but it has no Finished event. While the
+          // re-read is still under way, Date Read still holds this read's finish date.
+          const date = r === current - 1 && !isReading ? fic.dateRead : null;
+          readings.push(makeReading(fic, r, 'Read', date, true, null, 'log', startOf(list), list));
         }
       }
 
-      // The current read.
-      const tc = terminal.get(current);
-      if (fic.status === 'Read') {
-        const finEvent = [...evs].reverse().find(e => e.event === 'Finished' && e.readNumber === current);
-        readings.push(makeReading(fic, current, 'Read', fic.dateRead || (finEvent && finEvent.date), !finishedFor.has(current), null, 'status'));
-      } else if (fic.status === 'DNF') {
-        const dnfEvent = tc && tc.event === 'DNF' ? tc : null;
-        readings.push(makeReading(fic, current, 'DNF', fic.lastReadDate || (dnfEvent && dnfEvent.date), false, fic.chaptersRead || null, 'status'));
-      } else if (!inProgress && tc) {
-        logOnly++;
-        const kind = TERMINAL[tc.event];
-        readings.push(makeReading(fic, current, kind, tc.date, false, kind === 'DNF' ? tc.chaptersRead : null, 'logOnly'));
+      // The read the Data List row describes.
+      if (isReading) {
+        const list = forRead(current);
+        if (fic.status === 'Read') {
+          const fin = last(list, 'Finished');
+          readings.push(makeReading(fic, current, 'Read', fic.dateRead || (fin && fin.date), !fin, null, 'dataList', startOf(list) || fic.dateStarted, list));
+        } else {
+          const dnf = last(list, 'DNF');
+          readings.push(makeReading(fic, current, 'DNF', fic.lastReadDate || (dnf && dnf.date), !dnf, fic.chaptersRead || null, 'dataList', startOf(list) || fic.dateStarted, list));
+        }
       }
     }
-    readings.logOnly = logOnly;
+    readings.logNotStatus = logNotStatus;
     return readings;
   }
 
@@ -549,16 +653,22 @@ const ShelfRules = (() => {
   function periodStats(readings, p, authorFirst) {
     const rs = readings.filter(r => inPeriod(r.date, p));
     let words = 0, finished = 0, dnfs = 0, dnfNoWords = 0, est = 0;
-    const lens = [], byFandom = {};
+    const lens = [], byFandom = {}, byPairing = {}, countFandom = {}, countPairing = {};
     for (const r of rs) {
-      if (r.words !== null) { words += r.words; byFandom[r.fandom] = (byFandom[r.fandom] || 0) + r.words; }
+      countFandom[r.fandom] = (countFandom[r.fandom] || 0) + 1;
+      countPairing[r.pairingKey] = (countPairing[r.pairingKey] || 0) + 1;
+      if (r.words !== null) {
+        words += r.words;
+        byFandom[r.fandom] = (byFandom[r.fandom] || 0) + r.words;
+        byPairing[r.pairingKey] = (byPairing[r.pairingKey] || 0) + r.words;
+      }
       if (r.kind === 'Read') { finished++; lens.push(r.fic.words); if (r.est) est++; }
       else { dnfs++; if (r.words === null) dnfNoWords++; }
     }
     let newAuthors = 0;
     if (authorFirst) for (const [, d] of authorFirst) if (p && p.unit === 'all' ? true : (d && inPeriod(d, p))) newAuthors++;
     return {
-      readings: rs, words, finished, dnfs, dnfNoWords, est, byFandom,
+      readings: rs, words, finished, dnfs, dnfNoWords, est, byFandom, byPairing, countFandom, countPairing,
       completion: finished + dnfs ? finished / (finished + dnfs) : null,
       median: median(lens), newAuthors,
     };
@@ -573,15 +683,18 @@ const ShelfRules = (() => {
     return out;
   }
   // Per-month totals across all dated readings (for charts). Undated readings are left out.
-  function monthlySeries(readings, keys, fandomKeys) {
+  // groupOf maps a reading to its series key (fandom by default; pairing, or a folded "other" group).
+  function monthlySeries(readings, keys, groupKeys, groupOf) {
+    const of = groupOf || (r => r.fandom);
     const idx = new Map(keys.map((k, i) => [k, i]));
-    const words = {}; fandomKeys.forEach(f => { words[f] = keys.map(() => 0); });
+    const words = {}; groupKeys.forEach(f => { words[f] = keys.map(() => 0); });
     const finished = keys.map(() => 0), dnfs = keys.map(() => 0);
     for (const r of readings) {
       if (!r.date) continue;
       const i = idx.get(r.date.slice(0, 7));
       if (i === undefined) continue;
-      if (r.words !== null && words[r.fandom]) words[r.fandom][i] += r.words;
+      const g = of(r);
+      if (r.words !== null && g !== undefined && words[g]) words[g][i] += r.words;
       if (r.kind === 'Read') finished[i]++; else dnfs[i]++;
     }
     const completion = keys.map((_, i) => finished[i] + dnfs[i] ? finished[i] / (finished[i] + dnfs[i]) : null);
@@ -626,10 +739,10 @@ const ShelfRules = (() => {
   // 5. FILTERS (Library, Diary and Export all use this)
   // ------------------------------------------------------------------------------------------
   function emptyFilters() {
-    return { q: '', fandoms: [], kinds: [], ratings: [], categories: [], tagsInc: [], tagsExc: [], author: '', enjoyment: [], from: '', to: '', est: 'all' };
+    return { q: '', fandoms: [], pairings: [], kinds: [], ratings: [], categories: [], tagsInc: [], tagsExc: [], author: '', enjoyment: [], from: '', to: '', est: 'all' };
   }
   function filterCount(f) {
-    return f.fandoms.length + f.kinds.length + f.ratings.length + f.categories.length + f.tagsInc.length + f.tagsExc.length +
+    return f.fandoms.length + (f.pairings || []).length + f.kinds.length + f.ratings.length + f.categories.length + f.tagsInc.length + f.tagsExc.length +
       (f.author ? 1 : 0) + f.enjoyment.length + (f.from ? 1 : 0) + (f.to ? 1 : 0) + (f.est !== 'all' ? 1 : 0);
   }
   function filterReadings(readings, f, opts) {
@@ -639,6 +752,7 @@ const ShelfRules = (() => {
       const fic = r.fic;
       if (opts && opts.excludeE && fic.rating === 'E') return false;
       if (f.fandoms.length && !f.fandoms.includes(r.fandom)) return false;
+      if (f.pairings && f.pairings.length && !f.pairings.includes(r.pairingKey)) return false;
       if (f.kinds.length && !f.kinds.includes(r.kind)) return false;
       if (f.ratings.length && !f.ratings.includes(fic.rating || '—')) return false;
       if (f.categories.length && !fic.categories.some(c => f.categories.includes(c))) return false;
@@ -670,10 +784,10 @@ const ShelfRules = (() => {
   // ------------------------------------------------------------------------------------------
   // 6. EXPORT rows (a flat diary: one row per reading)
   // ------------------------------------------------------------------------------------------
-  function exportRow(r, fandomName) {
+  function exportRow(r) {
     const f = r.fic;
     return {
-      'Date': r.date || '', 'Fandom': fandomName || r.fandom, 'Title': f.title, 'Author': f.authors.join(', '),
+      'Date': r.date || '', 'Fandom': f.fandom, 'Pairing': f.pairing, 'Title': f.title, 'Author': f.authors.join(', '),
       'Result': r.kind === 'Read' ? 'Finished' : 'DNF', 'Read #': r.readNumber, 'Estimated': r.est ? 'Y' : '',
       'Words read': r.words === null ? '' : r.words, 'Words': f.words, 'Chapters': f.chapters,
       'DNF chapters read': r.dnfChapters || '', 'Enjoyment': f.enjoyment || '', 'K': f.kg ? 'Y' : '', 'B': f.bk ? 'Y' : '',
@@ -692,16 +806,20 @@ const ShelfRules = (() => {
   // 7. MODEL: everything the screens need, built once per sync.
   // ------------------------------------------------------------------------------------------
   const REQUIRED_COLS = ['Status', 'Title', 'Link', 'Author', 'Words', 'Chapters', 'Date Read', 'Last Read', 'Chapters Read', 'Times Read'];
-  function buildModel(fandomData, fandomList) {
+  // sourceData: { [source id]: loaded sheet }. sources: the SOURCES list.
+  function buildModel(sourceData, sources) {
     const fics = [], events = [], notes = [];
-    for (const fd of fandomList) {
-      const d = fandomData[fd.key];
-      if (!d) { notes.push(`${fd.name}: not loaded yet.`); continue; }
+    for (const src of sources) {
+      const d = sourceData[src.id];
+      const name = `${sourceLabel(src, sources)} sheet`;
+      if (!d) { notes.push(`${name}: not loaded yet.`); continue; }
+      assignGroups(d.fics, src);
       fics.push(...d.fics); events.push(...d.log);
-      if (d.logMissing) notes.push(`${fd.name}: no "Reading Log" tab, so every Read fic there counts as estimated.`);
-      if (d.missingCols && d.missingCols.length) notes.push(`${fd.name}: no column named ${d.missingCols.map(c => `"${c}"`).join(', ')}.`);
-      if (d.duplicateHeaders && d.duplicateHeaders.length) notes.push(`${fd.name}: more than one column is headed ${d.duplicateHeaders.map(c => `"${c}"`).join(', ')}; Shelf Life uses the right-most one, like the fandom apps.`);
-      if (d.stale) notes.push(`${fd.name}: the last sync failed, so this is the copy from the sync before.`);
+      if (d.logMissing) notes.push(`${name}: no "Reading Log" tab, so every reading there counts as estimated.`);
+      if (d.missingCols && d.missingCols.length) notes.push(`${name}: no column named ${d.missingCols.map(c => `"${c}"`).join(', ')}.`);
+      if (src.pairingMode === 'perFic' && d.header && !d.header.includes('Relationships')) notes.push(`${name}: pairings come from a "Relationships" column, but there isn't one, so every fic shows "${NO_PAIRING}".`);
+      if (d.duplicateHeaders && d.duplicateHeaders.length) notes.push(`${name}: more than one column is headed ${d.duplicateHeaders.map(c => `"${c}"`).join(', ')}; Shelf Life uses the right-most one, like the fandom apps.`);
+      if (d.stale) notes.push(`${name}: the last sync failed, so this is the copy from the sync before.`);
     }
     const ficByKey = new Map(fics.map(f => [f.key, f]));
     const eventsByKey = new Map();
@@ -725,11 +843,13 @@ const ShelfRules = (() => {
     const statusCounts = {};
     for (const f of fics) { const s = f.status || '(blank)'; statusCounts[s] = (statusCounts[s] || 0) + 1; }
     const unknown = Object.keys(statusCounts).filter(s => s !== '(blank)' && !KNOWN_STATUSES.includes(s));
-    if (est) notes.push(`${est} finished reading${est === 1 ? '' : 's'} have no Finished event in the Reading Log, so they're marked est.`);
-    if (undatedRead) notes.push(`${undatedRead} finished reading${undatedRead === 1 ? ' has' : 's have'} no date (including extra reads from Times Read), so ${undatedRead === 1 ? 'it counts' : 'they count'} in All time only.`);
+    if (est) notes.push(`${est} reading${est === 1 ? ' has' : 's have'} no matching Finished or DNF event in the Reading Log (backfilled), so ${est === 1 ? "it's" : "they're"} marked est.`);
+    if (undatedRead) notes.push(`${undatedRead} finished reading${undatedRead === 1 ? ' has' : 's have'} no date, so ${undatedRead === 1 ? 'it counts' : 'they count'} in All time only.`);
     if (undatedDnf) notes.push(`${undatedDnf} DNF${undatedDnf === 1 ? ' has' : 's have'} no Last Read date, so ${undatedDnf === 1 ? 'it counts' : 'they count'} in All time only.`);
     if (dnfNoWords) notes.push(`${dnfNoWords} DNF${dnfNoWords === 1 ? ' has' : 's have'} no Chapters Read, so ${dnfNoWords === 1 ? 'its' : 'their'} words aren't in any word total.`);
-    if (readings.logOnly) notes.push(`${readings.logOnly} reading${readings.logOnly === 1 ? ' is' : 's are'} counted from the Reading Log although the fic's Status is no longer Read or DNF.`);
+    if (readings.logNotStatus) notes.push(`${readings.logNotStatus} fic${readings.logNotStatus === 1 ? ' has' : 's have'} a Finished or DNF event in the Reading Log but a Status other than Read or DNF now, so ${readings.logNotStatus === 1 ? "it isn't" : "they aren't"} counted (the Data List decides).`);
+    const multi = fics.filter(f => f.timesRead > 1 && IS_READING.has(f.status) && readings.filter(r => r.ficKey === f.key).length < f.timesRead).length;
+    if (multi) notes.push(`${multi} fic${multi === 1 ? ' has' : 's have'} Times Read above 1 without Reading Log entries for the earlier reads, so each counts once and shows "Read N times".`);
     if (unmatched) notes.push(`${unmatched} Reading Log row${unmatched === 1 ? " doesn't" : "s don't"} match any fic in Data List (by work ID), so ${unmatched === 1 ? "it's" : "they're"} ignored.`);
     if (badDates.length) notes.push(`${badDates.length} date cell${badDates.length === 1 ? '' : 's'} couldn't be read, e.g. ${badDates.slice(0, 3).map(b => `${b.col} "${b.value}" on "${b.title}"`).join('; ')}.`);
     if (unknown.length) notes.push(`Other statuses found: ${unknown.map(s => `"${s}" (${statusCounts[s]})`).join(', ')}. They're kept as their own status.`);
@@ -743,16 +863,52 @@ const ShelfRules = (() => {
       realAuthors(r.fic.authors).forEach(a => vocab.authors.add(a));
     }
     const dated = readings.filter(r => r.date).map(r => r.date).sort();
+
+    // Fandoms (in SOURCES order, merged by name), each with its pairings ranked by all-time words read.
+    const fandomList = [];
+    for (const src of sources) {
+      let f = fandomList.find(x => x.name === src.fandom);
+      if (!f) { f = { name: src.fandom, short: shortFandom(src.fandom), sourceIds: [], pairings: [] }; fandomList.push(f); }
+      f.sourceIds.push(src.id);
+    }
+    const pairingByKey = new Map();
+    const touch = (fandom, pairing) => {
+      const key = pairingKey(fandom, pairing);
+      if (!pairingByKey.has(key)) pairingByKey.set(key, { key, name: pairing, fandom, words: 0, readings: 0, rank: 0 });
+      return pairingByKey.get(key);
+    };
+    for (const src of sources) if (src.pairingMode !== 'perFic') touch(src.fandom, pairingFor(src, []));
+    for (const f of fics) if (IS_READING.has(f.status) || IN_PROGRESS.has(f.status)) touch(f.fandom, f.pairing);
+    for (const r of readings) { const p = touch(r.fandom, r.pairing); p.readings++; if (r.words !== null) p.words += r.words; }
+    for (const fd of fandomList) {
+      fd.pairings = [...pairingByKey.values()].filter(p => p.fandom === fd.name)
+        .sort((a, b) => (a.name === NO_PAIRING) - (b.name === NO_PAIRING) || b.words - a.words || b.readings - a.readings || a.name.localeCompare(b.name));
+      fd.pairings.forEach((p, i) => { p.rank = i; });
+    }
+
+    // Per-Sheet counts, to check against the Sheets (Export → Readings per Sheet).
+    const counts = sources.map(src => {
+      const rs = readings.filter(r => r.source === src.id);
+      const fs = fics.filter(f => f.source === src.id);
+      return {
+        key: src.id, name: sourceLabel(src, sources), loaded: !!sourceData[src.id],
+        statusRead: fs.filter(f => f.status === 'Read').length, statusDnf: fs.filter(f => f.status === 'DNF').length,
+        readings: rs.length, read: rs.filter(r => r.kind === 'Read').length, dnf: rs.filter(r => r.kind === 'DNF').length,
+        logged: rs.filter(r => !r.est).length, est: rs.filter(r => r.est).length, undated: rs.filter(r => !r.date).length,
+        rereads: rs.filter(r => r.readNumber > 1).length, logEvents: events.filter(e => e.source === src.id).length,
+      };
+    });
     return {
-      fics, ficByKey, eventsByKey, readings, inProgress, notes, statusCounts,
+      fics, ficByKey, eventsByKey, readings, inProgress, notes, statusCounts, counts, fandomList, pairingByKey,
       authorFirst: authorFirstDates(readings), authors: authorRanking(readings), vocab,
       firstDate: dated[0] || null, lastDate: dated[dated.length - 1] || null,
     };
   }
 
   return {
-    TZ, MONTHS, MON, KNOWN_STATUSES, WARNING_TAGS,
-    num, splitList, normIsoDate, cellDate, parseFicDate, workIdFromLink, realAuthors, parseChapters,
+    TZ, MONTHS, MON, KNOWN_STATUSES, WARNING_TAGS, NO_PAIRING,
+    pairingKey, pairingFor, assignGroups, shortFandom, sourceLabel,
+    num, splitList, normIsoDate, cellDate, serialToIso, serialToStamp, parseFicDate, workIdFromLink, realAuthors, parseChapters,
     ficFromRow, parseLogRows, buildReadings, makeReading,
     melbourneToday, makePeriod, shiftPeriod, sameLastYear, inPeriod, periodName, fmtDay, addDays, monthShift, isIso,
     median, authorFirstDates, periodStats, monthKeys, monthlySeries, monthLabel, topTags, authorRanking,
@@ -773,15 +929,10 @@ const CLIENT_ID = '765897251156-e328g6jmu2obg8l0855km0iqsps062n5.apps.googleuser
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const TOKEN_KEY = 'shelflife-gtoken';
 const THEME_KEY = 'shelflife-theme';
-const DATA_VERSION = 1;
+const DATA_VERSION = 2;
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets/';
-// To add a fandom: one line here, plus a --f-<key> colour in the CSS (light and dark).
-const FANDOMS = [
-  { key: 'hollanov', name: 'Hollanov', sheetId: '1vsJxSpJFZaiBh540318Jq_yqIYG9h9ucTR_7AZ87L2I' },
-  { key: 'drarry', name: 'Drarry', sheetId: '1XDO0bKnLPmeURufZ4mwyifeJynwFVszCfayA_FEtKPY' },
-  { key: 'asoiaf', name: 'ASOIAF', sheetId: '1SQIBxxO8XgpvpR5vjSJS1Nu3l5Pq0z2v2W0uSYx_aMI' },
-];
-const FANDOM_BY_KEY = Object.fromEntries(FANDOMS.map(f => [f.key, f]));
+// The Sheets themselves are listed in SOURCES at the top of the file.
+const SOURCE_BY_ID = Object.fromEntries(SOURCES.map(s => [s.id, s]));
 
 function colLetter(index) {
   let s = '', i = index + 1;
@@ -809,10 +960,10 @@ async function readOnlyGet(url, token, timeoutMs) {
   return res.json();
 }
 
-// One fandom: header row first (to find columns by name), then a single values.batchGet for every
-// Data List column except Summary, plus the Reading Log.
-async function loadFandom(token, fandom) {
-  const base = SHEETS_API + fandom.sheetId;
+// One source Sheet: header row first (to find columns by name), then a single values.batchGet for
+// every Data List column except Summary, plus the Reading Log.
+async function loadSource(token, source) {
+  const base = SHEETS_API + source.sheetId;
   const hdr = await readOnlyGet(`${base}/values/${encodeURIComponent("'Data List'!1:1")}`, token, 20000);
   const header = ((hdr.values || [])[0] || []).map(h => String(h).trim());
   if (!header.length) throw new Error('The "Data List" tab has no header row.');
@@ -835,17 +986,31 @@ async function loadFandom(token, fandom) {
     logMissing = true;
   }
   const vr = res.valueRanges || [];
+  // Date columns again, unformatted: a real date cell comes back as a serial number, so the sheet's
+  // display format (d/m vs m/d, "8 Dec 2025"...) can never stop a date being read. Text cells the
+  // apps wrote ("2026-10-10 19:17") come back unchanged.
+  const dateCols = ['Date Started', 'Date Read', 'Last Read'].filter(c => headerIndex[c] !== undefined);
+  let serials = [];
+  if (dateCols.length) {
+    const r2 = await readOnlyGet(`${base}/values:batchGet?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER&` +
+      dateCols.map(c => 'ranges=' + encodeURIComponent(`'Data List'!${colLetter(headerIndex[c])}2:${colLetter(headerIndex[c])}`)).join('&'), token, 60000);
+    serials = (r2.valueRanges || []).map(x => x.values || []);
+  }
   const nRows = Math.max(0, ...blocks.map((_, j) => ((vr[j] || {}).values || []).length));
   const fics = [];
   for (let i = 0; i < nRows; i++) {
     const row = new Array(header.length).fill('');
     blocks.forEach(([s], j) => { const vals = ((vr[j] || {}).values || [])[i] || []; for (let k = 0; k < vals.length; k++) row[s + k] = vals[k]; });
-    const fic = ShelfRules.ficFromRow(headerIndex, row, i + 2, fandom.key);
+    dateCols.forEach((c, j) => {
+      const v = ((serials[j] || [])[i] || [])[0];
+      if (typeof v === 'number') row[headerIndex[c]] = c === 'Last Read' ? ShelfRules.serialToStamp(v) : ShelfRules.serialToIso(v);
+    });
+    const fic = ShelfRules.ficFromRow(headerIndex, row, i + 2, source.id);
     if (fic) { delete fic.summary; fics.push(fic); }
   }
-  const log = logMissing ? [] : ShelfRules.parseLogRows((vr[blocks.length] || {}).values || [], fandom.key);
+  const log = logMissing ? [] : ShelfRules.parseLogRows((vr[blocks.length] || {}).values || [], source.id);
   return {
-    key: fandom.key, syncedAt: Date.now(), header, fics, log, logMissing, duplicateHeaders,
+    key: source.id, syncedAt: Date.now(), header, fics, log, logMissing, duplicateHeaders,
     missingCols: ShelfRules.REQUIRED_COLS.filter(c => headerIndex[c] === undefined),
     summaryCol: summaryIdx !== undefined ? colLetter(summaryIdx) : null,
     linkCol: headerIndex['Link'] !== undefined ? colLetter(headerIndex['Link']) : null,
@@ -855,10 +1020,10 @@ async function loadFandom(token, fandom) {
 // A fic's summary, fetched only when its detail opens. The Link cell is fetched alongside it: if the
 // row no longer holds this fic (rows sorted or inserted since the last sync), we say so instead of
 // showing someone else's summary.
-async function fetchSummary(token, fandom, meta, fic) {
+async function fetchSummary(token, source, meta, fic) {
   if (!meta.summaryCol) throw new Error('This sheet has no "Summary" column.');
   const ranges = [`'Data List'!${meta.summaryCol}${fic.rowNumber}`, `'Data List'!${meta.linkCol}${fic.rowNumber}`];
-  const res = await readOnlyGet(`${SHEETS_API}${fandom.sheetId}/values:batchGet?` + ranges.map(r => 'ranges=' + encodeURIComponent(r)).join('&'), token, 20000);
+  const res = await readOnlyGet(`${SHEETS_API}${source.sheetId}/values:batchGet?` + ranges.map(r => 'ranges=' + encodeURIComponent(r)).join('&'), token, 20000);
   const cell = (j) => String((((res.valueRanges || [])[j] || {}).values || [[]])[0]?.[0] ?? '');
   if (ShelfRules.workIdFromLink(cell(1).trim(), fic.rowNumber) !== fic.id) {
     const e = new Error('The sheet has changed since the last sync. Sync now, then open this fic again.'); e.moved = true; throw e;
@@ -917,9 +1082,84 @@ function ago(ts, now) {
   return `${d} day${d === 1 ? '' : 's'} ago`;
 }
 const ordinal = (n) => { const v = n % 100; if (v >= 11 && v <= 13) return n + 'th'; return n + ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'); };
-const fcolor = (key) => `var(--f-${key})`;
-const fname = (key) => (FANDOM_BY_KEY[key] || {}).name || key;
 const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// ---------- colours: each fandom's accent comes from SOURCES; pairings are shades of it ----------
+function isDarkMode() {
+  const t = document.documentElement.getAttribute('data-theme');
+  if (t) return t === 'dark';
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function hexToHsl(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if (!m) return [0, 0, 50];
+  const n = parseInt(m[1], 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+  if (max === min) return [0, 0, l * 100];
+  const d = max - min, sat = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, sat * 100, l * 100];
+}
+function hslToHex(h, sat, l) {
+  sat /= 100; l /= 100;
+  const k = (n) => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
+  const f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))))).toString(16).padStart(2, '0');
+  return '#' + f(0) + f(8) + f(4);
+}
+const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+function sourceAccent(src, dark) {
+  const c = src && src.color;
+  if (c && typeof c === 'object') return dark ? (c.dark || lighten(c.light)) : (c.light || c.dark);
+  if (typeof c === 'string') return dark ? lighten(c) : c;
+  return dark ? '#A8A4B0' : '#6E6A75';
+  function lighten(hex) { const [h, sa, l] = hexToHsl(hex); return hslToHex(h, clampN(sa - 4, 0, 100), clampN(l + 16, 0, 76)); }
+}
+function fandomColor(name) { return sourceAccent(SOURCES.find(s => s.fandom === name), isDarkMode()); }
+// Shade i of a fandom's colour: the top pairing gets the accent itself, the rest step lighter/darker.
+const SHADE_STEPS = [0, 15, -13, 27, -22, 37, 7, -7, 21, -17];
+function shadeOf(hex, i) {
+  const [h, sa, l] = hexToHsl(hex);
+  return hslToHex(h, sa, clampN(l + SHADE_STEPS[i % SHADE_STEPS.length], 16, 86));
+}
+function pairingColor(model, key) {
+  const p = model.pairingByKey.get(key);
+  return p ? shadeOf(fandomColor(p.fandom), p.rank) : 'var(--ink-3)';
+}
+
+// ---------- grouping: fandom (default) or pairing ----------
+const OTHER_PREFIX = '\u0000other:';
+// Series for a chart or breakdown. totals = words per key in range, present = keys with any reading.
+// Pairings beyond the top `max` are folded into one "Other" series per fandom.
+function makeGroups(model, level, totals, present, max) {
+  totals = totals || {}; max = max || 8;
+  if (level !== 'pairing') {
+    return { level: 'fandom', keys: model.fandomList.map(f => f.name), of: r => r.fandom,
+      label: k => k, short: k => R.shortFandom(k), color: k => fandomColor(k), fandomOf: k => k };
+  }
+  const all = model.fandomList.flatMap(f => f.pairings.map(p => p.key));
+  const live = all.filter(k => (totals[k] || 0) > 0 || (present && present.has(k)));
+  const ranked = live.slice().sort((a, b) => (totals[b] || 0) - (totals[a] || 0));
+  const keep = new Set(ranked.length > max ? ranked.slice(0, max - 1) : ranked);
+  const map = new Map(), keys = [];
+  for (const f of model.fandomList) {
+    for (const p of f.pairings) if (keep.has(p.key)) { keys.push(p.key); map.set(p.key, p.key); }
+    const folded = f.pairings.filter(p => !keep.has(p.key) && live.includes(p.key));
+    if (folded.length) { const ok = OTHER_PREFIX + f.name; keys.push(ok); folded.forEach(p => map.set(p.key, ok)); }
+  }
+  const isOther = (k) => k.startsWith(OTHER_PREFIX);
+  const fandomOf = (k) => isOther(k) ? k.slice(OTHER_PREFIX.length) : (model.pairingByKey.get(k) || {}).fandom;
+  const label = (k) => isOther(k) ? `Other ${R.shortFandom(fandomOf(k))} pairings` : (model.pairingByKey.get(k) || {}).name || k;
+  return {
+    level: 'pairing', keys, of: r => map.get(r.pairingKey), label, short: label, fandomOf,
+    color: (k) => isOther(k) ? shadeOf(fandomColor(fandomOf(k)), 5) : pairingColor(model, k),
+  };
+}
+function GroupToggle({ value, onChange }) {
+  return html`<div className="seg" role="group" aria-label="Break down by">
+    <button className=${value === 'fandom' ? 'on' : ''} onClick=${() => onChange('fandom')}>Fandom</button>
+    <button className=${value === 'pairing' ? 'on' : ''} onClick=${() => onChange('pairing')}>Pairing</button>
+  </div>`;
+}
 function download(name, text, type) {
   const blob = new Blob([text], { type });
   const url = URL.createObjectURL(blob);
@@ -952,10 +1192,13 @@ function Icon({ name, size = 18, fill = false, sw = 2 }) {
 }
 
 // ---------- small pieces ----------
-function FandomBadge({ k }) {
-  return html`<span className="badge plain" style=${{ color: 'var(--ink)' }}><span className="dot" style=${{ background: fcolor(k) }}></span>${fname(k)}</span>`;
+// "Fandom · Pairing", with the fandom's colour. mode: '' (2 lines max), 'one' (1 line) or 'full'.
+function SourceLine({ fic, mode, style }) {
+  return html`<div className=${'srcline' + (mode ? ' ' + mode : '')} style=${style} title=${`${fic.fandom} · ${fic.pairing}`}>
+    <i style=${{ background: fandomColor(fic.fandom) }}></i><span><b>${fic.fandom}</b> · ${fic.pairing}</span>
+  </div>`;
 }
-const EstBadge = () => html`<span className="badge est" title="Estimated: backfilled from AO3's last-visited date, not logged">est.</span>`;
+const EstBadge = () => html`<span className="badge est" title="Estimated: backfilled from AO3, with no matching Reading Log event">est.</span>`;
 function Enjoy({ n }) {
   if (!n) return null;
   return html`<span className="enjoy" title=${`Enjoyment ${n}/5`} aria-label=${`Enjoyment ${n} of 5`}>${[1, 2, 3, 4, 5].map(i => html`<i key=${i} className=${i <= n ? 'on' : ''}></i>`)}</span>`;
@@ -988,7 +1231,7 @@ function ChartBox({ config, height }) {
   return html`<div style=${{ position: 'relative', height: height || 220 }}><canvas ref=${ref} role="img"></canvas></div>`;
 }
 function chartTheme() {
-  return { ink: cssVar('--ink'), ink2: cssVar('--ink-2'), ink3: cssVar('--ink-3'), line: cssVar('--line'), surface: cssVar('--surface'), accent: cssVar('--accent'), pos: cssVar('--pos'), dnf: cssVar('--dnf'), fandom: Object.fromEntries(FANDOMS.map(f => [f.key, cssVar('--f-' + f.key)])) };
+  return { ink: cssVar('--ink'), ink2: cssVar('--ink-2'), ink3: cssVar('--ink-3'), line: cssVar('--line'), surface: cssVar('--surface'), accent: cssVar('--accent'), pos: cssVar('--pos'), dnf: cssVar('--dnf') };
 }
 function baseScales(t, yFmt) {
   return {
@@ -997,10 +1240,10 @@ function baseScales(t, yFmt) {
   };
 }
 // Stacked bars: round only the top-most non-empty segment of each bar.
-function topRadius(wordsByFandom, i) {
+function topRadius(wordsByGroup, keys, i) {
   return (ctx) => {
     const j = ctx.dataIndex;
-    const top = FANDOMS.map(f => wordsByFandom[f.key][j]).reduce((acc, v, k) => v > 0 ? k : acc, -1);
+    const top = keys.map(k => wordsByGroup[k][j]).reduce((acc, v, k) => v > 0 ? k : acc, -1);
     return i === top ? { topLeft: 5, topRight: 5, bottomLeft: 0, bottomRight: 0 } : 0;
   };
 }
@@ -1084,7 +1327,7 @@ function useTheme() {
 // ============================================================================================
 const PERIOD_OPTIONS = [['thisMonth', 'This month'], ['lastMonth', 'Last month'], ['thisQuarter', 'This quarter'], ['thisYear', 'This year'], ['lastYear', 'Last year'], ['all', 'All time'], ['custom', 'Custom']];
 
-function headline(cur, prev, p, cp, today) {
+function headline(cur, prev, p, cp, today, level, model) {
   const name = R.periodName(p, today);
   const when = p.unit === 'all' ? 'in total' : (p.unit === 'days' ? `from ${name}` : `in ${name}`) + (p.partial ? ' so far' : '');
   if (!cur.finished && !cur.dnfs) return p.unit === 'all' ? 'No finished reads yet.' : `Nothing finished ${when} yet.`;
@@ -1096,10 +1339,13 @@ function headline(cur, prev, p, cp, today) {
       s += pct === 0 ? `, about the same as ${cname}` : `, ${pct}% ${d > 0 ? 'more' : 'fewer'} than ${cname}`;
     } else if (cur.words > 0) s += `, up from none in ${cname}`;
   }
-  const parts = Object.entries(cur.byFandom).filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1]);
+  // "mostly …" names the biggest fandom (or pairing, when the breakdown is set to Pairing).
+  const byPairing = level === 'pairing';
+  const nameOf = (k) => byPairing ? ((model.pairingByKey.get(k) || {}).name || k) : R.shortFandom(k);
+  const parts = Object.entries(byPairing ? cur.byPairing : cur.byFandom).filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1]);
   const total = parts.reduce((t, [, w]) => t + w, 0);
-  if (parts.length === 1 && total > 0) s += `, all ${fname(parts[0][0])}`;
-  else if (parts.length > 1) s += parts[0][1] / total >= 0.6 ? `, mostly ${fname(parts[0][0])}` : `, split between ${fname(parts[0][0])} and ${fname(parts[1][0])}`;
+  if (parts.length === 1 && total > 0) s += `, all ${nameOf(parts[0][0])}`;
+  else if (parts.length > 1) s += parts[0][1] / total >= 0.6 ? `, mostly ${nameOf(parts[0][0])}` : `, split between ${nameOf(parts[0][0])} and ${nameOf(parts[1][0])}`;
   return s + '.';
 }
 
@@ -1156,11 +1402,12 @@ function CurrentlyReading({ model, onOpen }) {
         const total = f.chaptersPlanned;
         const pct = total ? Math.min(100, Math.round(f.chaptersRead / total * 100)) : Math.min(100, Math.round(f.chaptersRead / Math.max(1, f.chapters) * 100));
         return html`<button key=${f.key} className="mini" onClick=${() => onOpen(f.key)}>
-          <div className="row" style=${{ gap: 6 }}><${FandomBadge} k=${f.fandom} />${f.status === 'Paused' ? html`<span className="badge plain">Paused</span>` : null}</div>
+          ${f.status === 'Paused' ? html`<div><span className="badge plain">Paused</span></div>` : null}
           <div className="mini-title">${f.title}</div>
           <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${f.authors.join(', ') || '—'}</div>
-          <div className="row" style=${{ gap: 10, flexWrap: 'nowrap', marginTop: 2 }}>
-            <div className="bar-track" style=${{ flex: 1 }}><div className="bar-fill" style=${{ width: pct + '%', background: fcolor(f.fandom) }}></div></div>
+          <${SourceLine} fic=${f} />
+          <div className="row" style=${{ gap: 10, flexWrap: 'nowrap', marginTop: 'auto' }}>
+            <div className="bar-track" style=${{ flex: 1 }}><div className="bar-fill" style=${{ width: pct + '%', background: fandomColor(f.fandom) }}></div></div>
             <span className="small num" style=${{ fontWeight: 700 }}>${f.chaptersRead} / ${total === null ? '?' : total}</span>
           </div>
         </button>`;
@@ -1169,8 +1416,8 @@ function CurrentlyReading({ model, onOpen }) {
   </div>`;
 }
 
-function WordsPerMonth({ model, p, today, themeTick }) {
-  const config = useMemo(() => {
+function WordsPerMonth({ model, p, today, themeTick, level }) {
+  const { config, groups } = useMemo(() => {
     const t = chartTheme();
     let from, to;
     const nowKey = today.slice(0, 7);
@@ -1183,20 +1430,42 @@ function WordsPerMonth({ model, p, today, themeTick }) {
     }
     if (from > to) from = to;
     const keys = R.monthKeys(from, to);
-    const s = R.monthlySeries(model.readings, keys, FANDOMS.map(f => f.key));
+    const totals = {}, present = new Set();
+    for (const r of model.readings) {
+      if (!r.date) continue; const mk = r.date.slice(0, 7); if (mk < from || mk > to) continue;
+      present.add(r.pairingKey); if (r.words !== null) totals[r.pairingKey] = (totals[r.pairingKey] || 0) + r.words;
+    }
+    const groups = makeGroups(model, level, totals, present);
+    const s = R.monthlySeries(model.readings, keys, groups.keys, groups.of);
     const multiYear = keys[0].slice(0, 4) !== keys[keys.length - 1].slice(0, 4);
-    return {
+    return { groups, config: {
       type: 'bar',
-      data: { labels: keys.map(k => R.monthLabel(k, multiYear)), datasets: FANDOMS.map((f, i) => ({ label: f.name, data: s.words[f.key], backgroundColor: t.fandom[f.key], borderRadius: topRadius(s.words, i), borderSkipped: false, maxBarThickness: 26, stack: 'w' })) },
+      data: { labels: keys.map(k => R.monthLabel(k, multiYear)), datasets: groups.keys.map((k, i) => ({ label: groups.short(k), data: s.words[k], backgroundColor: groups.color(k), borderRadius: topRadius(s.words, groups.keys, i), borderSkipped: false, maxBarThickness: 26, stack: 'w' })) },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.dataset.label}: ${fmtWords(c.parsed.y)}`) },
+        plugins: { legend: { display: false }, tooltip: { ...tooltip(t, c => ` ${c.dataset.label}: ${fmtWords(c.parsed.y)}`), filter: c => c.parsed.y > 0 } },
         scales: baseScales(t, v => fmtWords(v)) },
-    };
-  }, [model, p.start, p.end, p.unit, today, themeTick]);
+    } };
+  }, [model, p.start, p.end, p.unit, today, themeTick, level]);
   return html`<div className="card">
     <${ChartBox} config=${config} height=${200} />
-    <div className="legend">${FANDOMS.map(f => html`<span key=${f.key}><i style=${{ background: fcolor(f.key) }}></i>${f.name}</span>`)}</div>
+    <${GroupLegend} groups=${groups} />
   </div>`;
+}
+
+// Legend for a fandom/pairing breakdown. In pairing view, pairings sit under their fandom.
+function GroupLegend({ groups, suffix }) {
+  if (groups.level === 'fandom') return html`<div className="legend">${groups.keys.map(k => html`<span key=${k}><i style=${{ background: groups.color(k) }}></i>${groups.label(k)}${suffix || ''}</span>`)}</div>`;
+  const byFandom = [];
+  for (const k of groups.keys) {
+    const f = groups.fandomOf(k);
+    let e = byFandom.find(x => x.f === f); if (!e) { e = { f, keys: [] }; byFandom.push(e); }
+    e.keys.push(k);
+  }
+  if (!byFandom.length) return html`<div className="legend faint">No readings in this range.</div>`;
+  return html`<div style=${{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>${byFandom.map(e => html`<div key=${e.f}>
+    <div className="tiny faint" style=${{ fontWeight: 700, marginBottom: 3 }}>${e.f}</div>
+    <div className="legend" style=${{ marginTop: 0 }}>${e.keys.map(k => html`<span key=${k}><i style=${{ background: groups.color(k) }}></i>${groups.label(k)}${suffix || ''}</span>`)}</div>
+  </div>`)}</div>`;
 }
 
 function TopTags({ stats, onTag }) {
@@ -1216,30 +1485,46 @@ function TopTags({ stats, onTag }) {
   </div>`;
 }
 
-function FandomSplit({ stats, themeTick }) {
+// Share of words read by fandom, or by pairing within each fandom.
+function GroupSplit({ model, stats, themeTick, level }) {
+  const { groups, words, counts } = useMemo(() => {
+    const groups = makeGroups(model, level, stats.byPairing, new Set(Object.keys(stats.countPairing)));
+    const words = {}, counts = {};
+    for (const r of stats.readings) {
+      const g = groups.of(r); if (g === undefined) continue;
+      counts[g] = (counts[g] || 0) + 1; if (r.words !== null) words[g] = (words[g] || 0) + r.words;
+    }
+    return { groups, words, counts };
+  }, [model, stats, level]);
+  const keys = groups.level === 'fandom' ? groups.keys : groups.keys.filter(k => counts[k]);
   const config = useMemo(() => {
     const t = chartTheme();
-    const data = FANDOMS.map(f => stats.byFandom[f.key] || 0);
     return {
       type: 'doughnut',
-      data: { labels: FANDOMS.map(f => f.name), datasets: [{ data, backgroundColor: FANDOMS.map(f => t.fandom[f.key]), borderColor: t.surface, borderWidth: 3, hoverOffset: 4 }] },
+      data: { labels: keys.map(groups.short), datasets: [{ data: keys.map(k => words[k] || 0), backgroundColor: keys.map(groups.color), borderColor: t.surface, borderWidth: 3, hoverOffset: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, cutout: '70%', animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.label}: ${fmtWords(c.parsed)}`) } },
     };
-  }, [stats, themeTick]);
-  const total = Object.values(stats.byFandom).reduce((a, b) => a + b, 0);
-  const counts = {};
-  stats.readings.forEach(r => { counts[r.fandom] = (counts[r.fandom] || 0) + 1; });
-  return html`<div className="card" style=${{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16, alignItems: 'center' }}>
-    ${total ? html`<${ChartBox} config=${config} height=${120} />` : html`<div style=${{ width: 120, height: 120, borderRadius: '50%', border: '14px solid var(--surface-2)' }}></div>`}
+  }, [groups, words, themeTick]);
+  const total = Object.values(words).reduce((a, b) => a + b, 0);
+  // Pairing view has more (and longer) rows, so the doughnut sits above the list instead of beside it.
+  const stacked = groups.level === 'pairing';
+  const ring = stacked ? 150 : 112;
+  return html`<div className="card" style=${{ display: 'grid', gridTemplateColumns: stacked ? 'minmax(0, 1fr)' : '112px minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
+    <div style=${{ width: ring, justifySelf: stacked ? 'center' : 'start' }}>${total ? html`<${ChartBox} config=${config} height=${ring} />` : html`<div style=${{ width: ring, height: ring, borderRadius: '50%', border: '14px solid var(--surface-2)' }}></div>`}</div>
     <div>
-      ${FANDOMS.map(f => {
-        const w = stats.byFandom[f.key] || 0;
-        return html`<div key=${f.key} style=${{ padding: '4px 0' }}>
-          <div className="row" style=${{ gap: 8, flexWrap: 'nowrap', justifyContent: 'space-between' }}>
-            <span className="row" style=${{ gap: 8, flexWrap: 'nowrap' }}><i style=${{ width: 10, height: 10, borderRadius: 3, background: fcolor(f.key), display: 'inline-block' }}></i><b style=${{ fontWeight: 600 }}>${f.name}</b></span>
-            <span className="num" style=${{ fontWeight: 600 }}>${total ? Math.round(w / total * 100) : 0}%</span>
+      ${!keys.length ? html`<div className="small faint">No readings in this period.</div>` : null}
+      ${keys.map((k, i) => {
+        const w = words[k] || 0, n = counts[k] || 0;
+        const fandomHead = groups.level === 'pairing' && (i === 0 || groups.fandomOf(keys[i - 1]) !== groups.fandomOf(k));
+        return html`<div key=${k}>
+          ${fandomHead ? html`<div className="tiny faint" style=${{ fontWeight: 700, margin: i ? '8px 0 0' : 0 }}>${groups.fandomOf(k)}</div>` : null}
+          <div style=${{ padding: '4px 0' }}>
+            <div className="row" style=${{ gap: 8, flexWrap: 'nowrap', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <span className="row" style=${{ gap: 8, flexWrap: 'nowrap', alignItems: 'flex-start', minWidth: 0 }}><i style=${{ width: 10, height: 10, borderRadius: 3, background: groups.color(k), display: 'inline-block', flexShrink: 0, marginTop: 5 }}></i><b style=${{ fontWeight: 600 }}>${groups.label(k)}</b></span>
+              <span className="num" style=${{ fontWeight: 600 }}>${total ? Math.round(w / total * 100) : 0}%</span>
+            </div>
+            <div className="tiny muted num" style=${{ paddingLeft: 18 }}>${fmtWords(w)} words · ${n} read${n === 1 ? '' : 's'}</div>
           </div>
-          <div className="tiny muted num" style=${{ paddingLeft: 18 }}>${fmtWords(w)} words · ${counts[f.key] || 0} read${(counts[f.key] || 0) === 1 ? '' : 's'}</div>
         </div>`;
       })}
     </div>
@@ -1251,18 +1536,19 @@ function RecentlyFinished({ stats, onOpen, today }) {
   if (!recent.length) return html`<div className="card empty">No finished fics in this period.</div>`;
   return html`<div className="hscroll">
     ${recent.map(r => html`<button key=${r.id} className="mini" style=${{ width: 196 }} onClick=${() => onOpen(r.ficKey)}>
-      <div className="row" style=${{ gap: 6, justifyContent: 'space-between' }}><${FandomBadge} k=${r.fandom} />${r.est ? html`<${EstBadge} />` : null}</div>
       <div className="mini-title">${r.fic.title}</div>
       <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${r.fic.authors.join(', ')}</div>
+      <${SourceLine} fic=${r.fic} />
       <div className="row" style=${{ justifyContent: 'space-between', marginTop: 'auto' }}>
         <span className="small faint">${r.date ? R.fmtDay(r.date, today) : 'No date'} · ${fmtWords(r.fic.words)}</span>
+        ${r.est ? html`<${EstBadge} />` : null}
         ${r.fic.enjoyment ? html`<${Enjoy} n=${r.fic.enjoyment} />` : html`<span className="tiny faint">unrated</span>`}
       </div>
     </button>`)}
   </div>`;
 }
 
-function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash }) {
+function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy }) {
   const { period, custom, compare } = dash;
   const p = useMemo(() => R.makePeriod(period, today, custom), [period, today, custom.start, custom.end]);
   const cp = useMemo(() => p.unit === 'all' ? null : compare === 'year' ? R.sameLastYear(p) : R.shiftPeriod(p, -1), [p, compare]);
@@ -1279,7 +1565,7 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash }) {
   const cmpLabel = cp ? R.periodName(cp, today) : '';
   const set = (patch) => setDash(d => ({ ...d, ...patch }));
   return html`<div>
-    <h1 className="headline serif">${headline(cur, prev, p, cp, today)}</h1>
+    <h1 className="headline serif">${headline(cur, prev, p, cp, today, groupBy, model)}</h1>
     <div className="small faint" style=${{ margin: '0 2px 14px' }}>${p.unit === 'all' ? 'Everything you’ve read, including undated reads.' : `${R.fmtDay(p.start, today)} – ${R.fmtDay(p.end, today)}${cp ? ` · compared with ${cmpLabel}` : ''}`}</div>
     <${PeriodPicker} period=${period} setPeriod=${v => set({ period: v })} custom=${custom} setCustom=${fn => setDash(d => ({ ...d, custom: fn(d.custom) }))} compare=${compare} setCompare=${v => set({ compare: v })} today=${today} />
 
@@ -1297,17 +1583,18 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash }) {
 
     <${CurrentlyReading} model=${model} onOpen=${onOpen} />
 
-    <div className="section">
+    <div className="group-row"><span className="small faint">Break down by</span><${GroupToggle} value=${groupBy} onChange=${setGroupBy} /></div>
+    <div className="section" style=${{ marginTop: 14 }}>
       <div className="section-head"><h2 className="section-title">Words per month</h2></div>
-      <${WordsPerMonth} model=${model} p=${p} today=${today} themeTick=${themeTick} />
+      <${WordsPerMonth} model=${model} p=${p} today=${today} themeTick=${themeTick} level=${groupBy} />
+    </div>
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Split by ${groupBy}</h2><span className="small faint">by words</span></div>
+      <${GroupSplit} model=${model} stats=${cur} themeTick=${themeTick} level=${groupBy} />
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Top tags by words read</h2></div>
       <${TopTags} stats=${cur} onTag=${onTag} />
-    </div>
-    <div className="section">
-      <div className="section-head"><h2 className="section-title">Fandom split</h2><span className="small faint">by words</span></div>
-      <${FandomSplit} stats=${cur} themeTick=${themeTick} />
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Recently finished</h2></div>
@@ -1342,8 +1629,28 @@ function FilterPanel({ filters, setFilters, model }) {
   const cats = [...model.vocab.categories].sort();
   const authors = useMemo(() => [...model.vocab.authors].sort((a, b) => a.localeCompare(b)), [model]);
   const ChipSet = (field, items, labelOf) => html`<div className="wrap-chips">${items.map(v => html`<button key=${String(v)} className=${'chip sm' + (filters[field].includes(v) ? ' on' : '')} onClick=${() => toggle(field, v)}>${labelOf ? labelOf(v) : v}</button>`)}</div>`;
+  // Fandom, then Pairing. Pairing options follow the fandoms picked (all fandoms when none are).
+  const [allPairings, setAllPairings] = useState(false);
+  const fandomsRead = model.fandomList.filter(f => f.pairings.some(p => p.readings));
+  const toggleFandom = (name) => setFilters(f => {
+    const fandoms = f.fandoms.includes(name) ? f.fandoms.filter(x => x !== name) : [...f.fandoms, name];
+    const allowed = new Set(model.fandomList.filter(x => !fandoms.length || fandoms.includes(x.name)).flatMap(x => x.pairings.map(p => p.key)));
+    return { ...f, fandoms, pairings: f.pairings.filter(k => allowed.has(k)) };
+  });
+  const pairingOpts = model.fandomList.filter(f => !filters.fandoms.length || filters.fandoms.includes(f.name))
+    .flatMap(f => f.pairings.filter(p => p.readings)).sort((a, b) => b.readings - a.readings || a.name.localeCompare(b.name));
+  const PAIRING_LIMIT = 12;
+  const shownPairings = allPairings ? pairingOpts : pairingOpts.slice(0, PAIRING_LIMIT).concat(pairingOpts.slice(PAIRING_LIMIT).filter(p => filters.pairings.includes(p.key)));
+  const multiFandom = new Set(pairingOpts.map(p => p.fandom)).size > 1;
   return html`<div className="panel">
-    <div><div className="flabel">Fandom</div>${ChipSet('fandoms', FANDOMS.map(f => f.key), fname)}</div>
+    <div><div className="flabel">Fandom</div>
+      <div className="wrap-chips">${fandomsRead.map(f => html`<button key=${f.name} className=${'chip sm' + (filters.fandoms.includes(f.name) ? ' on' : '')} onClick=${() => toggleFandom(f.name)}><span className="cdot" style=${{ background: fandomColor(f.name) }}></span>${f.name}</button>`)}</div>
+    </div>
+    <div><div className="flabel">Pairing</div>
+      <div className="wrap-chips">${shownPairings.map(pr => html`<button key=${pr.key} className=${'chip sm' + (filters.pairings.includes(pr.key) ? ' on' : '')} onClick=${() => toggle('pairings', pr.key)} title=${pr.fandom}>
+        ${multiFandom ? html`<span className="cdot" style=${{ background: pairingColor(model, pr.key) }}></span>` : null}${pr.name} <span className="faint">${pr.readings}</span></button>`)}</div>
+      ${pairingOpts.length > PAIRING_LIMIT ? html`<button className="link-btn" style=${{ marginTop: 8 }} onClick=${() => setAllPairings(v => !v)}>${allPairings ? 'Show fewer' : `Show all ${pairingOpts.length} pairings`}</button>` : null}
+    </div>
     <div><div className="flabel">Status</div>${ChipSet('kinds', ['Read', 'DNF'], k => k === 'Read' ? 'Finished' : 'DNF')}</div>
     <div><div className="flabel">Logged or estimated</div>
       <div className="seg">${[['all', 'All'], ['logged', 'Logged'], ['est', 'Estimated']].map(([k, l]) => html`<button key=${k} className=${filters.est === k ? 'on' : ''} onClick=${() => setFilters(f => ({ ...f, est: k }))}>${l}</button>`)}</div>
@@ -1390,16 +1697,18 @@ function DiaryRow({ r, onOpen }) {
   const wd = d ? WEEKDAYS[new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay()] : '';
   return html`<button className="drow" onClick=${() => onOpen(r.ficKey)}>
     <div className="dday">${d ? html`<b className="num">${d[2]}</b><span>${wd}</span>` : html`<span>—</span>`}</div>
-    <div className="dstripe" style=${{ background: fcolor(r.fandom) }}></div>
+    <div className="dstripe" style=${{ background: fandomColor(r.fandom) }}></div>
     <div style=${{ minWidth: 0 }}>
       <div className="dtitle">${r.fic.title}</div>
-      <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${r.fic.authors.join(', ') || '—'} · ${fname(r.fandom)}</div>
+      <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${r.fic.authors.join(', ') || '—'}</div>
+      <${SourceLine} fic=${r.fic} mode="one" style=${{ marginTop: 2 }} />
       <div className="dmeta">
         <span className="num">${r.kind === 'DNF' ? (r.words === null ? `${fmtWords(r.fic.words)} · words not counted` : `${fmtWords(r.words)} of ${fmtWords(r.fic.words)}`) : fmtWords(r.words)}</span>
         <${Enjoy} n=${r.fic.enjoyment} />
         <${KB} fic=${r.fic} />
         ${r.kind === 'DNF' ? html`<span className="badge dnf">DNF</span>` : null}
         ${r.readNumber > 1 ? html`<span className="badge plain">${ordinal(r.readNumber)} read</span>` : null}
+        ${r.origin === 'dataList' && r.fic.timesRead > r.readNumber ? html`<span className="badge plain">Read ${r.fic.timesRead} times</span>` : null}
         ${r.est ? html`<${EstBadge} />` : null}
       </div>
     </div>
@@ -1452,28 +1761,29 @@ function Library({ readings, onOpen, today, view, setView }) {
         <button className=${view === 'table' ? 'on' : ''} onClick=${() => setView('table')} aria-label="Table"><${Icon} name="table" size=${15} /></button>
       </div>
     </div>
-    ${view === 'cards' ? html`<div className="lib-grid">${shown.map(e => html`<button key=${e.fic.key} className="lcard" style=${{ '--fc': fcolor(e.fic.fandom) }} onClick=${() => onOpen(e.fic.key)}>
-        <div className="row" style=${{ gap: 6 }}><${FandomBadge} k=${e.fic.fandom} /><span className="badge rating">${e.fic.rating || '—'}</span>${statusOf(e) === 'DNF' ? html`<span className="badge dnf">DNF</span>` : null}${e.est ? html`<${EstBadge} />` : null}</div>
+    ${view === 'cards' ? html`<div className="lib-grid">${shown.map(e => html`<button key=${e.fic.key} className="lcard" style=${{ '--fc': fandomColor(e.fic.fandom) }} onClick=${() => onOpen(e.fic.key)}>
+        <div className="row" style=${{ gap: 6 }}><span className="badge rating">${e.fic.rating || '—'}</span>${statusOf(e) === 'DNF' ? html`<span className="badge dnf">DNF</span>` : null}${e.est ? html`<${EstBadge} />` : null}</div>
         <div className="mini-title">${e.fic.title}</div>
         <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${e.fic.authors.join(', ')}</div>
+        <${SourceLine} fic=${e.fic} />
         <div className="row small faint" style=${{ gap: 8, marginTop: 'auto' }}>
           <span className="num">${fmtWords(e.fic.words)}</span><span>${e.fic.chapters} ch</span>
-          ${e.n > 1 ? html`<span>${e.n}× read</span>` : null}
+          ${Math.max(e.n, e.fic.timesRead) > 1 ? html`<span>Read ${Math.max(e.n, e.fic.timesRead)} times</span>` : null}
           <span>${e.last ? R.fmtDay(e.last, today) : 'no date'}</span>
           <${Enjoy} n=${e.fic.enjoyment} />
         </div>
       </button>`)}</div>`
     : html`<div className="table-wrap"><table>
-        <thead><tr><th>Title</th><th>Fandom</th><th>Status</th><th>Last</th><th>Words</th><th>Enjoy</th><th>Rating</th><th>Reads</th></tr></thead>
+        <thead><tr><th>Title</th><th>Fandom · Pairing</th><th>Status</th><th>Last</th><th>Words</th><th>Enjoy</th><th>Rating</th><th>Reads</th></tr></thead>
         <tbody>${shown.map(e => html`<tr key=${e.fic.key} className="click" onClick=${() => onOpen(e.fic.key)}>
           <td className="t">${e.fic.title}<div className="tiny faint" style=${{ fontWeight: 400 }}>${e.fic.authors.join(', ')}</div></td>
-          <td><span className="row" style=${{ gap: 6, flexWrap: 'nowrap' }}><i style=${{ width: 8, height: 8, borderRadius: 4, background: fcolor(e.fic.fandom), display: 'inline-block' }}></i>${fname(e.fic.fandom)}</span></td>
+          <td style=${{ whiteSpace: 'normal', minWidth: 190 }}><${SourceLine} fic=${e.fic} mode="full" /></td>
           <td>${statusOf(e) === 'Read' ? 'Finished' : 'DNF'}${e.est ? ' · est.' : ''}</td>
           <td className="num">${e.last ? R.fmtDay(e.last, today) : '—'}</td>
           <td className="num">${fmtWords(e.fic.words)}</td>
           <td>${e.fic.enjoyment ? e.fic.enjoyment + '/5' : '—'}</td>
           <td>${e.fic.rating || '—'}</td>
-          <td className="num">${e.n}</td>
+          <td className="num">${Math.max(e.n, e.fic.timesRead || 0)}</td>
         </tr>`)}</tbody>
       </table></div>`}
     ${limit < fics.length ? html`<button className="big-btn ghost" style=${{ marginTop: 14 }} onClick=${() => setLimit(l => l + 60)}>Show more (${fics.length - limit} left)</button>` : null}
@@ -1532,13 +1842,14 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
   ];
   if (fic.dnrReason) meta.splice(6, 0, ['DNR reason', fic.dnrReason]);
   return html`<div className="sheet-back" onClick=${onClose}>
-    <div className="sheet" onClick=${e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label=${fic.title} style=${{ '--fc': fcolor(fic.fandom) }}>
+    <div className="sheet" onClick=${e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label=${fic.title} style=${{ '--fc': fandomColor(fic.fandom) }}>
       <div className="grab"></div>
       <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-        <div className="row" style=${{ gap: 6 }}><${FandomBadge} k=${fic.fandom} /><span className="badge rating">${fic.rating || '—'}</span>${readings.some(r => r.est) ? html`<${EstBadge} />` : null}</div>
+        <div className="row" style=${{ gap: 6 }}><span className="badge rating">${fic.rating || '—'}</span>${readings.some(r => r.est) ? html`<${EstBadge} />` : null}</div>
         <button className="icon-btn" onClick=${onClose} aria-label="Close"><${Icon} name="close" size=${16} /></button>
       </div>
-      <h2 className="serif" style=${{ fontSize: 26, lineHeight: 1.18, margin: '14px 0 4px', fontWeight: 600 }}>${fic.title}</h2>
+      <${SourceLine} fic=${fic} mode="full" style=${{ marginTop: 14, fontSize: 13.5 }} />
+      <h2 className="serif" style=${{ fontSize: 26, lineHeight: 1.18, margin: '8px 0 4px', fontWeight: 600 }}>${fic.title}</h2>
       <div className="muted">by ${fic.authors.length ? fic.authors.map((a, i) => html`<span key=${a}>${i ? ', ' : ''}<button className="link-btn" style=${{ fontSize: 15 }} onClick=${() => onAuthor(a)}>${a}</button></span>`) : '—'}</div>
 
       ${authorCtx.length ? html`<div className="card" style=${{ marginTop: 14, padding: 14 }}>
@@ -1555,8 +1866,9 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
         <div className="card" style=${{ padding: '6px 16px' }}>
           ${readings.length ? readings.map(r => html`<div key=${r.id} className="row" style=${{ justifyContent: 'space-between', padding: '9px 0', borderTop: '1px solid var(--line)' }}>
             <span className="row" style=${{ gap: 8 }}><b style=${{ fontWeight: 600 }}>${ordinal(r.readNumber)} read</b>${r.kind === 'DNF' ? html`<span className="badge dnf">DNF</span>` : html`<span className="badge plain">Finished</span>`}${r.est ? html`<${EstBadge} />` : null}</span>
-            <span className="small muted num">${r.date ? R.fmtDay(r.date, today) : 'no date'} · ${r.words === null ? 'words not counted' : fmtWords(r.words) + ' words'}${r.dnfChapters ? ` (${r.dnfChapters}/${fic.chapters} ch)` : ''}</span>
+            <span className="small muted num">${r.started && r.started !== r.date ? `${R.fmtDay(r.started, today)} → ` : ''}${r.date ? R.fmtDay(r.date, today) : 'no date'} · ${r.words === null ? 'words not counted' : fmtWords(r.words) + ' words'}${r.dnfChapters ? ` (${r.dnfChapters}/${fic.chapters} ch)` : ''}</span>
           </div>`) : html`<div className="empty" style=${{ padding: 14 }}>Not finished or DNF'd yet.</div>`}
+          ${fic.timesRead > readings.length && readings.length ? html`<div className="small muted" style=${{ padding: '9px 0', borderTop: '1px solid var(--line)' }}>Read ${fic.timesRead} times. The Reading Log doesn't show the earlier reads, so they're counted once.</div>` : null}
         </div>
       </div>
 
@@ -1588,10 +1900,15 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
 // ============================================================================================
 // TRENDS
 // ============================================================================================
-function TrendsScreen({ model, today, themeTick, onAuthor }) {
+function TrendsScreen({ model, today, themeTick, onAuthor, groupBy, setGroupBy }) {
   const [by, setBy] = useState('fics');
   const keys = useMemo(() => R.monthKeys((model.firstDate || today).slice(0, 7), today.slice(0, 7)), [model, today]);
-  const s = useMemo(() => R.monthlySeries(model.readings, keys, FANDOMS.map(f => f.key)), [model, keys]);
+  const groups = useMemo(() => {
+    const totals = {}, present = new Set();
+    for (const r of model.readings) { if (!r.date) continue; present.add(r.pairingKey); if (r.words !== null) totals[r.pairingKey] = (totals[r.pairingKey] || 0) + r.words; }
+    return makeGroups(model, groupBy, totals, present);
+  }, [model, groupBy, themeTick]);
+  const s = useMemo(() => R.monthlySeries(model.readings, keys, groups.keys, groups.of), [model, keys, groups]);
   const multiYear = keys[0].slice(0, 4) !== keys[keys.length - 1].slice(0, 4);
   const labels = keys.map(k => R.monthLabel(k, multiYear));
   const wordsCfg = useMemo(() => {
@@ -1601,13 +1918,13 @@ function TrendsScreen({ model, today, themeTick, onAuthor }) {
     return {
       type: 'bar',
       data: { labels, datasets: [
-        ...FANDOMS.map((f, i) => ({ label: f.name, data: s.words[f.key], backgroundColor: t.fandom[f.key], borderRadius: topRadius(s.words, i), borderSkipped: false, stack: 'w', maxBarThickness: 26, order: 2 })),
+        ...groups.keys.map((k, i) => ({ label: groups.short(k), data: s.words[k], backgroundColor: groups.color(k), borderRadius: topRadius(s.words, groups.keys, i), borderSkipped: false, stack: 'w', maxBarThickness: 26, order: 2 })),
         { type: 'line', label: 'Fics finished', data: s.finished, yAxisID: 'y1', borderColor: t.ink, backgroundColor: t.ink, borderWidth: 2, pointRadius: 2.5, cubicInterpolationMode: 'monotone', order: 1 },
       ] },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false }, tooltip: tooltip(t, c => c.dataset.yAxisID === 'y1' ? ` Fics finished: ${c.parsed.y}` : ` ${c.dataset.label}: ${fmtWords(c.parsed.y)}`) }, scales: sc },
+        plugins: { legend: { display: false }, tooltip: { ...tooltip(t, c => c.dataset.yAxisID === 'y1' ? ` Fics finished: ${c.parsed.y}` : ` ${c.dataset.label}: ${fmtWords(c.parsed.y)}`), filter: c => c.dataset.yAxisID === 'y1' || c.parsed.y > 0 } }, scales: sc },
     };
-  }, [s, themeTick]);
+  }, [s, groups, themeTick]);
   const compCfg = useMemo(() => {
     const t = chartTheme();
     const sc = baseScales(t, v => Math.round(v * 100) + '%');
@@ -1626,10 +1943,11 @@ function TrendsScreen({ model, today, themeTick, onAuthor }) {
     <h1 className="headline serif" style=${{ marginTop: 10 }}>Trends</h1>
     <div className="small faint" style=${{ margin: '0 2px' }}>Every dated read since ${model.firstDate ? R.fmtDay(model.firstDate, today) : '—'}.${undated ? ` ${undated} undated read${undated === 1 ? ' isn’t' : 's aren’t'} shown by month.` : ''}</div>
     <div className="section">
-      <div className="section-head"><h2 className="section-title">Words and fics per month</h2></div>
+      <div className="section-head"><h2 className="section-title">Words and fics per month</h2><${GroupToggle} value=${groupBy} onChange=${setGroupBy} /></div>
       <div className="card">
         <${ChartBox} config=${wordsCfg} height=${230} />
-        <div className="legend">${FANDOMS.map(f => html`<span key=${f.key}><i style=${{ background: fcolor(f.key) }}></i>${f.name} words</span>`)}<span><i style=${{ background: 'var(--ink)', height: 3, borderRadius: 2 }}></i>Fics finished</span></div>
+        <${GroupLegend} groups=${groups} />
+        <div className="legend"><span><i style=${{ background: 'var(--ink)', height: 3, borderRadius: 2 }}></i>Fics finished</span></div>
       </div>
     </div>
     <div className="section">
@@ -1650,11 +1968,11 @@ function TrendsScreen({ model, today, themeTick, onAuthor }) {
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Shelves by status</h2></div>
-      <div className="table-wrap"><table>
-        <thead><tr><th>Status</th>${FANDOMS.map(f => html`<th key=${f.key}>${f.name}</th>`)}</tr></thead>
+      <div className="table-wrap wrap-th"><table>
+        <thead><tr><th>Status</th>${model.fandomList.map(f => html`<th key=${f.name}>${f.short}</th>`)}</tr></thead>
         <tbody>${Object.keys(model.statusCounts).sort((a, b) => model.statusCounts[b] - model.statusCounts[a]).map(st => html`<tr key=${st}>
           <td>${st}${st !== '(blank)' && !R.KNOWN_STATUSES.includes(st) ? html` <span className="badge est">other</span>` : null}</td>
-          ${FANDOMS.map(f => html`<td key=${f.key} className="num">${fmtInt(model.fics.filter(x => x.fandom === f.key && (x.status || '(blank)') === st).length)}</td>`)}
+          ${model.fandomList.map(f => html`<td key=${f.name} className="num">${fmtInt(model.fics.filter(x => x.fandom === f.name && (x.status || '(blank)') === st).length)}</td>`)}
         </tr>`)}</tbody>
       </table></div>
     </div>
@@ -1668,10 +1986,10 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
   const [excludeE, setExcludeE] = useState(false);
   const readings = useMemo(() => R.sortDiary(R.filterReadings(model.readings, filters, { excludeE })), [model, filters, excludeE]);
   const n = R.filterCount(filters) + (filters.q ? 1 : 0);
-  const csv = () => download(`shelf-life-diary-${today}.csv`, '﻿' + R.toCSV(readings.map(r => R.exportRow(r, fname(r.fandom)))), 'text/csv;charset=utf-8');
+  const csv = () => download(`shelf-life-diary-${today}.csv`, '﻿' + R.toCSV(readings.map(r => R.exportRow(r))), 'text/csv;charset=utf-8');
   const json = () => {
-    const fics = [...new Map(readings.map(r => [r.ficKey, r.fic])).values()].map(({ badDates, ...f }) => ({ ...f, fandomName: fname(f.fandom) }));
-    const out = { exportedAt: new Date().toISOString(), timezone: R.TZ, filters: { ...filters, excludeE }, readings: readings.map(r => R.exportRow(r, fname(r.fandom))), fics };
+    const fics = [...new Map(readings.map(r => [r.ficKey, r.fic])).values()].map(({ badDates, key, source, pairingKey, ...f }) => f);
+    const out = { exportedAt: new Date().toISOString(), timezone: R.TZ, filters: { ...filters, excludeE }, readings: readings.map(r => R.exportRow(r)), fics };
     download(`shelf-life-${today}.json`, JSON.stringify(out, null, 2), 'application/json');
   };
   return html`<div>
@@ -1687,6 +2005,19 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
         <button className="big-btn ghost" onClick=${json} disabled=${!readings.length}>JSON</button>
       </div>
       <div className="tiny faint">One row per read. The filters from Diary and Library apply here. Summaries aren't included, since Shelf Life only loads them when you open a fic.</div>
+    </div>
+
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Readings per Sheet</h2><span className="small faint">check against your Sheets</span></div>
+      <div className="table-wrap wrap-th"><table>
+        <thead><tr><th></th>${model.counts.map(c => html`<th key=${c.key}>${c.name}</th>`)}<th>Total</th></tr></thead>
+        <tbody>${[
+          ['Status = Read', 'statusRead'], ['Status = DNF', 'statusDnf'], ['Readings', 'readings'], ['  finished', 'read'], ['  DNF', 'dnf'],
+          ['Logged', 'logged'], ['Estimated', 'est'], ['No date', 'undated'], ['Extra re-reads (from the log)', 'rereads'], ['Reading Log events', 'logEvents'],
+        ].map(([label, k]) => html`<tr key=${k}><td style=${{ fontWeight: k === 'readings' ? 700 : 400, paddingLeft: label.startsWith('  ') ? 24 : 12 }}>${label.trim()}</td>
+          ${model.counts.map(c => html`<td key=${c.key} className="num" style=${{ fontWeight: k === 'readings' ? 700 : 400 }}>${c.loaded ? fmtInt(c[k]) : '—'}</td>`)}
+          <td className="num" style=${{ fontWeight: k === 'readings' ? 700 : 400 }}>${fmtInt(model.counts.reduce((t, c) => t + c[k], 0))}</td></tr>`)}</tbody>
+      </table></div>
     </div>
 
     <div className="section">
@@ -1715,7 +2046,7 @@ function SignInScreen({ onSignIn, ready, error, busy }) {
   return html`<div className="center-screen">
     <div style=${{ maxWidth: 360 }}>
       <div className="wordmark serif" style=${{ justifyContent: 'center', fontSize: 34 }}><${Mark} size=${34} />Shelf Life</div>
-      <p className="muted" style=${{ margin: '14px 0 22px' }}>Your fic reading history across Hollanov, Drarry and ASOIAF. Shelf Life only reads your sheets; it never changes them.</p>
+      <p className="muted" style=${{ margin: '14px 0 22px' }}>Your fic reading history across ${[...new Set(SOURCES.map(s => R.shortFandom(s.fandom)))].join(', ').replace(/, ([^,]*)$/, ' and $1')}. Shelf Life only reads your Sheets; it never changes them.</p>
       <button className="big-btn" onClick=${onSignIn} disabled=${!ready || busy}>${busy ? 'Loading your reading…' : ready ? 'Sign in with Google' : 'Loading…'}</button>
       ${error ? html`<p className="small" style=${{ color: 'var(--neg)', marginTop: 12 }}>${error}</p>` : null}
       <p className="tiny faint" style=${{ marginTop: 16 }}>You may see an "unverified app" warning — that's expected for a personal project. Tap Advanced → Go to (unsafe) to continue.</p>
@@ -1725,7 +2056,9 @@ function SignInScreen({ onSignIn, ready, error, busy }) {
 
 function Mark({ size }) {
   const s = size || 22;
-  return html`<span className="mark" style=${{ width: s, height: s, borderRadius: s * 0.32 }}>${FANDOMS.map(f => html`<span key=${f.key} style=${{ background: fcolor(f.key) }}></span>`)}</span>`;
+  const fandoms = [...new Set(SOURCES.map(x => x.fandom))];
+  const three = [0, 1, 2].map(i => fandoms[i % fandoms.length]);
+  return html`<span className="mark" style=${{ width: s, height: s, borderRadius: s * 0.32 }}>${three.map((f, i) => html`<span key=${i} style=${{ background: fandomColor(f) }}></span>`)}</span>`;
 }
 
 // ============================================================================================
@@ -1741,6 +2074,7 @@ function App() {
   const [detail, setDetail] = useState(null);
   const [filters, setFilters] = useState(R.emptyFilters);
   const [ui, setUi] = useState({ sub: 'diary', filtersOpen: false, libView: 'cards' });
+  const [groupBy, setGroupBy] = useState('fandom');
   const [dash, setDash] = useState({ period: 'thisMonth', compare: 'prev', custom: { start: '', end: '' } });
   const [now, setNow] = useState(Date.now());
   const dataRef = useRef(null);
@@ -1759,17 +2093,17 @@ function App() {
     syncingRef.current = true;
     setSync({ state: 'syncing' });
     try {
-      const results = await Promise.allSettled(FANDOMS.map(f => loadFandom(tok, f)));
+      const results = await Promise.allSettled(SOURCES.map(src => loadSource(tok, src)));
       const prev = dataRef.current;
-      const fandoms = {}, errors = [];
+      const sources = {}, errors = [];
       let authFailed = false;
       results.forEach((r, i) => {
-        const f = FANDOMS[i];
-        if (r.status === 'fulfilled') fandoms[f.key] = r.value;
+        const src = SOURCES[i];
+        if (r.status === 'fulfilled') sources[src.id] = r.value;
         else {
           if (r.reason && r.reason.isAuthError) authFailed = true;
-          errors.push(`${f.name}: ${(r.reason && r.reason.message) || r.reason}`);
-          if (prev && prev.fandoms && prev.fandoms[f.key]) fandoms[f.key] = { ...prev.fandoms[f.key], stale: true };
+          errors.push(`${R.sourceLabel(src, SOURCES)}: ${(r.reason && r.reason.message) || r.reason}`);
+          if (prev && prev.sources && prev.sources[src.id]) sources[src.id] = { ...prev.sources[src.id], stale: true };
         }
       });
       if (authFailed) auth.expire();
@@ -1777,7 +2111,7 @@ function App() {
         setSync(authFailed ? { state: 'needsAuth', message: 'Your Google sign-in expired. Sign in again to sync.' } : { state: 'error', message: errors.join(' · ') });
         return;
       }
-      const next = { version: DATA_VERSION, syncedAt: Date.now(), fandoms };
+      const next = { version: DATA_VERSION, syncedAt: Date.now(), sources };
       dataRef.current = next;
       setData(next);
       setNow(Date.now());
@@ -1790,7 +2124,7 @@ function App() {
   useEffect(() => {
     (async () => {
       const cached = await idb.get('dataset');
-      if (cached && cached.version === DATA_VERSION && cached.fandoms) { dataRef.current = cached; setData(cached); }
+      if (cached && cached.version === DATA_VERSION && cached.sources) { dataRef.current = cached; setData(cached); }
       setBooted(true);
       if (auth.getToken()) doSync(false);
       else if (cached) setSync({ state: 'needsAuth' });
@@ -1808,7 +2142,7 @@ function App() {
     return () => document.removeEventListener('visibilitychange', on);
   }, [doSync]);
 
-  const model = useMemo(() => data ? R.buildModel(data.fandoms, FANDOMS) : null, [data]);
+  const model = useMemo(() => data ? R.buildModel(data.sources, SOURCES) : null, [data]);
 
   const loadSummary = useCallback(async (fic) => {
     const ck = 'summary:' + fic.key;
@@ -1816,9 +2150,9 @@ function App() {
     if (typeof cached === 'string') return cached;
     const tok = auth.getToken();
     if (!tok) { const e = new Error('Sign in to load the summary.'); e.needsAuth = true; throw e; }
-    const meta = dataRef.current && dataRef.current.fandoms[fic.fandom];
+    const meta = dataRef.current && dataRef.current.sources[fic.source];
     try {
-      const text = await fetchSummary(tok, FANDOM_BY_KEY[fic.fandom], meta, fic);
+      const text = await fetchSummary(tok, SOURCE_BY_ID[fic.source], meta, fic);
       idb.put(ck, text);
       return text;
     } catch (e) {
@@ -1854,9 +2188,9 @@ function App() {
         <span>${sync.message || 'Showing your saved copy.'}</span><button className="pill-btn" onClick=${() => doSync(true)}>Sign in to sync</button></div>` : null}
       ${sync.state === 'error' || sync.state === 'partial' ? html`<div className="banner err">Sync ${sync.state === 'partial' ? 'partly ' : ''}failed — showing the last copy. ${sync.message}</div>` : null}
 
-      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} />` : null}
+      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} />` : null}
       ${tab === 'diary' ? html`<${DiaryScreen} model=${model} filters=${filters} setFilters=${setFilters} onOpen=${setDetail} today=${today} ui=${ui} setUi=${setUi} />` : null}
-      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} />` : null}
+      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} groupBy=${groupBy} setGroupBy=${setGroupBy} />` : null}
       ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today} syncedAt=${data.syncedAt} auth=${auth} onSignIn=${() => doSync(true)} onReset=${reset}
         goFilters=${() => { setUi(u => ({ ...u, filtersOpen: true })); switchTab('diary'); }} />` : null}
     </main>

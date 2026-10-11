@@ -76,7 +76,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-  .nav-inner { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .nav-inner { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
   .nav button { background: none; border: 0; padding: 10px 0 9px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--ink-3); }
   .nav button.on { color: var(--ink); }
   .nav button.on svg { color: var(--accent); }
@@ -207,6 +207,24 @@
   .chip .cdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
   .wrap-th th { white-space: normal; min-width: 104px; vertical-align: bottom; text-transform: none; letter-spacing: 0; font-size: 12px; }
   .group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 22px 2px 0; }
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+  .switch-row.compact { font-size: 12.5px; color: var(--ink-2); justify-content: flex-start; }
+  .switch { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 38px; height: 22px; border-radius: 99px; background: var(--surface-3); position: relative; margin: 0; cursor: pointer; transition: background .15s; }
+  .switch::before { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+  .switch:checked { background: var(--accent); }
+  .switch:checked::before { transform: translateX(16px); }
+  .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tagchip.revealed { background: transparent; border: 1px dashed var(--line); }
+  button.tagchip { border: 0; cursor: pointer; font: inherit; font-size: 12.5px; }
+  button.tagchip.more { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .seg.sm button { padding: 5px 10px; font-size: 12.5px; }
+  .seg button.on.cls-sexual { background: var(--neg-soft); color: var(--neg); }
+  .seg button.on.cls-unsure { background: var(--est-soft); color: var(--est); }
+  .tr-row { padding: 12px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .tr-row:first-child { border-top: 0; }
+  .tr-tag { font-weight: 600; font-size: 14.5px; line-height: 1.3; word-break: break-word; }
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; background: none; border: 0; padding: 12px 0; text-align: left; border-top: 1px solid var(--line); }
+  .set-row:first-child { border-top: 0; padding-top: 2px; }
   .center-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; text-align: center; }
 </style>
 </head>
@@ -230,7 +248,7 @@ const SOURCES = [
   {
     id: 'hollanov',
     sheetId: '1vsJxSpJFZaiBh540318Jq_yqIYG9h9ucTR_7AZ87L2I',
-    fandom: 'Heated Rivalry / Game Changers (Rachel Reid)',
+    fandom: 'Game Changers (All)',
     pairing: 'Ilya Rozanov/Shane Hollander',
     pairingMode: 'fixed',
     color: { light: '#2C79BE', dark: '#64A9E8' },
@@ -238,7 +256,7 @@ const SOURCES = [
   {
     id: 'asoiaf',
     sheetId: '1SQIBxxO8XgpvpR5vjSJS1Nu3l5Pq0z2v2W0uSYx_aMI',
-    fandom: 'A Song of Ice and Fire (incl. Game of Thrones, House of the Dragon)',
+    fandom: 'A Song of Ice and Fire (All)',
     pairing: 'Multiple pairings',
     pairingMode: 'perFic',
     color: { light: '#C24E36', dark: '#EF8068' },
@@ -246,12 +264,194 @@ const SOURCES = [
   {
     id: 'drarry',
     sheetId: '1XDO0bKnLPmeURufZ4mwyifeJynwFVszCfayA_FEtKPY',
-    fandom: 'Harry Potter',
+    fandom: 'Harry Potter (All)',
     pairing: 'Draco Malfoy/Harry Potter',
     pairingMode: 'fixed',
     color: { light: '#1F8C66', dark: '#4CC79B' },
   },
 ];
+</script>
+
+<script>
+// ============================================================================================
+// <tag-classes>
+// TAG CLASSES — every freeform tag is "sexual", "unsure" or "general".
+//
+//   sexual   hidden from tag lists, charts, counts and tag filters while "Include sex-related
+//            tags" is off (fic detail pages show them behind a "+N hidden" chip).
+//   unsure   about sex or intimacy but not explicit. Treated as general until you review it.
+//   general  everything else.
+//
+// HOW TO EDIT: change the lists in steps 0–6. Matching ignores case and works on whole words or
+// phrases, so "Sex" matches "Rough Sex" but not "Sexuality" or "Bisexual". Inside a phrase a space
+// or hyphen also matches the other or nothing ("Blow Jobs" = "Blowjobs" = "Blow-Jobs"), and a
+// trailing "s", "es" or "ing" is allowed ("Bareback" also matches "Barebacking").
+// Steps run top to bottom and the first match wins. Your manual overrides
+// (Settings → Tag review) beat every rule.
+// ============================================================================================
+const TAG_CLASSES = (() => {
+  // 0. AO3 archive warnings. Removed from every fic's tags as soon as a Sheet is read, so no
+  //    screen, count, chart, filter or export ever sees them. Exact match, ignoring case.
+  const ARCHIVE_WARNINGS = [
+    'No Archive Warnings Apply',
+    'Creator Chose Not To Use Archive Warnings',
+    'Graphic Depictions Of Violence',
+    'Major Character Death',
+    'Rape/Non-Con',
+    'Underage Sex',
+  ];
+
+  // 1. Never sexual: tags the keyword rules would otherwise catch by mistake...
+  const ALWAYS_GENERAL = ['No Sex', 'No Smut', 'No Porn', 'Sex-Repulsed', 'Sex-Averse', 'Identity Porn'];
+  //    ...and tags that START with one of these words ("No Smut", "No Alpha/Beta/Omega Dynamics").
+  const GENERAL_PREFIXES = ['No'];
+
+  // 2. Unsure even though they mention sex (checked before the sexual keywords, because
+  //    "Implied Sexual Content" contains "Sexual Content").
+  const UNSURE_PHRASES = ['Unresolved Sexual Tension', 'Sexual Tension', 'Implied Sexual Content', 'Mentioned Sex', 'Fade to Black', 'Off-screen Sex'];
+  //    A tag that STARTS with one of these words and would otherwise be sexual is unsure instead,
+  //    e.g. "Implied/Referenced Sex".
+  const UNSURE_PREFIXES = ['Implied', 'Referenced', 'Mentioned', 'Off-screen'];
+
+  // 2b. Vague "sex" tags: general, but only when the WHOLE tag is one of these (optionally followed
+  //     by a character name, e.g. "Sex Worker Ilya Rozanov"). Anything more specific, like
+  //     "Rough Sex" or "Shower Sex", still goes on to the sexual keywords below.
+  const VAGUE_WHOLE_TAGS = ['Sex', 'Gay Sex', 'Lesbian Sex', 'Emotional Sex', 'Tender Sex', 'Gentle Sex', 'Married Sex', 'Casual Sex', 'Sex Work', 'Sex Worker'];
+
+  // 3. Sexual keywords: actual acts or specific sexual content.
+  const SEXUAL_KEYWORDS = [
+    'Sex',
+    'Oral Sex', 'Anal Sex', 'Vaginal Sex', 'Blow Jobs', 'Blowjobs', 'Hand Jobs', 'Handjobs', 'Rimming', 'Fingering',
+    'Masturbation', 'Frottage', 'Orgasm', 'Edging', 'Overstimulation', 'Come Eating', 'Cum',
+    'Dirty Talk', 'Phone Sex', 'Shower Sex', 'Car Sex', 'Public Sex', 'Semi-Public Sex',
+    'Kink', 'BDSM', 'Dom/sub', 'Bondage', 'Spanking', 'Praise Kink', 'Size Kink', 'Breeding Kink',
+    'Knotting', 'Bareback', 'Condoms', 'Lube', 'Sex Toys', 'Strap-Ons', 'Threesome', 'Foursome', 'Sex Pollen',
+    'Subspace', 'Subdrop', 'Domdrop', 'Cock Warming', 'Cock Rings', 'Cock Cages', 'Nipple Play', 'Anal Play', 'Anal Plug', 'Anal', 'Choking',
+    'Porn Watching',
+  ];
+
+  // 4. Sexual role tags: a role word followed by a character name, anywhere in the tag:
+  //    "Bottom Shane Hollander", "Top Ilya Rozanov", "Power Bottom Shane Hollander".
+  //    A name is a character from your pairings / Relationships columns, or two or three
+  //    Capitalised words ("Bottom Luca Haas"). "Top Gun" is not a name, so it doesn't count.
+  const ROLE_WORDS = ['Top', 'Bottom', 'Switch', 'Versatile'];
+  //    Also "Bottom/Top" style tags: two role words joined by "/" ("Top/Bottom Versatile"),
+  //    or a role word joined to a name with "!" ("Top!Draco").
+
+  // 5. Unsure: about sex or intimacy, not explicit. ("Mating Cycles", "In Heat", "Omega Verse"
+  //    and "Alpha/Omega" are the spellings AO3 uses for heat cycles and the omegaverse.)
+  const UNSURE_KEYWORDS = ['Omegaverse', 'Omega Verse', 'Alpha/Beta/Omega Dynamics', 'Alpha/Omega', 'Heat Cycles', 'Mating Cycles', 'In Heat', 'Ruts', 'Consent'];
+
+  // 5b. Vague content references: say there IS sexual content, not what it is ("Smut",
+  //     "Fluff and Smut", "Explicit Sexual Content", "Porn with Plot", "Porn with Feelings").
+  //     General, unless the tag also names an act or kink from step 3 or a role from step 4
+  //     ("Smut and Kink" stays sexual).
+  const VAGUE_KEYWORDS = ['Smut', 'PWP', 'Porn', 'Explicit Sexual Content', 'Sexual Content'];
+
+  // 6. Anything else containing the whole word "sexual" is unsure ("Non-Sexual Intimacy",
+  //    "Sexual Assault"). "Sexuality" and "Bisexual" are different words, so they stay general.
+
+  // 7. Everything else is general.
+
+  // ------------------------------------------------------------------------------------------
+  // Engine (no need to edit below this line)
+  // ------------------------------------------------------------------------------------------
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  function phraseSource(p) {
+    let base = p.trim();
+    if (/[a-z]s$/i.test(base) && !/ss$/i.test(base)) base = base.slice(0, -1);
+    const words = base.split(/[\s-]+/).map(w => w.split('/').map(esc).join('\\s*/\\s*'));
+    return words.join('[\\s-]?') + '(?:s|es|ing)?';
+  }
+  // One regex per list; each phrase is its own group so we can tell which one matched.
+  function listMatcher(list) {
+    const ordered = list.slice().sort((a, b) => b.length - a.length);
+    const re = new RegExp('(?:^|[^a-z0-9])(?:' + ordered.map(p => '(' + phraseSource(p) + ')').join('|') + ')(?=$|[^a-z0-9])', 'i');
+    return (tag) => { const m = re.exec(tag); if (!m) return null; const i = m.slice(1).findIndex(x => x !== undefined); return ordered[i]; };
+  }
+  const isGeneral = listMatcher(ALWAYS_GENERAL);
+  const unsurePhrase = listMatcher(UNSURE_PHRASES);
+  const sexualKeyword = listMatcher(SEXUAL_KEYWORDS);
+  const unsureKeyword = listMatcher(UNSURE_KEYWORDS);
+  const vagueKeyword = listMatcher(VAGUE_KEYWORDS);
+  const VAGUE_WHOLE_ORDERED = VAGUE_WHOLE_TAGS.slice().sort((a, b) => b.length - a.length);
+  const VAGUE_WHOLE_RE = new RegExp('^(?:' + VAGUE_WHOLE_ORDERED.map(p => '(' + phraseSource(p) + ')').join('|') + ')(?:\\s+(.+))?$', 'i');
+  const prefixRe = (list) => new RegExp('^(' + list.map(phraseSource).join('|').replace(/\(\?:s\|es\|ing\)\?/g, '') + ')(?=$|[^a-z0-9])', 'i');
+  const GENERAL_PREFIX_RE = prefixRe(GENERAL_PREFIXES);
+  const PREFIX_RE = new RegExp('^(' + UNSURE_PREFIXES.map(phraseSource).join('|').replace(/\(\?:s\|es\|ing\)\?/g, '') + ')(?=$|[^a-z0-9])', 'i');
+  const ROLES = ROLE_WORDS.map(esc).join('|');
+  const ROLE_PAIR_RE = new RegExp('(?:^|[^a-z0-9])(' + ROLES + ')\\s*(?:/\\s*(' + ROLES + ')(?=$|[^a-z0-9])|!\\s*[a-z])', 'i');
+  const ROLE_NAME_RE = new RegExp('(?:^|[^a-z0-9])(' + ROLES + ')\\s+([^/|(),&]+)', 'gi');
+  const NAME_WORD = "[A-Z\\u00C0-\\u024F][a-z\\u00DF-\\u024F'\\u2019.\\-]+";
+  const FULL_NAME_RE = new RegExp('^' + NAME_WORD + '(?:\\s+' + NAME_WORD + '){1,2}$');
+  const SEXUAL_WORD_RE = /(?:^|[^a-z0-9])sexual(?=$|[^a-z0-9])/i;
+  const WARNING_SET = new Set(ARCHIVE_WARNINGS.map(w => w.toLowerCase()));
+
+  // Existing tag normalisation: trim and collapse spaces. Classification runs on this form.
+  const canonicalTag = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+  const isArchiveWarning = (t) => WARNING_SET.has(canonicalTag(t).toLowerCase());
+
+  // Character names from pairing / relationship tags ("Ilya Rozanov/Shane Hollander",
+  // "Arya Stark & Sansa Stark"): each full name, plus each first name of 3+ letters.
+  const NOT_FIRST_NAMES = new Set(['original', 'other', 'minor', 'background', 'unnamed', 'reader', 'you', 'implied', 'past', 'the']);
+  function namesFrom(pairingTags) {
+    const names = new Set();
+    for (const p of pairingTags || []) for (const part of String(p).split(/[\/&]/)) {
+      const n = part.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (n.length < 3) continue;
+      names.add(n);
+      const first = n.split(' ')[0];
+      if (first.length >= 3 && !NOT_FIRST_NAMES.has(first)) names.add(first);
+    }
+    return names;
+  }
+  function roleName(tag, names) {
+    ROLE_NAME_RE.lastIndex = 0;
+    let m;
+    while ((m = ROLE_NAME_RE.exec(tag))) {
+      const rest = m[2].trim(), lower = rest.toLowerCase();
+      for (const n of names || []) if (lower === n || lower.startsWith(n + ' ')) return { role: m[1], name: rest };
+      if (FULL_NAME_RE.test(rest)) return { role: m[1], name: rest };
+    }
+    return null;
+  }
+  const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  const isName = (rest, names) => { const lower = rest.toLowerCase(); for (const n of names || []) if (lower === n || lower.startsWith(n + ' ')) return true; return FULL_NAME_RE.test(rest); };
+  function vagueWhole(tag, names) {
+    const m = VAGUE_WHOLE_RE.exec(tag);
+    if (!m) return null;
+    const rest = m[m.length - 1];
+    if (rest && !isName(rest.trim(), names)) return null;
+    return VAGUE_WHOLE_ORDERED[m.slice(1, -1).findIndex(x => x !== undefined)];
+  }
+
+  // classify(tag, names) -> { cls: 'sexual' | 'unsure' | 'general', rule: 'what matched' }
+  function classify(rawTag, names) {
+    const tag = canonicalTag(rawTag);
+    let k;
+    if ((k = isGeneral(tag))) return { cls: 'general', rule: `never-sexual list: "${k}"` };
+    const gp = GENERAL_PREFIX_RE.exec(tag);
+    if (gp) { const rest = classify(tag.slice(gp[0].length), names); if (rest.cls !== 'general') return { cls: 'general', rule: `starts with "${gp[1]}" (would be ${rest.cls}: ${rest.rule})` }; }
+    if ((k = unsurePhrase(tag))) return { cls: 'unsure', rule: `unsure phrase: "${k}"` };
+    if ((k = vagueWhole(tag, names))) return { cls: 'general', rule: `vague "sex" tag: "${k}"` };
+    let hit = null;
+    if ((k = sexualKeyword(tag))) hit = `keyword: "${k}"`;
+    else { const rn = roleName(tag, names); if (rn) hit = `role tag: "${cap(rn.role)}" + name`; }
+    if (!hit) { const rp = ROLE_PAIR_RE.exec(tag); if (rp) hit = `role tag: "${rp[2] ? cap(rp[1]) + '/' + cap(rp[2]) : cap(rp[1]) + '!'}"`; }
+    if (hit) {
+      const pre = PREFIX_RE.exec(tag);
+      if (pre) return { cls: 'unsure', rule: `starts with "${pre[1]}" (${hit})` };
+      return { cls: 'sexual', rule: hit };
+    }
+    if ((k = unsureKeyword(tag))) return { cls: 'unsure', rule: `unsure keyword: "${k}"` };
+    if ((k = vagueKeyword(tag))) return { cls: 'general', rule: `vague content reference: "${k}"` };
+    if (SEXUAL_WORD_RE.test(tag)) return { cls: 'unsure', rule: 'contains "sexual"' };
+    return { cls: 'general', rule: '' };
+  }
+
+  return { ARCHIVE_WARNINGS, canonicalTag, isArchiveWarning, namesFrom, classify };
+})();
+// </tag-classes>
 </script>
 
 <script>
@@ -396,7 +596,8 @@ const ShelfRules = (() => {
       words: num(get('Words')),
       chapters: ch.published,
       chaptersPlanned: ch.planned,
-      tags: splitList(get('Tags')),
+      // Freeform tags: normalised, AO3 archive warnings removed, duplicates dropped (see TAG_CLASSES).
+      tags: [...new Set(splitList(get('Tags')).map(TAG_CLASSES.canonicalTag).filter(t => t && !TAG_CLASSES.isArchiveWarning(t)))],
       ships: splitList(get('Relationships')),
       kudos: num(get('Kudos')), bookmarks: num(get('Bookmarks')), hits: num(get('Hits')), comments: num(get('Comments')),
       status: get('Status').trim(),              // raw text: '' (unread) or any status, known or not
@@ -702,18 +903,14 @@ const ShelfRules = (() => {
   }
   function monthLabel(key, withYear) { const [y, m] = key.split('-').map(Number); return MON[m - 1] + (withYear ? ' ' + String(y).slice(2) : ''); }
 
-  // AO3 archive warnings, excluded from "top tags" by default.
-  const WARNING_TAGS = new Set([
-    'No Archive Warnings Apply', 'Creator Chose Not To Use Archive Warnings', 'Author Chose Not To Use Archive Warnings',
-    'Graphic Depictions Of Violence', 'Major Character Death', 'Rape/Non-Con', 'Underage', 'Underage Sex',
-  ]);
-  // Tags ranked by words read (DNFs without Chapters Read add no words).
-  function topTags(readings, includeWarnings, limit) {
+  // Tags ranked by words read (DNFs without Chapters Read add no words). isVisible(tag) decides which
+  // tags may appear (the sex-related tag toggle); it never changes which fics or words are counted.
+  function topTags(readings, isVisible, limit) {
     const m = new Map();
     for (const r of readings) {
       if (r.words === null) continue;
       for (const t of new Set(r.fic.tags)) {
-        if (!includeWarnings && WARNING_TAGS.has(t)) continue;
+        if (isVisible && !isVisible(t)) continue;
         const e = m.get(t) || { tag: t, words: 0, fics: new Set() };
         e.words += r.words; e.fics.add(r.ficKey); m.set(t, e);
       }
@@ -886,6 +1083,13 @@ const ShelfRules = (() => {
       fd.pairings.forEach((p, i) => { p.rank = i; });
     }
 
+    // Tag classes (TAG_CLASSES), once per tag, with how many fics carry it across all Sheets.
+    const names = TAG_CLASSES.namesFrom([...sources.filter(x => x.pairingMode !== 'perFic').map(x => x.pairing), ...fics.flatMap(f => f.ships)]);
+    const tagCount = new Map();
+    for (const f of fics) for (const t of f.tags) tagCount.set(t, (tagCount.get(t) || 0) + 1);
+    const tagInfo = new Map();
+    for (const [tag, count] of tagCount) tagInfo.set(tag, { tag, count, ...TAG_CLASSES.classify(tag, names) });
+
     // Per-Sheet counts, to check against the Sheets (Export → Readings per Sheet).
     const counts = sources.map(src => {
       const rs = readings.filter(r => r.source === src.id);
@@ -899,14 +1103,14 @@ const ShelfRules = (() => {
       };
     });
     return {
-      fics, ficByKey, eventsByKey, readings, inProgress, notes, statusCounts, counts, fandomList, pairingByKey,
+      fics, ficByKey, eventsByKey, readings, inProgress, notes, statusCounts, counts, fandomList, pairingByKey, tagInfo,
       authorFirst: authorFirstDates(readings), authors: authorRanking(readings), vocab,
       firstDate: dated[0] || null, lastDate: dated[dated.length - 1] || null,
     };
   }
 
   return {
-    TZ, MONTHS, MON, KNOWN_STATUSES, WARNING_TAGS, NO_PAIRING,
+    TZ, MONTHS, MON, KNOWN_STATUSES, NO_PAIRING,
     pairingKey, pairingFor, assignGroups, shortFandom, sourceLabel,
     num, splitList, normIsoDate, cellDate, serialToIso, serialToStamp, parseFicDate, workIdFromLink, realAuthors, parseChapters,
     ficFromRow, parseLogRows, buildReadings, makeReading,
@@ -929,7 +1133,7 @@ const CLIENT_ID = '765897251156-e328g6jmu2obg8l0855km0iqsps062n5.apps.googleuser
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const TOKEN_KEY = 'shelflife-gtoken';
 const THEME_KEY = 'shelflife-theme';
-const DATA_VERSION = 2;
+const DATA_VERSION = 3;
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets/';
 // The Sheets themselves are listed in SOURCES at the top of the file.
 const SOURCE_BY_ID = Object.fromEntries(SOURCES.map(s => [s.id, s]));
@@ -1050,6 +1254,11 @@ const idb = (() => {
     get: (k) => run('readonly', s => s.get(k)).catch(() => undefined),
     put: (k, v) => run('readwrite', s => s.put(v, k)).catch(() => undefined),
     clear: () => run('readwrite', s => s.clear()).catch(() => undefined),
+    // Clear everything except the listed keys (used so "Clear cached data" keeps tag overrides).
+    clearExcept: async (keep) => {
+      const keys = await run('readonly', s => s.getAllKeys()).catch(() => []);
+      for (const k of keys || []) if (!keep.includes(k)) await run('readwrite', s => s.delete(k)).catch(() => undefined);
+    },
   };
 })();
 </script>
@@ -1058,7 +1267,21 @@ const idb = (() => {
 // ============================================================================================
 // APP
 // ============================================================================================
-const { useState, useEffect, useMemo, useRef, useCallback } = React;
+const { useState, useEffect, useMemo, useRef, useCallback, useContext } = React;
+const SEXTAG_KEY = 'shelflife-include-sex-tags';
+const OVERRIDES_KEY = 'tagOverrides';  // IndexedDB key: { [tag in lower case]: 'sexual' | 'unsure' | 'general' }
+// Which tags may be shown. Shared by every screen that lists tags. It only ever filters TAGS:
+// fics, words, counts of fics and ratings are never touched by it.
+const TagCtx = React.createContext({ include: false, setInclude: () => {}, hidden: new Set(), isVisible: () => true, overrides: {}, saveOverrides: () => {} });
+// Effective class of a tag: your override if there is one, else the TAG_CLASSES rule.
+const effectiveClass = (info, overrides) => (overrides && overrides[info.tag.toLowerCase()]) || info.cls;
+function SexTagToggle({ compact }) {
+  const ctx = useContext(TagCtx);
+  return html`<label className=${'switch-row' + (compact ? ' compact' : '')}>
+    ${compact ? html`<input type="checkbox" role="switch" className="switch" checked=${ctx.include} onChange=${e => ctx.setInclude(e.target.checked)} /><span>Include sex-related tags</span>`
+      : html`<span>Include sex-related tags</span><input type="checkbox" role="switch" className="switch" checked=${ctx.include} onChange=${e => ctx.setInclude(e.target.checked)} />`}
+  </label>`;
+}
 const html = htm.bind(React.createElement);
 const R = ShelfRules;
 
@@ -1186,6 +1409,8 @@ const ICONS = {
   bookmark: 'M7 4h10v16l-5-3.5L7 20z',
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   table: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
+  settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
+  back: 'M15 18l-6-6 6-6',
 };
 function Icon({ name, size = 18, fill = false, sw = 2 }) {
   return html`<svg width=${size} height=${size} viewBox="0 0 24 24" fill=${fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth=${sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${ICONS[name]} /></svg>`;
@@ -1468,20 +1693,18 @@ function GroupLegend({ groups, suffix }) {
   </div>`)}</div>`;
 }
 
-function TopTags({ stats, onTag }) {
-  const [withWarnings, setWithWarnings] = useState(false);
-  const tags = useMemo(() => R.topTags(stats.readings, withWarnings, 10), [stats, withWarnings]);
+function TopTags({ readings, dnfNoWords, onTag, limit }) {
+  const ctx = useContext(TagCtx);
+  const tags = useMemo(() => R.topTags(readings, ctx.isVisible, limit || 10), [readings, ctx.isVisible, limit]);
   const max = tags.length ? tags[0].words : 1;
   return html`<div className="card">
-    <label className="check small" style=${{ marginBottom: 6, fontSize: 13 }}>
-      <input type="checkbox" checked=${withWarnings} onChange=${e => setWithWarnings(e.target.checked)} /> Include AO3 warning tags
-    </label>
+    <div style=${{ marginBottom: 6 }}><${SexTagToggle} compact /></div>
     ${!tags.length ? html`<div className="empty">No tagged words in this period.</div>` : tags.map(t => html`<div className="hbar-row" key=${t.tag} onClick=${() => onTag(t.tag)} style=${{ cursor: 'pointer' }}>
       <span className="hbar-label">${t.tag}</span>
       <span className="hbar-val num">${fmtWords(t.words)} · ${t.fics} fic${t.fics === 1 ? '' : 's'}</span>
       <div className="hbar-track"><div style=${{ width: Math.max(2, t.words / max * 100) + '%', background: 'var(--accent)', borderRadius: 99 }}></div></div>
     </div>`)}
-    ${stats.dnfNoWords ? html`<div className="tiny faint" style=${{ marginTop: 8 }}>${stats.dnfNoWords} DNF${stats.dnfNoWords === 1 ? '' : 's'} with no Chapters Read add no words here.</div>` : null}
+    ${dnfNoWords ? html`<div className="tiny faint" style=${{ marginTop: 8 }}>${dnfNoWords} DNF${dnfNoWords === 1 ? '' : 's'} with no Chapters Read add no words here.</div>` : null}
   </div>`;
 }
 
@@ -1594,7 +1817,7 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Top tags by words read</h2></div>
-      <${TopTags} stats=${cur} onTag=${onTag} />
+      <${TopTags} readings=${cur.readings} dnfNoWords=${cur.dnfNoWords} onTag=${onTag} />
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Recently finished</h2></div>
@@ -1608,12 +1831,14 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
 // ============================================================================================
 function TagPicker({ label, chosen, onAdd, onRemove, vocab, exclude, tone }) {
   const [q, setQ] = useState('');
+  const ctx = useContext(TagCtx);
+  // Options leave out hidden (sex-related) tags while the toggle is off. Tags already chosen stay visible.
   const sugg = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    const all = [...vocab.tags.entries()].filter(([t]) => !chosen.includes(t) && !exclude.includes(t) && (!ql || t.toLowerCase().includes(ql)));
+    const all = [...vocab.tags.entries()].filter(([t]) => ctx.isVisible(t) && !chosen.includes(t) && !exclude.includes(t) && (!ql || t.toLowerCase().includes(ql)));
     all.sort((a, b) => b[1] - a[1]);
     return all.slice(0, 6);
-  }, [q, vocab, chosen, exclude]);
+  }, [q, vocab, chosen, exclude, ctx.isVisible]);
   return html`<div>
     <div className="flabel">${label}</div>
     ${chosen.length ? html`<div className="wrap-chips" style=${{ marginBottom: 8 }}>${chosen.map(t => html`<button key=${t} className="chip sm on" style=${tone ? { background: 'var(--neg)', borderColor: 'var(--neg)', color: '#fff' } : null} onClick=${() => onRemove(t)}>${t}<span className="x">✕</span></button>`)}</div>` : null}
@@ -1670,6 +1895,7 @@ function FilterPanel({ filters, setFilters, model }) {
       <input className="plain-input" list="sl-authors" value=${filters.author} onChange=${e => setFilters(f => ({ ...f, author: e.target.value }))} placeholder="Any author" />
       <datalist id="sl-authors">${authors.map(a => html`<option key=${a} value=${a} />`)}</datalist>
     </div>
+    <${SexTagToggle} />
     <${TagPicker} label="Include tags" chosen=${filters.tagsInc} exclude=${filters.tagsExc} vocab=${model.vocab}
       onAdd=${t => setFilters(f => ({ ...f, tagsInc: [...f.tagsInc, t] }))} onRemove=${t => setFilters(f => ({ ...f, tagsInc: f.tagsInc.filter(x => x !== t) }))} />
     <${TagPicker} label="Exclude tags" chosen=${filters.tagsExc} exclude=${filters.tagsInc} vocab=${model.vocab} tone="neg"
@@ -1812,6 +2038,22 @@ function DiaryScreen({ model, filters, setFilters, onOpen, today, ui, setUi }) {
 // ============================================================================================
 // FIC DETAIL
 // ============================================================================================
+// Relationship tags, then freeform tags. Hidden (sex-related) tags sit behind a "+N hidden" chip.
+function DetailTags({ fic }) {
+  const ctx = useContext(TagCtx);
+  const [reveal, setReveal] = useState(false);
+  const shown = fic.tags.filter(ctx.isVisible), hidden = fic.tags.filter(t => !ctx.isVisible(t));
+  return html`<div className="section">
+    <div className="section-head"><h3 className="section-title">Tags</h3><${SexTagToggle} compact /></div>
+    <div>
+      ${fic.ships.map(t => html`<span key=${'s' + t} className="tagchip ship">${t}</span>`)}
+      ${shown.map(t => html`<span key=${t} className="tagchip">${t}</span>`)}
+      ${hidden.length && !reveal ? html`<button className="tagchip more" onClick=${() => setReveal(true)} aria-label=${`Show ${hidden.length} hidden sex-related tags`}>+${hidden.length} hidden</button>` : null}
+      ${hidden.length && reveal ? html`${hidden.map(t => html`<span key=${'h' + t} className="tagchip revealed">${t}</span>`)}<button className="tagchip more" onClick=${() => setReveal(false)}>Hide</button>` : null}
+    </div>
+  </div>`;
+}
+
 function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
   const fic = model.ficByKey.get(ficKey);
   const [sum, setSum] = useState({ state: 'loading', text: '' });
@@ -1876,9 +2118,7 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
         <div className="card"><div className="meta-grid">${meta.map(([k, v]) => html`<div key=${k}><b>${k}</b><span className="num">${v}</span></div>`)}</div></div>
       </div>
 
-      ${fic.ships.length || fic.tags.length ? html`<div className="section"><div className="section-head"><h3 className="section-title">Tags</h3></div>
-        <div>${fic.ships.map(t => html`<span key=${'s' + t} className="tagchip ship">${t}</span>`)}${fic.tags.map(t => html`<span key=${t} className="tagchip">${t}</span>`)}</div>
-      </div>` : null}
+      ${fic.ships.length || fic.tags.length ? html`<${DetailTags} fic=${fic} />` : null}
 
       <div className="section"><div className="section-head"><h3 className="section-title">Summary</h3></div>
         <div className="card">
@@ -1900,7 +2140,7 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
 // ============================================================================================
 // TRENDS
 // ============================================================================================
-function TrendsScreen({ model, today, themeTick, onAuthor, groupBy, setGroupBy }) {
+function TrendsScreen({ model, today, themeTick, onAuthor, onTag, groupBy, setGroupBy }) {
   const [by, setBy] = useState('fics');
   const keys = useMemo(() => R.monthKeys((model.firstDate || today).slice(0, 7), today.slice(0, 7)), [model, today]);
   const groups = useMemo(() => {
@@ -1967,6 +2207,10 @@ function TrendsScreen({ model, today, themeTick, onAuthor, groupBy, setGroupBy }
       </div>
     </div>
     <div className="section">
+      <div className="section-head"><h2 className="section-title">Top tags by words read</h2><span className="small faint">all time</span></div>
+      <${TopTags} readings=${model.readings} dnfNoWords=${model.readings.filter(r => r.kind === 'DNF' && r.words === null).length} onTag=${onTag} limit=${15} />
+    </div>
+    <div className="section">
       <div className="section-head"><h2 className="section-title">Shelves by status</h2></div>
       <div className="table-wrap wrap-th"><table>
         <thead><tr><th>Status</th>${model.fandomList.map(f => html`<th key=${f.name}>${f.short}</th>`)}</tr></thead>
@@ -2029,16 +2273,136 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
       </div>
     </div>
 
+  </div>`;
+}
+
+// ============================================================================================
+// SETTINGS + TAG REVIEW
+// ============================================================================================
+function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setView }) {
+  const ctx = useContext(TagCtx);
+  if (view === 'tags') return html`<${TagReview} model=${model} onBack=${() => { setView('main'); window.scrollTo(0, 0); }} />`;
+  const n = { sexual: 0, unsure: 0 };
+  for (const i of model.tagInfo.values()) { const c = effectiveClass(i, ctx.overrides); if (n[c] !== undefined) n[c]++; }
+  const nOver = Object.keys(ctx.overrides).length;
+  return html`<div>
+    <h1 className="headline serif" style=${{ marginTop: 10 }}>Settings</h1>
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Tags</h2></div>
+      <div className="card">
+        <div className="set-row" style=${{ display: 'block' }}>
+          <${SexTagToggle} />
+          <div className="tiny faint" style=${{ marginTop: 6 }}>Off hides sexual tags from tag rankings, charts and tag filters, and puts them behind a "+N hidden" chip on fic pages. It never hides fics or changes word and fic totals.</div>
+        </div>
+        <button className="set-row" onClick=${() => { setView('tags'); window.scrollTo(0, 0); }}>
+          <span><b style=${{ fontWeight: 600 }}>Tag review</b><div className="tiny faint">${fmtInt(n.sexual)} sexual · ${fmtInt(n.unsure)} unsure${nOver ? ` · ${nOver} changed by you` : ''}</div></span>
+          <span className="faint" style=${{ transform: 'scaleX(-1)', display: 'inline-grid' }}><${Icon} name="back" size=${18} /></span>
+        </button>
+        <div className="set-row" style=${{ display: 'block' }}><${OverrideFileButtons} /></div>
+      </div>
+    </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Account</h2></div>
       <div className="card" style=${{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div className="small muted">Shelf Life only reads your three sheets (read-only Google access). Logging stays in the fandom apps. Last synced ${ago(syncedAt, Date.now())}.</div>
+        <div className="small muted">Shelf Life only reads your Sheets (read-only Google access). Logging stays in the fandom apps. Last synced ${ago(syncedAt, Date.now())}.</div>
         <div className="row">
           ${auth.signedIn ? html`<button className="pill-btn" onClick=${auth.signOut}>Sign out</button>` : html`<button className="pill-btn primary" onClick=${onSignIn}>Sign in to sync</button>`}
           <button className="pill-btn" onClick=${onReset}>Clear cached data</button>
         </div>
+        <div className="tiny faint">Clearing cached data keeps your tag overrides.</div>
       </div>
     </div>
+  </div>`;
+}
+
+// Export / import overrides as a JSON file, to carry them between devices.
+function OverrideFileButtons() {
+  const ctx = useContext(TagCtx);
+  const fileRef = useRef(null);
+  const [msg, setMsg] = useState('');
+  const doExport = () => {
+    const out = { app: 'shelf-life', kind: 'tag-overrides', version: 1, exportedAt: new Date().toISOString(), overrides: ctx.overrides };
+    download(`shelf-life-tag-overrides-${R.melbourneToday()}.json`, JSON.stringify(out, null, 2), 'application/json');
+    setMsg(`Exported ${Object.keys(ctx.overrides).length} override${Object.keys(ctx.overrides).length === 1 ? '' : 's'}.`);
+  };
+  const doImport = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        const src = data && typeof data === 'object' && data.overrides && typeof data.overrides === 'object' ? data.overrides : data;
+        const clean = {};
+        for (const [k, v] of Object.entries(src || {})) if (['sexual', 'unsure', 'general'].includes(v) && String(k).trim()) clean[String(k).trim().toLowerCase()] = v;
+        const n = Object.keys(clean).length;
+        if (!n) { setMsg('No overrides found in that file.'); return; }
+        ctx.saveOverrides({ ...ctx.overrides, ...clean });
+        setMsg(`Imported ${n} override${n === 1 ? '' : 's'} (merged with the ones already here; the file wins on clashes).`);
+      } catch (err) { setMsg('That file isn’t a Shelf Life overrides file.'); }
+    };
+    reader.readAsText(file);
+  };
+  return html`<div>
+    <div className="row">
+      <button className="pill-btn" onClick=${doExport}>Export overrides</button>
+      <button className="pill-btn" onClick=${() => fileRef.current && fileRef.current.click()}>Import overrides</button>
+      <input ref=${fileRef} type="file" accept="application/json,.json" style=${{ display: 'none' }} onChange=${doImport} aria-label="Import overrides file" />
+    </div>
+    ${msg ? html`<div className="tiny muted" style=${{ marginTop: 8 }}>${msg}</div>` : null}
+  </div>`;
+}
+
+// Every tag the rules class as sexual or unsure (plus any you've changed), most frequent first.
+function TagReview({ model, onBack }) {
+  const ctx = useContext(TagCtx);
+  const [q, setQ] = useState('');
+  const [show, setShow] = useState('all');
+  const [limit, setLimit] = useState(80);
+  const list = useMemo(() => [...model.tagInfo.values()]
+    .filter(i => i.cls !== 'general' || ctx.overrides[i.tag.toLowerCase()])
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)), [model, ctx.overrides]);
+  const ql = q.trim().toLowerCase();
+  const rows = list.filter(i => {
+    const eff = effectiveClass(i, ctx.overrides), changed = !!ctx.overrides[i.tag.toLowerCase()];
+    if (show === 'changed' ? !changed : show !== 'all' && eff !== show) return false;
+    return !ql || i.tag.toLowerCase().includes(ql);
+  });
+  useEffect(() => setLimit(80), [q, show]);
+  const setClass = (info, cls) => {
+    const key = info.tag.toLowerCase(), next = { ...ctx.overrides };
+    if (cls === info.cls) delete next[key]; else next[key] = cls;   // only differences from the rules are stored
+    ctx.saveOverrides(next);
+  };
+  const LABEL = { sexual: 'Sexual', unsure: 'Unsure', general: 'General' };
+  return html`<div>
+    <div className="row" style=${{ marginTop: 10, gap: 10, flexWrap: 'nowrap' }}>
+      <button className="icon-btn" onClick=${onBack} aria-label="Back to Settings"><${Icon} name="back" size=${18} /></button>
+      <h1 className="headline serif" style=${{ margin: 0 }}>Tag review</h1>
+    </div>
+    <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Your choice beats the rules. Unsure tags count as general until you decide. Saved on this device; use Export / Import to copy them to another.</div>
+    <div className="search-wrap"><${Icon} name="search" size=${17} /><input className="text-input" value=${q} onChange=${e => setQ(e.target.value)} placeholder="Search tags" aria-label="Search tags" /></div>
+    <div className="chips" style=${{ marginTop: 10 }}>
+      ${[['all', 'All'], ['sexual', 'Sexual'], ['unsure', 'Unsure'], ['general', 'General'], ['changed', 'Changed by you']].map(([k, l]) => html`<button key=${k} className=${'chip sm' + (show === k ? ' on' : '')} onClick=${() => setShow(k)}>${l}</button>`)}
+    </div>
+    <div className="card" style=${{ marginTop: 12, padding: '4px 16px' }}>
+      ${!rows.length ? html`<div className="empty">No tags here.</div>` : rows.slice(0, limit).map(i => {
+        const eff = effectiveClass(i, ctx.overrides), changed = !!ctx.overrides[i.tag.toLowerCase()];
+        return html`<div className="tr-row" key=${i.tag}>
+          <div className="tr-tag">${i.tag}</div>
+          <div className="tiny faint">${fmtInt(i.count)} fic${i.count === 1 ? '' : 's'} · ${i.rule || 'no rule matched'}${changed ? html` · <span style=${{ color: 'var(--accent)', fontWeight: 700 }}>changed (rule says ${LABEL[i.cls].toLowerCase()})</span>` : ''}</div>
+          <div className="row" style=${{ gap: 10 }}>
+            <div className="seg sm" role="radiogroup" aria-label=${`Class for ${i.tag}`}>
+              ${['sexual', 'unsure', 'general'].map(c => html`<button key=${c} role="radio" aria-checked=${eff === c} className=${(eff === c ? 'on ' : '') + 'cls-' + c} onClick=${() => setClass(i, c)}>${LABEL[c]}</button>`)}
+            </div>
+            ${changed ? html`<button className="link-btn" onClick=${() => setClass(i, i.cls)}>Reset</button>` : null}
+          </div>
+        </div>`;
+      })}
+    </div>
+    ${limit < rows.length ? html`<button className="big-btn ghost" style=${{ marginTop: 14 }} onClick=${() => setLimit(l => l + 120)}>Show more (${fmtInt(rows.length - limit)} left)</button>` : null}
+    <div className="card" style=${{ marginTop: 14 }}><${OverrideFileButtons} /></div>
   </div>`;
 }
 
@@ -2075,6 +2439,13 @@ function App() {
   const [filters, setFilters] = useState(R.emptyFilters);
   const [ui, setUi] = useState({ sub: 'diary', filtersOpen: false, libView: 'cards' });
   const [groupBy, setGroupBy] = useState('fandom');
+  const [settingsView, setSettingsView] = useState('main');
+  // Sex-related tag toggle (remembered on this device; default off) and your tag overrides (IndexedDB).
+  const [includeSex, setIncludeSexState] = useState(() => { try { return localStorage.getItem(SEXTAG_KEY) === '1'; } catch (e) { return false; } });
+  const setIncludeSex = useCallback((v) => { setIncludeSexState(!!v); try { localStorage.setItem(SEXTAG_KEY, v ? '1' : '0'); } catch (e) {} }, []);
+  const [overrides, setOverrides] = useState({});
+  useEffect(() => { idb.get(OVERRIDES_KEY).then(o => { if (o && typeof o === 'object') setOverrides(o); }); }, []);
+  const saveOverrides = useCallback((next) => { setOverrides(next); idb.put(OVERRIDES_KEY, next); }, []);
   const [dash, setDash] = useState({ period: 'thisMonth', compare: 'prev', custom: { start: '', end: '' } });
   const [now, setNow] = useState(Date.now());
   const dataRef = useRef(null);
@@ -2143,6 +2514,15 @@ function App() {
   }, [doSync]);
 
   const model = useMemo(() => data ? R.buildModel(data.sources, SOURCES) : null, [data]);
+  const hiddenTags = useMemo(() => {
+    const set = new Set();
+    if (model) for (const i of model.tagInfo.values()) if (effectiveClass(i, overrides) === 'sexual') set.add(i.tag);
+    return set;
+  }, [model, overrides]);
+  const tagCtx = useMemo(() => ({
+    include: includeSex, setInclude: setIncludeSex, hidden: hiddenTags,
+    isVisible: (t) => includeSex || !hiddenTags.has(t), overrides, saveOverrides,
+  }), [includeSex, setIncludeSex, hiddenTags, overrides, saveOverrides]);
 
   const loadSummary = useCallback(async (fic) => {
     const ck = 'summary:' + fic.key;
@@ -2163,15 +2543,15 @@ function App() {
 
   const openAuthor = (a) => { setDetail(null); setFilters({ ...R.emptyFilters(), author: a }); setUi(u => ({ ...u, sub: 'library', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
   const openTag = (t) => { setFilters({ ...R.emptyFilters(), tagsInc: [t] }); setUi(u => ({ ...u, sub: 'diary', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
-  const reset = async () => { await idb.clear(); dataRef.current = null; setData(null); setSync({ state: auth.signedIn ? 'idle' : 'needsAuth' }); if (auth.getToken()) doSync(false); };
-  const switchTab = (t) => { setTab(t); window.scrollTo(0, 0); };
+  const reset = async () => { await idb.clearExcept([OVERRIDES_KEY]); dataRef.current = null; setData(null); setSync({ state: auth.signedIn ? 'idle' : 'needsAuth' }); if (auth.getToken()) doSync(false); };
+  const switchTab = (t) => { setTab(t); if (t !== 'settings') setSettingsView('main'); window.scrollTo(0, 0); };
 
   if (!booted) return html`<div className="center-screen faint">Opening your shelf…</div>`;
   if (!model) return html`<${SignInScreen} onSignIn=${() => doSync(true)} ready=${auth.ready || auth.signedIn} error=${auth.error || (sync.state === 'error' ? sync.message : '')} busy=${sync.state === 'syncing'} />`;
 
   const syncing = sync.state === 'syncing';
   const themeIcon = theme.mode === 'system' ? 'auto' : theme.mode === 'light' ? 'sun' : 'moon';
-  return html`<div>
+  return html`<${TagCtx.Provider} value=${tagCtx}><div>
     <header className="topbar"><div className="topbar-inner">
       <div className="wordmark serif"><${Mark} />Shelf Life</div>
       <div className="sync">
@@ -2190,17 +2570,18 @@ function App() {
 
       ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} />` : null}
       ${tab === 'diary' ? html`<${DiaryScreen} model=${model} filters=${filters} setFilters=${setFilters} onOpen=${setDetail} today=${today} ui=${ui} setUi=${setUi} />` : null}
-      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} groupBy=${groupBy} setGroupBy=${setGroupBy} />` : null}
-      ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today} syncedAt=${data.syncedAt} auth=${auth} onSignIn=${() => doSync(true)} onReset=${reset}
+      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} onTag=${openTag} groupBy=${groupBy} setGroupBy=${setGroupBy} />` : null}
+      ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today}
         goFilters=${() => { setUi(u => ({ ...u, filtersOpen: true })); switchTab('diary'); }} />` : null}
+      ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} />` : null}
     </main>
 
     <nav className="nav"><div className="nav-inner">
-      ${[['home', 'home', 'Dashboard'], ['diary', 'diary', 'Diary'], ['trends', 'trends', 'Trends'], ['export', 'export', 'Export']].map(([k, ic, label]) => html`<button key=${k} className=${tab === k ? 'on' : ''} onClick=${() => switchTab(k)} aria-current=${tab === k ? 'page' : null}><${Icon} name=${ic} size=${21} />${label}</button>`)}
+      ${[['home', 'home', 'Dashboard'], ['diary', 'diary', 'Diary'], ['trends', 'trends', 'Trends'], ['export', 'export', 'Export'], ['settings', 'settings', 'Settings']].map(([k, ic, label]) => html`<button key=${k} className=${tab === k ? 'on' : ''} onClick=${() => switchTab(k)} aria-current=${tab === k ? 'page' : null}><${Icon} name=${ic} size=${21} />${label}</button>`)}
     </div></nav>
 
     ${detail ? html`<${FicDetail} ficKey=${detail} model=${model} onClose=${() => setDetail(null)} loadSummary=${loadSummary} onAuthor=${openAuthor} today=${today} />` : null}
-  </div>`;
+  </div></${TagCtx.Provider}>`;
 }
 
 if (window.Chart) {

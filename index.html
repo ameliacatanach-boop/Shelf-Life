@@ -7,12 +7,13 @@
 <title>Shelf Life</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" />
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" />
 <!-- Libraries, pinned to exact versions. No in-browser Babel: the app is written with htm so it starts fast on a phone. -->
 <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
@@ -23,6 +24,7 @@
     --est: #8A5A00; --est-soft: #FBEFD5;
     --dnf: #7A6A9C;
     --shadow: 0 1px 2px rgba(24, 20, 40, .05), 0 6px 20px rgba(24, 20, 40, .05);
+    --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100; --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
     --radius: 18px; --radius-sm: 12px;
     color-scheme: light;
   }
@@ -35,6 +37,7 @@
       --est: #E8B654; --est-soft: #3A2E12;
       --dnf: #A797CC;
       --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+      --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
       color-scheme: dark;
     }
   }
@@ -46,6 +49,7 @@
     --est: #E8B654; --est-soft: #3A2E12;
     --dnf: #A797CC;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -225,6 +229,77 @@
   .tr-tag { font-weight: 600; font-size: 14.5px; line-height: 1.3; word-break: break-word; }
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; background: none; border: 0; padding: 12px 0; text-align: left; border-top: 1px solid var(--line); }
   .set-row:first-child { border-top: 0; padding-top: 2px; }
+  /* Phase 2 */
+  .finding { margin: -2px 2px 10px; font-size: 14px; line-height: 1.45; color: var(--ink); }
+  .trend-tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 16px -16px 0; padding: 0 16px 2px; position: sticky; top: calc(56px + env(safe-area-inset-top)); z-index: 15; background: var(--bg); }
+  .trend-tabs::-webkit-scrollbar { display: none; }
+  .trend-tabs button { flex-shrink: 0; border: 0; background: none; padding: 10px 12px 9px; font-size: 14.5px; font-weight: 600; color: var(--ink-3); border-bottom: 2px solid transparent; }
+  .trend-tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+  .recap-launch { margin-top: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)), var(--surface)); }
+  .logged-empty { text-align: left; border: 1px dashed var(--line); box-shadow: none; background: transparent; }
+  .bump-legend { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 10px; }
+  .bump-legend button { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: none; border: 0; padding: 6px 0; text-align: left; border-top: 1px solid var(--line); font-size: 13.5px; }
+  .bump-legend button:first-child { border-top: 0; }
+  .bump-legend i { width: 12px; height: 3px; border-radius: 2px; border: 1.5px dashed transparent; box-sizing: content-box; }
+  .bump-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bump-legend b { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+  .band-row { padding: 9px 0; border-top: 1px solid var(--line); }
+  .band-row:first-child { border-top: 0; padding-top: 2px; }
+  .cal-scroll { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+  .cal-grid { display: grid; gap: 2px; width: max-content; }
+  .cal-col { display: grid; grid-template-rows: repeat(7, 11px); gap: 2px; }
+  .cal-col i, .cal-key { display: block; width: 11px; height: 11px; border-radius: 3px; }
+  .clock-grid { display: grid; grid-template-columns: 30px repeat(24, minmax(0, 1fr)); gap: 2px; align-items: center; }
+  .clock-grid i { display: block; aspect-ratio: 1; border-radius: 3px; }
+  .bests { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (min-width: 620px) { .bests { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .best-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; text-align: left; border: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .best-value { font-size: 24px; font-weight: 600; line-height: 1.15; overflow-wrap: anywhere; }
+  .best-sub { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .streak-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px 3px 7px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); margin-right: 8px; vertical-align: 1px; }
+  .recap-teaser { width: 100%; border: 0; border-radius: var(--radius); padding: 18px; color: #fff; text-align: left; display: flex; flex-direction: column; gap: 4px; margin-top: 14px; box-shadow: var(--shadow); }
+  /* Year in Reading */
+  .rc-overlay { position: fixed; inset: 0; z-index: 70; background: #0d0c12; color: #fff; display: flex; flex-direction: column; padding: calc(8px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
+  .rc-progress { display: flex; gap: 3px; }
+  .rc-progress i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.25); }
+  .rc-progress i.done, .rc-progress i.on { background: #fff; }
+  .rc-bar { display: flex; align-items: center; gap: 8px; padding: 10px 2px; }
+  .rc-label { flex: 1; font-weight: 700; font-size: 14px; }
+  .rc-btn { background: rgba(255,255,255,.14); color: #fff; border: 0; border-radius: 999px; padding: 7px 12px; font-weight: 700; font-size: 13px; display: inline-grid; place-items: center; min-height: 34px; }
+  .rc-stage { flex: 1; min-height: 0; display: grid; place-items: center; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: pointer; }
+  .rc-fit { position: relative; }
+  .rc-scale { position: absolute; left: 0; top: 0; width: 360px; height: 640px; transform-origin: 0 0; }
+  .rc-export .rc-card { border-radius: 0; }
+  .rc-card { width: 360px; height: 640px; border-radius: 22px; overflow: hidden; color: #fff; display: flex; flex-direction: column; padding: 26px 26px 20px; font-family: 'DM Sans', system-ui, sans-serif; position: relative; }
+  .rc-card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 70% at 100% 0%, rgba(255,255,255,.18), transparent 60%); pointer-events: none; }
+  .rc-top, .rc-foot { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .85; position: relative; z-index: 1; }
+  .rc-foot { text-transform: none; letter-spacing: 0; font-weight: 600; opacity: .75; }
+  .rc-body { flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
+  .rc-kicker { font-size: 15px; font-weight: 700; letter-spacing: .02em; opacity: .9; margin-bottom: 6px; }
+  .rc-big { font-weight: 600; line-height: .95; letter-spacing: -0.03em; }
+  .rc-unit { font-size: 22px; font-weight: 600; opacity: .9; margin-top: 2px; }
+  .rc-title { font-size: 36px; font-weight: 600; line-height: 1.08; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .rc-line { font-size: 16px; line-height: 1.4; margin-top: 12px; opacity: .95; }
+  .rc-small { font-size: 13px; opacity: .8; margin-top: 8px; }
+  .rc-rule { height: 1px; background: rgba(255,255,255,.35); margin: 26px 0 22px; }
+  .rc-split, .rc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 26px; }
+  .rc-split b, .rc-grid b { display: block; font-size: 38px; font-weight: 600; line-height: 1; overflow-wrap: anywhere; }
+  .rc-split span, .rc-grid span { font-size: 13px; opacity: .85; }
+  .rc-list { margin: 14px 0 0; padding: 0; list-style: none; counter-reset: rc; display: flex; flex-direction: column; gap: 14px; }
+  .rc-list li { counter-increment: rc; display: grid; grid-template-columns: 34px 1fr; column-gap: 6px; font-size: 18px; font-weight: 600; line-height: 1.25; }
+  .rc-list li::before { content: counter(rc); font-family: 'Fraunces', Georgia, serif; font-size: 26px; opacity: .7; grid-row: span 2; }
+  .rc-list.plain li::before { content: '—'; font-size: 18px; }
+  .rc-list em { font-style: normal; font-size: 13px; opacity: .8; font-weight: 500; grid-column: 2; }
+  .rc-stars { font-size: 34px; letter-spacing: 4px; }
+  .rc-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 120px; margin-top: 26px; }
+  .rc-bars div { display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; height: 100%; }
+  .rc-bars i { width: 100%; background: #fff; border-radius: 6px; display: block; }
+  .rc-bars span { font-size: 12px; opacity: .85; font-weight: 700; }
+  .rc-panel-back { position: absolute; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; z-index: 2; }
+  .rc-panel { background: var(--bg); color: var(--ink); width: 100%; max-width: 520px; border-radius: 22px 22px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); }
+  .rc-export { position: fixed; left: -10000px; top: 0; width: 360px; pointer-events: none; }
+  .rc-export > div { margin-bottom: 10px; }
+  .rc-empty { margin: auto; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
   .center-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; text-align: center; }
 </style>
 </head>
@@ -936,7 +1011,7 @@ const ShelfRules = (() => {
 
   // Tags ranked by words read (DNFs without Chapters Read add no words). isVisible(tag) decides which
   // tags may appear (the sex-related tag toggle); it never changes which fics or words are counted.
-  function topTags(readings, isVisible, limit) {
+  function topTags(readings, isVisible, limit, minFics) {
     const m = new Map();
     for (const r of readings) {
       if (r.words === null) continue;
@@ -946,7 +1021,7 @@ const ShelfRules = (() => {
         e.words += r.words; e.fics.add(r.ficKey); m.set(t, e);
       }
     }
-    return [...m.values()].map(e => ({ tag: e.tag, words: e.words, fics: e.fics.size }))
+    return [...m.values()].map(e => ({ tag: e.tag, words: e.words, fics: e.fics.size })).filter(e => e.fics >= (minFics || 0))
       .sort((a, b) => b.words - a.words || b.fics - a.fics).slice(0, limit || 10);
   }
   // Authors ranked by distinct fics read, then words. Anonymous / orphan_account are left out.
@@ -1140,6 +1215,573 @@ const ShelfRules = (() => {
     };
   }
 
+  // ==========================================================================================
+  // 8. PHASE 2 ANALYTICS
+  // Shared definitions (every Phase 2 screen uses these):
+  //   reading         as in section 2: each Data List row with Status Read or DNF, plus earlier
+  //                   re-reads the Reading Log shows. Every reading is "closed" (finished or DNF).
+  //   logged reading  a reading with a start date (a Started / Re-read started event, or the Data
+  //                   List's Date Started). Backfilled (est.) reads have no start date, so any
+  //                   metric needing one uses logged readings only and says "Based on N logged reads".
+  //   timed event     a Reading Log event whose timestamp includes a time of day.
+  //   week            Monday to Sunday, in Melbourne dates.
+  //   tag words       a reading's words count toward each of its visible tags (sex-tag toggle and
+  //                   overrides respected; archive warnings were removed at parse time). DNFs with
+  //                   no Chapters Read add no words, exactly as in topTags.
+  //   MIN_RANK        fewest readings before a tag, author or length band is ranked or charted (3).
+  //   MIN_RATE        fewest closed readings before a completion / DNF rate is shown (5).
+  //   MIN_LOGGED      fewest logged reads before a logged-only metric is shown (5).
+  // ==========================================================================================
+  const MIN_RANK = 3, MIN_RATE = 5, MIN_LOGGED = 5;
+  const LENGTH_BANDS = [
+    { key: 'lt20', label: 'Under 20k', min: 0, max: 20000 },
+    { key: '20-50', label: '20–50k', min: 20000, max: 50000 },
+    { key: '50-100', label: '50–100k', min: 50000, max: 100000 },
+    { key: '100-200', label: '100–200k', min: 100000, max: 200000 },
+    { key: '200plus', label: '200k+', min: 200000, max: Infinity },
+  ];
+  const lengthBand = (w) => LENGTH_BANDS.find(b => w >= b.min && w < b.max) || LENGTH_BANDS[0];
+  const dayDiff = (a, b) => Math.round((isoToUTC(b) - isoToUTC(a)) / 86400000);
+  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const weekdayOf = (iso) => (new Date(isoToUTC(iso)).getUTCDay() + 6) % 7;   // 0 = Monday
+  const weekStart = (iso) => addDays(iso, -weekdayOf(iso));
+  const quarterKey = (iso) => `${iso.slice(0, 4)}-Q${Math.floor((+iso.slice(5, 7) - 1) / 3) + 1}`;
+  const quarterLabel = (k) => `Q${k.slice(-1)} ’${k.slice(2, 4)}`;
+  function quarterKeys(endIso, n) {
+    let y = +endIso.slice(0, 4), q = Math.floor((+endIso.slice(5, 7) - 1) / 3) + 1;
+    const out = [];
+    for (let i = 0; i < n; i++) { out.unshift(`${y}-Q${q}`); q--; if (q === 0) { q = 4; y--; } }
+    return out;
+  }
+  const monthName = (key, withYear = true) => { const [y, m] = key.split('-').map(Number); return MONTHS[m - 1] + (withYear ? ' ' + y : ''); };
+  const inRange = (d, a, b) => !!d && d >= a && d <= b;
+  const isLogged = (r) => !!r.started && isIso(r.started);
+  const sumWords = (rs) => rs.reduce((t, r) => t + (r.words || 0), 0);
+  const pct = (x) => Math.round(x * 100);
+  const yearsWithReads = (readings) => [...new Set(readings.filter(r => r.date).map(r => +r.date.slice(0, 4)))].sort((a, b) => a - b);
+
+  // Tag totals over a set of readings: Map tag -> { words, readings, finished, dnfs }.
+  function tagTotals(readings, isVisible) {
+    const m = new Map();
+    for (const r of readings) for (const t of new Set(r.fic.tags)) {
+      if (isVisible && !isVisible(t)) continue;
+      const e = m.get(t) || { words: 0, readings: 0, finished: 0, dnfs: 0 };
+      e.readings++; if (r.words !== null) e.words += r.words;
+      if (r.kind === 'Read') e.finished++; else e.dnfs++;
+      m.set(t, e);
+    }
+    return m;
+  }
+
+  // ---- TASTES -------------------------------------------------------------------------------
+  // BUMP CHART: the 10 tags with most words read over the last 8 quarters (ending this quarter),
+  // each needing >= MIN_RANK readings in that window. For each quarter, a tag's rank is its
+  // position by words among all tags with >= MIN_RANK readings THAT quarter; null = not ranked.
+  function tagBump(readings, isVisible, today, nQuarters = 8, top = 10) {
+    const quarters = quarterKeys(today, nQuarters);
+    const qset = new Set(quarters);
+    const win = readings.filter(r => r.date && qset.has(quarterKey(r.date)));
+    const totals = tagTotals(win, isVisible);
+    const chosen = [...totals].filter(([, v]) => v.readings >= MIN_RANK && v.words > 0)
+      .sort((a, b) => b[1].words - a[1].words || a[0].localeCompare(b[0])).slice(0, top).map(([t]) => t);
+    const ranks = Object.fromEntries(chosen.map(t => [t, []]));
+    for (const q of quarters) {
+      const tq = tagTotals(win.filter(r => quarterKey(r.date) === q), isVisible);
+      const ranked = [...tq].filter(([, v]) => v.readings >= MIN_RANK && v.words > 0)
+        .sort((a, b) => b[1].words - a[1].words || a[0].localeCompare(b[0]));
+      const pos = new Map(ranked.map(([t], i) => [t, i + 1]));
+      chosen.forEach(t => ranks[t].push(pos.get(t) || null));
+    }
+    const tags = chosen.map(t => ({ tag: t, words: totals.get(t).words, readings: totals.get(t).readings, ranks: ranks[t] }));
+    // Finding: the biggest climb from a tag's first ranked quarter to its latest ranked quarter.
+    let best = null;
+    for (const t of tags) {
+      const idx = t.ranks.map((r, i) => r ? i : -1).filter(i => i >= 0);
+      if (idx.length < 2) continue;
+      const a = idx[0], b = idx[idx.length - 1], climb = t.ranks[a] - t.ranks[b];
+      if (!best || climb > best.climb) best = { tag: t.tag, from: t.ranks[a], to: t.ranks[b], fromQ: quarters[a], toQ: quarters[b], climb };
+    }
+    let finding;
+    if (!tags.length) finding = 'No tag has 3 or more readings in the last 8 quarters yet.';
+    else if (best && best.climb > 0) finding = `${best.tag} rose from your #${best.from} tag in ${quarterLabel(best.fromQ)} to #${best.to} in ${quarterLabel(best.toQ)}.`;
+    else finding = `${tags[0].tag} is your top tag over the last 8 quarters, with ${fmtK(tags[0].words)} words read.`;
+    return { quarters, labels: quarters.map(quarterLabel), tags, finding };
+  }
+
+  // RISERS AND FALLERS: a tag's share = words carrying that tag ÷ all words read in the window
+  // (shares add up to more than 100% because fics have many tags). "Now" is the selected year
+  // (Jan–Dec; the current year runs to today); "then" is the 12 months before it (the previous
+  // calendar year). Risers need >= MIN_RANK readings now; fallers >= MIN_RANK readings then.
+  // NEW THIS YEAR: tags with >= MIN_RANK readings in the year and no dated reading before it.
+  function tagDrift(readings, isVisible, year) {
+    const a = `${year}-01-01`, b = `${year}-12-31`, pa = `${year - 1}-01-01`, pb = `${year - 1}-12-31`;
+    const nowR = readings.filter(r => inRange(r.date, a, b)), thenR = readings.filter(r => inRange(r.date, pa, pb));
+    const totNow = sumWords(nowR), totThen = sumWords(thenR);
+    const tN = tagTotals(nowR, isVisible), tT = tagTotals(thenR, isVisible);
+    const before = new Set();
+    for (const r of readings) if (r.date && r.date < a) for (const t of r.fic.tags) before.add(t);
+    const rows = [];
+    for (const tag of new Set([...tN.keys(), ...tT.keys()])) {
+      const n = tN.get(tag) || { words: 0, readings: 0 }, t = tT.get(tag) || { words: 0, readings: 0 };
+      const shareNow = totNow ? n.words / totNow : 0, shareThen = totThen ? t.words / totThen : 0;
+      rows.push({ tag, shareNow, shareThen, change: (shareNow - shareThen) * 100, readingsNow: n.readings, readingsThen: t.readings, wordsNow: n.words });
+    }
+    const risers = rows.filter(r => r.readingsNow >= MIN_RANK && r.change > 0).sort((x, y) => y.change - x.change).slice(0, 5);
+    const fallers = rows.filter(r => r.readingsThen >= MIN_RANK && r.change < 0).sort((x, y) => x.change - y.change).slice(0, 5);
+    const newTags = rows.filter(r => r.readingsNow >= MIN_RANK && !before.has(r.tag)).sort((x, y) => y.wordsNow - x.wordsNow);
+    const thinBaseline = thenR.length < MIN_RATE;
+    let finding;
+    if (!nowR.length) finding = `No dated reads in ${year}.`;
+    else if (thinBaseline) finding = `Only ${thenR.length} dated read${thenR.length === 1 ? '' : 's'} in ${year - 1}, so these shifts are measured against a very small baseline.`;
+    else if (risers.length) finding = `${risers[0].tag} grew the most: ${pct(risers[0].shareThen)}% of your words in ${year - 1} to ${pct(risers[0].shareNow)}% in ${year}.`;
+    else finding = `Your tag mix in ${year} is close to ${year - 1}.`;
+    return { year, totNow, totThen, readingsNow: nowR.length, readingsThen: thenR.length, risers, fallers, newTags, thinBaseline, finding,
+      newFinding: newTags.length ? `${newTags.length} tag${newTags.length === 1 ? ' is' : 's are'} new to you in ${year}; ${newTags[0].tag} leads with ${newTags[0].readingsNow} reads.` : `No tag with 3+ reads in ${year} is new to you.` };
+  }
+
+  // ---- COMPLETION ---------------------------------------------------------------------------
+  // COMPLETION BY LENGTH: finished ÷ (finished + DNF) per length band (fic Words). A band is shown
+  // with >= MIN_RANK readings; its rate only with >= MIN_RATE.
+  function completionByBand(readings) {
+    const rows = LENGTH_BANDS.map(b => {
+      const rs = readings.filter(r => r.fic.words >= b.min && r.fic.words < b.max);
+      const finished = rs.filter(r => r.kind === 'Read').length, dnfs = rs.length - finished;
+      return { ...b, readings: rs.length, finished, dnfs, rate: rs.length >= MIN_RATE ? finished / rs.length : null, shown: rs.length >= MIN_RANK };
+    });
+    const rated = rows.filter(r => r.rate !== null);
+    let finding = 'Not enough readings in any length band yet.';
+    if (rated.length >= 2) {
+      const hi = rated.reduce((x, y) => (y.rate > x.rate ? y : x)), lo = rated.reduce((x, y) => (y.rate < x.rate ? y : x));
+      finding = `You finish ${pct(hi.rate)}% of ${hi.label.toLowerCase()} fics but only ${pct(lo.rate)}% of ${lo.label.toLowerCase()} ones.`;
+    } else if (rated.length === 1) finding = `You finish ${pct(rated[0].rate)}% of ${rated[0].label.toLowerCase()} fics.`;
+    return { rows, finding };
+  }
+
+  // DNF REASONS: DNF readings per quarter by DNR Reason. "Content…" values (e.g. "Content/Tags")
+  // count as Content; blank is "No reason"; any other value is kept as its own reason.
+  const DNF_REASONS = ['Writing/Pacing', 'Content', 'Other', 'No reason'];
+  function dnfReasonOf(fic) {
+    const s = String(fic.dnrReason || '').trim();
+    if (!s) return 'No reason';
+    if (/^content/i.test(s)) return 'Content';
+    if (/writing|pacing/i.test(s)) return 'Writing/Pacing';
+    if (/^other$/i.test(s)) return 'Other';
+    return s;
+  }
+  function dnfReasonsByQuarter(readings, today, n = 8) {
+    const quarters = quarterKeys(today, n), qi = new Map(quarters.map((q, i) => [q, i]));
+    const dnfs = readings.filter(r => r.kind === 'DNF');
+    const reasons = [...DNF_REASONS];
+    dnfs.forEach(r => { const x = dnfReasonOf(r.fic); if (!reasons.includes(x)) reasons.splice(reasons.length - 1, 0, x); });
+    const counts = Object.fromEntries(reasons.map(x => [x, quarters.map(() => 0)]));
+    let inWindow = 0;
+    for (const r of dnfs) { if (!r.date) continue; const i = qi.get(quarterKey(r.date)); if (i === undefined) continue; counts[dnfReasonOf(r.fic)][i]++; inWindow++; }
+    const totals = reasons.map(x => [x, counts[x].reduce((a, b) => a + b, 0)]).filter(([x, c]) => c > 0 && x !== 'No reason').sort((a, b) => b[1] - a[1]);
+    const finding = !inWindow ? 'No dated DNFs in the last 8 quarters.'
+      : totals.length ? `${totals[0][0]} is your most common DNF reason: ${totals[0][1]} of ${inWindow} DNFs in the last 8 quarters.`
+      : `None of your ${inWindow} DNFs in the last 8 quarters has a reason recorded.`;
+    return { quarters, labels: quarters.map(quarterLabel), reasons: reasons.filter(x => counts[x].some(c => c > 0)), counts, inWindow, finding };
+  }
+
+  // TAGS THAT PREDICT A DNF: overall DNF rate = DNFs ÷ all readings. A tag qualifies with >= MIN_RATE
+  // readings and a DNF rate at least 15 points above the overall rate.
+  function dnfPredictorTags(readings, isVisible) {
+    const dnfs = readings.filter(r => r.kind === 'DNF').length;
+    const overall = readings.length ? dnfs / readings.length : 0;
+    const rows = [...tagTotals(readings, isVisible)].filter(([, v]) => v.readings >= MIN_RATE)
+      .map(([tag, v]) => ({ tag, readings: v.readings, dnfs: v.dnfs, rate: v.dnfs / v.readings }))
+      .filter(r => r.rate - overall >= 0.15).sort((a, b) => b.rate - a.rate || b.readings - a.readings);
+    const finding = !readings.length ? 'No readings yet.' : rows.length
+      ? `You DNF ${pct(rows[0].rate)}% of fics tagged ${rows[0].tag}, against ${pct(overall)}% overall.`
+      : `No tag with 5+ reads has a DNF rate 15 points above your overall ${pct(overall)}%.`;
+    return { overall, rows, finding };
+  }
+
+  // ABANDON POINT: how far through a DNF stopped = Chapters Read ÷ chapters (capped at 100%),
+  // in 10% buckets. Only DNFs with Chapters Read filled in.
+  function abandonPoints(readings) {
+    const dnfs = readings.filter(r => r.kind === 'DNF');
+    const withCh = dnfs.filter(r => r.dnfChapters && r.dnfChapters > 0 && r.fic.chapters > 0);
+    const buckets = Array.from({ length: 10 }, () => 0);
+    for (const r of withCh) buckets[Math.min(9, Math.floor(Math.min(1, r.dnfChapters / r.fic.chapters) * 10))]++;
+    const fr = withCh.map(r => Math.min(1, r.dnfChapters / r.fic.chapters));
+    const finding = !withCh.length ? `None of your ${dnfs.length} DNFs has Chapters Read filled in yet.`
+      : `Half of your DNFs stop by ${pct(median(fr.map(x => Math.round(x * 1000))) / 1000)}% of the way through (based on ${withCh.length} of ${dnfs.length} DNFs).`;
+    return { buckets, labels: buckets.map((_, i) => `${i * 10}–${i * 10 + 10}%`), covered: withCh.length, total: dnfs.length, finding };
+  }
+
+  // ---- LOYALTY ------------------------------------------------------------------------------
+  // GO-TO AUTHORS: authors with 3+ distinct fics read (anonymous / orphan_account excluded). Words
+  // count every reading; average Enjoyment is over that author's rated fics.
+  function goToAuthors(readings) {
+    const m = new Map();
+    for (const r of readings) for (const a of realAuthors(r.fic.authors)) {
+      const e = m.get(a) || { author: a, fics: new Map(), words: 0, first: null, latest: null };
+      e.fics.set(r.ficKey, r.fic); if (r.words !== null) e.words += r.words;
+      if (r.date) { if (!e.first || r.date < e.first) e.first = r.date; if (!e.latest || r.date > e.latest) e.latest = r.date; }
+      m.set(a, e);
+    }
+    const rows = [...m.values()].filter(e => e.fics.size >= MIN_RANK).map(e => {
+      const rated = [...e.fics.values()].filter(f => f.enjoyment);
+      return { author: e.author, fics: e.fics.size, words: e.words, first: e.first, latest: e.latest,
+        avgEnjoyment: rated.length ? Math.round(rated.reduce((t, f) => t + f.enjoyment, 0) / rated.length * 10) / 10 : null, rated: rated.length };
+    }).sort((a, b) => b.fics - a.fics || b.words - a.words || a.author.localeCompare(b.author));
+    const finding = rows.length ? `You've read ${rows.length} author${rows.length === 1 ? '' : 's'} 3+ times; ${rows[0].author} leads with ${rows[0].fics} fics.` : 'No author has 3 or more of your reads yet.';
+    return { rows, finding };
+  }
+
+  // PER-YEAR LOYALTY (dated readings in each calendar year):
+  //   return rate  = authors with 2+ different fics read that year ÷ all authors read that year
+  //                  (shown with >= MIN_RATE authors).
+  //   top-5 share  = words from readings by that year's 5 most-read authors (by words) ÷ all words.
+  function loyaltyByYear(readings) {
+    const out = [];
+    for (const y of yearsWithReads(readings)) {
+      const rs = readings.filter(r => r.date && r.date.startsWith(y + '-'));
+      const fics = new Map(), words = new Map();
+      for (const r of rs) for (const a of realAuthors(r.fic.authors)) {
+        if (!fics.has(a)) fics.set(a, new Set()); fics.get(a).add(r.ficKey);
+        words.set(a, (words.get(a) || 0) + (r.words || 0));
+      }
+      const authors = fics.size, returning = [...fics.values()].filter(s => s.size >= 2).length;
+      const top5 = [...words].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([a]) => a);
+      const total = sumWords(rs), top5Words = sumWords(rs.filter(r => r.fic.authors.some(a => top5.includes(a))));
+      out.push({ year: y, readings: rs.length, authors, returning, returnRate: authors >= MIN_RATE ? returning / authors : null,
+        top5, top5Share: authors >= MIN_RATE && total ? top5Words / total : null });
+    }
+    const last = out.filter(x => x.returnRate !== null).slice(-1)[0];
+    const finding = last ? `In ${last.year} you went back to ${pct(last.returnRate)}% of the authors you read, and your top 5 wrote ${pct(last.top5Share)}% of your words.` : 'Not enough authors per year yet.';
+    return { years: out, finding };
+  }
+
+  // RE-READS: fics with Times Read above 1, readings with read number above 1, or a "Re-read
+  // started" event. times = the largest of Times Read, readings counted and read numbers seen.
+  function rereadList(model) {
+    const out = [];
+    for (const fic of model.fics) {
+      const rs = model.readings.filter(r => r.ficKey === fic.key);
+      const evs = model.eventsByKey.get(fic.key) || [];
+      const maxRn = Math.max(0, ...rs.map(r => r.readNumber), ...evs.map(e => e.readNumber));
+      const times = Math.max(fic.timesRead || 0, rs.length, maxRn);
+      if (times > 1 || evs.some(e => e.event === 'Re-read started')) {
+        const latest = rs.map(r => r.date).filter(Boolean).sort().slice(-1)[0] || null;
+        out.push({ fic, times: Math.max(times, 2), latest, logged: rs.length > 1 || maxRn > 1 });
+      }
+    }
+    out.sort((a, b) => b.times - a.times || (b.latest || '').localeCompare(a.latest || ''));
+    return { rows: out, finding: out.length ? `${out.length} fic${out.length === 1 ? '' : 's'} read more than once; ${out[0].fic.title} leads at ${out[0].times} reads.` : 'No re-reads yet.' };
+  }
+
+  // ---- HABITS -------------------------------------------------------------------------------
+  // WEEKDAYS: finished reads by day of the week, from every dated finished reading (est. included).
+  function weekdayCounts(readings) {
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    const fin = readings.filter(r => r.kind === 'Read' && r.date);
+    fin.forEach(r => counts[weekdayOf(r.date)]++);
+    const est = fin.filter(r => r.est).length;
+    const top = counts.indexOf(Math.max(...counts));
+    const finding = fin.length ? `You finish the most fics on ${WEEKDAYS[top]}s: ${counts[top]} of ${fin.length} (${pct(counts[top] / fin.length)}%).` : 'No dated finished reads yet.';
+    return { counts, labels: WEEKDAYS.map(d => d.slice(0, 3)), total: fin.length, est, finding };
+  }
+
+  // READING CLOCK: timed Reading Log events by weekday × hour. loggedReads = distinct readings
+  // (fic + read number) with a timed event.
+  function readingClock(model) {
+    const grid = Array.from({ length: 7 }, () => Array(24).fill(0));
+    const reads = new Set(); let events = 0;
+    for (const list of model.eventsByKey.values()) for (const e of list) {
+      const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})/.exec(e.ts || '');
+      if (!m) continue;
+      grid[weekdayOf(m[1])][+m[2]]++; events++; reads.add(e.key + '#' + e.readNumber);
+    }
+    let best = null;
+    grid.forEach((row, d) => row.forEach((c, h) => { if (c && (!best || c > best.c)) best = { d, h, c }; }));
+    const enough = reads.size >= MIN_LOGGED;
+    const finding = !enough ? '' : `Your busiest reading hour is ${WEEKDAYS[best.d]} around ${best.h % 12 || 12}${best.h < 12 ? 'am' : 'pm'} (${best.c} events).`;
+    return { grid, events, loggedReads: reads.size, enough, finding };
+  }
+
+  // READING DAYS AND STREAKS: a reading day is any day with a Reading Log event, or a finish or
+  // DNF date. A day is "logged" if it has a log event or a non-est. reading; a streak that
+  // includes any day without that is marked est.
+  //   daily streak  consecutive reading days. The current streak counts back from today, or
+  //                 from yesterday if today has nothing yet.
+  //   weekly streak consecutive Monday–Sunday weeks with at least one reading day; the current
+  //                 one counts back from this week, or last week if this week has nothing yet.
+  function readingDays(model, today) {
+    const days = new Map();   // date -> { logged }; dates after today (typos) are ignored
+    const mark = (d, logged) => { if (!d || (today && d > today)) return; const e = days.get(d) || { logged: false }; e.logged = e.logged || logged; days.set(d, e); };
+    for (const r of model.readings) mark(r.date, !r.est);
+    for (const list of model.eventsByKey.values()) for (const e of list) mark(e.date, true);
+    return days;
+  }
+  function runsOf(sortedKeys, nextOf) {
+    const runs = [];
+    for (const k of sortedKeys) {
+      const last = runs[runs.length - 1];
+      if (last && nextOf(last.end) === k) { last.end = k; last.len++; last.keys.push(k); }
+      else runs.push({ start: k, end: k, len: 1, keys: [k] });
+    }
+    return runs;
+  }
+  function streaks(model, today) {
+    const days = readingDays(model, today);
+    const dayKeys = [...days.keys()].sort();
+    const dRuns = runsOf(dayKeys, d => addDays(d, 1));
+    const weeks = [...new Set(dayKeys.map(weekStart))].sort();
+    const wRuns = runsOf(weeks, w => addDays(w, 7));
+    const estRun = (run, toDays) => run.keys.some(k => toDays(k).some(d => days.has(d) && !days.get(d).logged));
+    const dayList = (d) => [d];
+    const weekDays = (w) => Array.from({ length: 7 }, (_, i) => addDays(w, i));
+    const pick = (runs, anchorA, anchorB) => runs.find(r => r.end === anchorA) || runs.find(r => r.end === anchorB) || null;
+    const longestOf = (runs) => runs.reduce((b, r) => (!b || r.len > b.len || (r.len === b.len && r.end > b.end) ? r : b), null);
+    const curD = pick(dRuns, today, addDays(today, -1)), longD = longestOf(dRuns);
+    const curW = pick(wRuns, weekStart(today), addDays(weekStart(today), -7)), longW = longestOf(wRuns);
+    const pack = (r, toDays, unit) => r ? { len: r.len, start: r.start, end: unit === 'week' ? addDays(r.end, 6) : r.end, est: estRun(r, toDays) } : { len: 0, start: null, end: null, est: false };
+    const res = {
+      currentDaily: pack(curD, dayList, 'day'), longestDaily: pack(longD, dayList, 'day'),
+      currentWeekly: pack(curW, weekDays, 'week'), longestWeekly: pack(longW, weekDays, 'week'),
+      readingDays: days.size,
+    };
+    res.finding = res.currentWeekly.len
+      ? `You're on a ${res.currentWeekly.len}-week reading streak; your longest is ${res.longestWeekly.len} weeks.`
+      : res.longestWeekly.len ? `Your longest weekly streak is ${res.longestWeekly.len} weeks; read anything this week to start a new one.` : 'No reading days yet.';
+    return res;
+  }
+
+  // CALENDAR: words finished per day in a year (finished readings only; DNFs add nothing here).
+  function calendarYear(readings, year) {
+    const days = new Map();
+    for (const r of readings) {
+      if (r.kind !== 'Read' || !r.date || !r.date.startsWith(year + '-')) continue;
+      const e = days.get(r.date) || { words: 0, fics: 0, est: true };
+      e.words += r.words || 0; e.fics++; e.est = e.est && r.est; days.set(r.date, e);
+    }
+    const vals = [...days.values()].map(e => e.words);
+    let best = null; for (const [d, e] of days) if (!best || e.words > best.words) best = { date: d, ...e };
+    const finding = days.size ? `${days.size} day${days.size === 1 ? '' : 's'} with a finished read in ${year}; your biggest was ${fmtDay(best.date)} with ${fmtK(best.words)} words.` : `No finished reads dated in ${year}.`;
+    return { year, days, max: vals.length ? Math.max(...vals) : 0, finding };
+  }
+
+  // PACE: days from start to finish (finish date − start date; same day = 0) for logged finished
+  // readings, median per length band (bands need >= MIN_RANK).
+  function paceByBand(readings) {
+    const logged = readings.filter(r => r.kind === 'Read' && r.date && isLogged(r) && r.started <= r.date);
+    const rows = LENGTH_BANDS.map(b => {
+      const ds = logged.filter(r => r.fic.words >= b.min && r.fic.words < b.max).map(r => dayDiff(r.started, r.date));
+      return { ...b, n: ds.length, median: ds.length >= MIN_RANK ? median(ds) : null };
+    });
+    const enough = logged.length >= MIN_LOGGED;
+    const shown = rows.filter(r => r.median !== null);
+    const dur = (d) => (d === 0 ? 'the same day you start them' : `${d} day${d === 1 ? '' : 's'}`);
+    const finding = !enough ? '' : shown.length ? `You usually finish ${shown[0].label.toLowerCase()} fics ${shown[0].median === 0 ? 'the same day you start them' : 'in ' + dur(shown[0].median)}.` : 'Not enough logged reads in any one length band yet.';
+    return { rows, loggedReads: logged.length, enough, finding };
+  }
+
+  // ---- PERSONAL BESTS -----------------------------------------------------------------------
+  // Each best has a date (or range), a tap target and est: true when it rests on estimated dates
+  // (any contributing reading is est.). Counts that don't depend on dates (most-read author,
+  // most re-read fic) are never est.
+  function monthTotals(readings) {
+    const m = new Map();
+    for (const r of readings) {
+      if (!r.date) continue;
+      const k = r.date.slice(0, 7), e = m.get(k) || { month: k, words: 0, finished: 0, est: false };
+      e.words += r.words || 0; if (r.kind === 'Read') e.finished++; e.est = e.est || r.est; m.set(k, e);
+    }
+    return [...m.values()];
+  }
+  function personalBests(model, today) {
+    const R0 = model.readings, out = [];
+    const months = monthTotals(R0);
+    const top = (arr, f) => arr.reduce((b, x) => (!b || f(x) > f(b) ? x : b), null);
+    const mw = top(months, x => x.words);
+    if (mw && mw.words) out.push({ key: 'monthWords', title: 'Biggest month by words', value: fmtK(mw.words) + ' words', sub: monthName(mw.month), date: mw.month, est: mw.est, target: { type: 'range', start: mw.month + '-01', end: mw.month + '-31' } });
+    const mf = top(months, x => x.finished);
+    if (mf && mf.finished) out.push({ key: 'monthFics', title: 'Biggest month by fics finished', value: `${mf.finished} fics`, sub: monthName(mf.month), date: mf.month, est: mf.est, target: { type: 'range', start: mf.month + '-01', end: mf.month + '-31' } });
+    const fin = R0.filter(r => r.kind === 'Read');
+    const lf = top(fin, r => r.fic.words);
+    if (lf) out.push({ key: 'longest', title: 'Longest fic finished', value: fmtK(lf.fic.words) + ' words', sub: lf.fic.title, date: lf.date, est: lf.est, target: { type: 'fic', key: lf.ficKey } });
+    const wk = new Map();
+    for (const r of fin) { if (!r.date) continue; const k = weekStart(r.date), e = wk.get(k) || { week: k, n: 0, est: false }; e.n++; e.est = e.est || r.est; wk.set(k, e); }
+    const bw = top([...wk.values()], x => x.n);
+    if (bw) out.push({ key: 'week', title: 'Most fics finished in a week', value: `${bw.n} fics`, sub: `Week of ${fmtDay(bw.week, today)}`, date: bw.week, est: bw.est, target: { type: 'range', start: bw.week, end: addDays(bw.week, 6) } });
+    const st = streaks(model, today);
+    if (st.longestWeekly.len) out.push({ key: 'weekly', title: 'Longest weekly streak', value: `${st.longestWeekly.len} weeks`, sub: `${fmtDay(st.longestWeekly.start, today)} – ${fmtDay(st.longestWeekly.end, today)}`, date: st.longestWeekly.end, est: st.longestWeekly.est, target: { type: 'range', start: st.longestWeekly.start, end: st.longestWeekly.end } });
+    if (st.longestDaily.len) out.push({ key: 'daily', title: 'Longest daily streak', value: `${st.longestDaily.len} day${st.longestDaily.len === 1 ? '' : 's'}`, sub: `${fmtDay(st.longestDaily.start, today)} – ${fmtDay(st.longestDaily.end, today)}`, date: st.longestDaily.end, est: st.longestDaily.est, target: { type: 'range', start: st.longestDaily.start, end: st.longestDaily.end } });
+    const au = model.authors.find(a => a.fics >= MIN_RANK) || null;
+    if (au) out.push({ key: 'author', title: 'Most-read author', value: au.author, sub: `${au.fics} fics · ${fmtK(au.words)} words`, date: null, est: false, target: { type: 'author', author: au.author } });
+    const rr = rereadList(model).rows[0];
+    if (rr) out.push({ key: 'reread', title: 'Most re-read fic', value: `${rr.times} reads`, sub: rr.fic.title, date: rr.latest, est: false, target: { type: 'fic', key: rr.fic.key } });
+    const logged = fin.filter(r => r.date && isLogged(r) && r.started <= r.date);
+    const ff = logged.reduce((b, r) => { const d = dayDiff(r.started, r.date); return !b || d < b.d || (d === b.d && r.fic.words > b.r.fic.words) ? { r, d } : b; }, null);
+    // Fastest finish is logged-only: below MIN_LOGGED logged reads the card shows an empty state.
+    const enoughLogged = logged.length >= MIN_LOGGED;
+    out.push(ff && enoughLogged
+      ? { key: 'fastest', title: 'Fastest finish', value: ff.d === 0 ? 'Same day' : `${ff.d} day${ff.d === 1 ? '' : 's'}`, sub: `${ff.r.fic.title} · ${fmtK(ff.r.fic.words)} words`, date: ff.r.date, est: false, logged: logged.length, enough: true, target: { type: 'fic', key: ff.r.ficKey } }
+      : { key: 'fastest', title: 'Fastest finish', value: '—', sub: '', date: null, est: false, logged: logged.length, enough: false, target: null });
+    const five = [...new Map(R0.filter(r => r.fic.enjoyment === 5).map(r => [r.ficKey, r])).values()].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (five.length) out.push({ key: 'fives', title: 'Top-rated fics', value: `${five.length} rated 5/5`, sub: five.slice(0, 3).map(r => r.fic.title).join(' · '), date: five[0].date, est: false, list: five.map(r => ({ key: r.ficKey, title: r.fic.title, date: r.date })), target: { type: 'fic', key: five[0].ficKey } });
+    return out;
+  }
+
+  // ---- YEAR IN READING ----------------------------------------------------------------------
+  // scope: { type: 'year', year } or { type: 'month', month: 'YYYY-MM' }. Uses dated readings in the
+  // scope. Each card needs enough data or is skipped with a reason.
+  const WORD_YARDSTICKS = [   // approximate published word counts
+    { words: 1084170, name: 'the entire Harry Potter series' },
+    { words: 298000, name: 'A Game of Thrones' },
+    { words: 76944, name: "Harry Potter and the Philosopher's Stone" },
+  ];
+  function yardstick(words) {
+    for (const y of WORD_YARDSTICKS) if (words >= y.words * 1.5 || y === WORD_YARDSTICKS[WORD_YARDSTICKS.length - 1]) {
+      const n = words / y.words;
+      return { n, text: n >= 1.5 ? `about ${Math.round(n)} ${y.name === 'the entire Harry Potter series' ? 'times ' + y.name : 'copies of ' + y.name}` : `about ${Math.round(n * 100)}% of ${y.name}` };
+    }
+  }
+  // PERSONA (rule-based; the strongest = largest value ÷ threshold among those that apply):
+  //   The Binger      >= 50% of logged finished words from fics finished within 2 days of starting
+  //                   (needs >= MIN_LOGGED logged finished reads, else skipped).
+  //   The Loyalist    top 5 authors (by words) account for > 40% of words.
+  //   The Explorer    > 60% of authors read are new (first ever read falls in this period).
+  //   The Longhauler  median finished length > 100k words.
+  //   The WIP Chaser  skipped: the apps track complete fics only.
+  //   The Re-reader   > 25% of readings are re-reads (read number above 1, or Times Read above 1).
+  //   The Eclectic    when none apply.
+  function persona(rs, model, start) {
+    const cands = [], skipped = [];
+    const fin = rs.filter(r => r.kind === 'Read');
+    const logged = fin.filter(r => isLogged(r) && r.started <= r.date);
+    if (logged.length < MIN_LOGGED) skipped.push({ name: 'The Binger', reason: `only ${logged.length} logged finished read${logged.length === 1 ? '' : 's'} (needs ${MIN_LOGGED})` });
+    else {
+      const lw = sumWords(logged), quick = sumWords(logged.filter(r => dayDiff(r.started, r.date) <= 2)), v = lw ? quick / lw : 0;
+      cands.push({ name: 'The Binger', value: v, threshold: 0.5, ok: v >= 0.5, rule: `${pct(v)}% of your logged words came from fics finished within 2 days of starting (rule: 50% or more; based on ${logged.length} logged reads)` });
+    }
+    const words = new Map();
+    for (const r of rs) for (const a of realAuthors(r.fic.authors)) words.set(a, (words.get(a) || 0) + (r.words || 0));
+    const total = sumWords(rs);
+    const top5 = [...words].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([a]) => a);
+    const t5 = total ? sumWords(rs.filter(r => r.fic.authors.some(a => top5.includes(a)))) / total : 0;
+    cands.push({ name: 'The Loyalist', value: t5, threshold: 0.4, ok: t5 > 0.4, rule: `your top 5 authors wrote ${pct(t5)}% of your words (rule: over 40%)` });
+    const authors = [...words.keys()];
+    const newA = authors.filter(a => { const d = model.authorFirst.get(a); return d && d >= start; }).length;
+    const ex = authors.length ? newA / authors.length : 0;
+    cands.push({ name: 'The Explorer', value: ex, threshold: 0.6, ok: ex > 0.6, rule: `${pct(ex)}% of the ${authors.length} authors you read were new to you (rule: over 60%)` });
+    const med = median(fin.map(r => r.fic.words)) || 0;
+    cands.push({ name: 'The Longhauler', value: med / 100000, threshold: 1, ok: med > 100000, rule: `your median finished fic was ${fmtK(med)} words (rule: over 100k)` });
+    skipped.push({ name: 'The WIP Chaser', reason: 'the fandom apps track complete fics only' });
+    const rr = rs.filter(r => r.readNumber > 1 || r.fic.timesRead > 1).length, rv = rs.length ? rr / rs.length : 0;
+    cands.push({ name: 'The Re-reader', value: rv, threshold: 0.25, ok: rv > 0.25, rule: `${pct(rv)}% of your reads were re-reads (rule: over 25%)` });
+    const qualifying = cands.filter(c => c.ok).sort((a, b) => b.value / b.threshold - a.value / a.threshold);
+    const chosen = qualifying[0] || { name: 'The Eclectic', rule: 'none of the other personas’ rules applied, so you read a bit of everything' };
+    return { name: chosen.name, rule: chosen.rule, candidates: cands, skipped, qualifying: qualifying.map(c => c.name) };
+  }
+  function availableRecaps(readings, today) {
+    const years = yearsWithReads(readings);
+    const months = [...new Set(readings.filter(r => r.date && r.date.slice(0, 7) < today.slice(0, 7)).map(r => r.date.slice(0, 7)))].sort().reverse();
+    return { years, months };
+  }
+  function recap(model, scope, today, isVisible) {
+    const isYear = scope.type === 'year';
+    const start = isYear ? `${scope.year}-01-01` : `${scope.month}-01`;
+    const end = isYear ? `${scope.year}-12-31` : `${scope.month}-31`;
+    const current = isYear ? String(scope.year) === today.slice(0, 4) : scope.month === today.slice(0, 7);
+    const label = isYear ? `${scope.year}${current ? ' so far' : ''}` : monthName(scope.month) + (current ? ' so far' : '');
+    const rs = model.readings.filter(r => inRange(r.date, start, end));
+    const fin = rs.filter(r => r.kind === 'Read'), dnf = rs.filter(r => r.kind === 'DNF');
+    const words = sumWords(rs);
+    const cards = [], skipped = [];
+    const add = (c) => cards.push(c), skip = (n, title, reason) => skipped.push({ n, title, reason });
+    // 1 words
+    if (words > 0) add({ n: 1, type: 'words', words, yardstick: yardstick(words).text, dnfNoWords: dnf.filter(r => r.words === null).length });
+    else skip(1, 'Total words', 'no words read in this period');
+    // 2 finished + DNFs
+    if (rs.length) add({ n: 2, type: 'counts', finished: fin.length, dnfs: dnf.length });
+    else skip(2, 'Fics finished and DNFs', 'no dated reads in this period');
+    // 3 top fandom + pairing
+    const byF = new Map(), byP = new Map();
+    for (const r of rs) { byF.set(r.fandom, (byF.get(r.fandom) || 0) + (r.words || 0)); byP.set(r.pairingKey, (byP.get(r.pairingKey) || 0) + (r.words || 0)); }
+    const tf = [...byF].sort((a, b) => b[1] - a[1])[0], tp = [...byP].sort((a, b) => b[1] - a[1])[0];
+    if (tf && tf[1] > 0) { const p = model.pairingByKey.get(tp[0]) || {}; add({ n: 3, type: 'fandom', fandom: tf[0], fandomShare: tf[1] / words, pairing: p.name, pairingFandom: p.fandom, pairingShare: tp[1] / words }); }
+    else skip(3, 'Top fandom and pairing', 'no words read in this period');
+    // 4 top tags
+    const tags = [...tagTotals(rs, isVisible)].filter(([, v]) => v.readings >= MIN_RANK && v.words > 0).sort((a, b) => b[1].words - a[1].words).slice(0, 5).map(([tag, v]) => ({ tag, words: v.words, readings: v.readings }));
+    if (tags.length) add({ n: 4, type: 'tags', tags }); else skip(4, 'Top 5 tags', 'no tag has 3 or more reads in this period');
+    // 5 longest fic
+    const lf = fin.reduce((b, r) => (!b || r.fic.words > b.fic.words ? r : b), null);
+    if (lf) add({ n: 5, type: 'longest', fic: lf.fic, ficKey: lf.ficKey, date: lf.date }); else skip(5, 'Longest fic', 'no finished fics in this period');
+    // 6 most-read author
+    const ar = authorRanking(rs).filter(a => a.readings >= MIN_RANK);
+    if (ar.length) add({ n: 6, type: 'author', author: ar[0].author, fics: ar[0].fics, words: ar[0].words }); else skip(6, 'Most-read author', 'no author has 3 or more reads in this period');
+    // 7 biggest month
+    const months = monthTotals(rs);
+    if (!isYear) skip(7, 'Biggest month', 'this is a one-month recap');
+    else if (months.length < 2) skip(7, 'Biggest month', 'reads in fewer than 2 months');
+    else { const m = months.reduce((b, x) => (x.words > b.words ? x : b)); add({ n: 7, type: 'month', month: m.month, words: m.words, finished: m.finished, est: m.est }); }
+    // 8 busiest weekday
+    const wd = weekdayCounts(rs);
+    if (wd.total >= MIN_RATE) { const i = wd.counts.indexOf(Math.max(...wd.counts)); add({ n: 8, type: 'weekday', day: WEEKDAYS[i], count: wd.counts[i], total: wd.total, counts: wd.counts }); }
+    else skip(8, 'Busiest weekday', `only ${wd.total} dated finished read${wd.total === 1 ? '' : 's'} (needs ${MIN_RATE})`);
+    // 9 completion rate
+    if (rs.length >= MIN_RATE) add({ n: 9, type: 'completion', rate: fin.length / rs.length, finished: fin.length, closed: rs.length });
+    else skip(9, 'Completion rate', `only ${rs.length} closed read${rs.length === 1 ? '' : 's'} (needs ${MIN_RATE})`);
+    // 10 new obsession: biggest riser vs the 12 months before the period
+    const ps = isYear ? `${scope.year - 1}-01-01` : (() => { const [y, m] = scope.month.split('-').map(Number); const [py, pm] = monthShift(y, m, -12); return `${py}-${String(pm).padStart(2, '0')}-01`; })();
+    const prev = model.readings.filter(r => r.date && r.date >= ps && r.date < start);
+    if (prev.length < MIN_RATE) skip(10, 'A new obsession', `only ${prev.length} dated read${prev.length === 1 ? '' : 's'} in the 12 months before, too few to compare`);
+    else {
+      const tN = tagTotals(rs, isVisible), tT = tagTotals(prev, isVisible), wP = sumWords(prev);
+      const rise = [...tN].filter(([, v]) => v.readings >= MIN_RANK).map(([tag, v]) => ({ tag, now: words ? v.words / words : 0, then: wP ? ((tT.get(tag) || {}).words || 0) / wP : 0, readings: v.readings }))
+        .map(x => ({ ...x, change: (x.now - x.then) * 100 })).filter(x => x.change > 0).sort((a, b) => b.change - a.change)[0];
+      if (rise) add({ n: 10, type: 'riser', ...rise }); else skip(10, 'A new obsession', 'no tag grew its share');
+    }
+    // 11 highest rated
+    const rated = [...new Map(fin.filter(r => r.fic.enjoyment >= 4).map(r => [r.ficKey, r])).values()];
+    const topScore = Math.max(0, ...rated.map(r => r.fic.enjoyment));
+    const best = rated.filter(r => r.fic.enjoyment === topScore).sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 5);
+    if (best.length) add({ n: 11, type: 'rated', score: topScore, fics: best.map(r => ({ key: r.ficKey, fic: r.fic })) });
+    else skip(11, 'Highest-rated fics', 'no finished fic rated 4 or 5 in this period');
+    // 12 persona
+    let per = null;
+    if (rs.length) { per = persona(rs, model, start); add({ n: 12, type: 'persona', ...per }); }
+    else skip(12, 'Reading persona', 'no reads in this period');
+    // 13 one year ago (the same calendar month a year before the recap's last month)
+    const lastMonth = isYear ? (current ? today.slice(0, 7) : `${scope.year}-12`) : scope.month;
+    const [ly, lm] = lastMonth.split('-').map(Number);
+    const agoKey = `${ly - 1}-${String(lm).padStart(2, '0')}`;
+    const ago = model.readings.filter(r => r.date && r.date.startsWith(agoKey)).sort((a, b) => (b.fic.enjoyment || 0) - (a.fic.enjoyment || 0) || b.fic.words - a.fic.words);
+    if (ago.length) add({ n: 13, type: 'ago', month: agoKey, fics: ago.slice(0, 3).map(r => ({ key: r.ficKey, fic: r.fic, kind: r.kind })), count: ago.length });
+    else skip(13, 'One year ago', `no reads dated in ${monthName(agoKey)}`);
+    // 14 closing summary
+    if (rs.length) add({ n: 14, type: 'summary', words, finished: fin.length, dnfs: dnf.length, fandom: tf && tf[0], persona: per && per.name });
+    else skip(14, 'Summary', 'no reads in this period');
+    const est = rs.filter(r => r.est).length;
+    return { scope, label, start, end, current, readings: rs.length, est, cards, skipped };
+  }
+
+  // Volume / completion / authors / tags findings for the Phase 1 charts that moved into Trends.
+  function volumeFindings(readings) {
+    const months = monthTotals(readings).filter(m => m.words > 0);
+    const bw = months.reduce((b, x) => (!b || x.words > b.words ? x : b), null);
+    const bf = months.reduce((b, x) => (!b || x.finished > b.finished ? x : b), null);
+    return {
+      words: bw ? `Your biggest month was ${monthName(bw.month)}, with ${fmtK(bw.words)} words read.` : 'No dated reads yet.',
+      fics: bf ? `You finished the most fics in ${monthName(bf.month)}: ${bf.finished}.` : 'No dated finished reads yet.',
+    };
+  }
+  function completionMonthFinding(series) {
+    const rows = series.keys.map((k, i) => ({ k, closed: series.finished[i] + series.dnfs[i], rate: series.completion[i] })).filter(x => x.closed >= MIN_RATE);
+    if (!rows.length) return 'No month has 5 or more closed reads yet.';
+    const hi = rows.reduce((b, x) => (x.rate > b.rate ? x : b)), lo = rows.reduce((b, x) => (x.rate < b.rate ? x : b));
+    return hi === lo ? `You finished ${pct(hi.rate)}% of what you started in ${monthName(hi.k)}.` : `Completion peaked at ${pct(hi.rate)}% in ${monthName(hi.k)} and dipped to ${pct(lo.rate)}% in ${monthName(lo.k)}.`;
+  }
+  // Shelves by status finding: how much of the Data List has been read or DNF'd.
+  function statusFinding(model) {
+    const total = model.fics.length, closed = model.fics.filter(f => f.status === 'Read' || f.status === 'DNF').length;
+    return total ? `${closed.toLocaleString('en-AU')} of your ${total.toLocaleString('en-AU')} listed fics (${pct(closed / total)}%) are Read or DNF.` : 'No fics loaded yet.';
+  }
+  const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 2).replace(/\.?0+$/, '') + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n));
+
   return {
     TZ, MONTHS, MON, KNOWN_STATUSES, NO_PAIRING,
     pairingKey, pairingFor, assignGroups, shortFandom, sourceLabel,
@@ -1148,6 +1790,11 @@ const ShelfRules = (() => {
     melbourneToday, makePeriod, shiftPeriod, sameLastYear, likeForLike, rangeLabel, inPeriod, periodName, fmtDay, addDays, monthShift, isIso,
     median, authorFirstDates, periodStats, monthKeys, monthlySeries, monthLabel, topTags, authorRanking,
     emptyFilters, filterCount, filterReadings, sortDiary, exportRow, toCSV, buildModel, REQUIRED_COLS,
+    // Phase 2
+    MIN_RANK, MIN_RATE, MIN_LOGGED, LENGTH_BANDS, WEEKDAYS, DNF_REASONS, lengthBand, weekdayOf, weekStart, quarterKey, quarterLabel, quarterKeys,
+    monthName, yearsWithReads, tagTotals, tagBump, tagDrift, completionByBand, dnfReasonOf, dnfReasonsByQuarter, dnfPredictorTags, abandonPoints,
+    goToAuthors, loyaltyByYear, rereadList, weekdayCounts, readingClock, readingDays, streaks, calendarYear, paceByBand, monthTotals,
+    personalBests, persona, availableRecaps, recap, yardstick, volumeFindings, completionMonthFinding, statusFinding, fmtK,
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = ShelfRules;
@@ -1414,6 +2061,10 @@ function GroupToggle({ value, onChange }) {
     <button className=${value === 'pairing' ? 'on' : ''} onClick=${() => onChange('pairing')}>Pairing</button>
   </div>`;
 }
+function downloadDataUrl(name, url) {
+  const a = document.createElement('a'); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
 function download(name, text, type) {
   const blob = new Blob([text], { type });
   const url = URL.createObjectURL(blob);
@@ -1442,6 +2093,7 @@ const ICONS = {
   table: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
   settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   back: 'M15 18l-6-6 6-6',
+  flame: 'M12 22c4 0 7-2.7 7-6.6 0-3.4-2.3-5.6-4-7.4-.4 2-1.4 3.2-2.6 3.8.3-3.3-1.1-6.4-4.4-8.8.2 3.6-3 6.1-3 10.6C5 19.4 8 22 12 22z',
 };
 function Icon({ name, size = 18, fill = false, sw = 2 }) {
   return html`<svg width=${size} height=${size} viewBox="0 0 24 24" fill=${fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth=${sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d=${ICONS[name]} /></svg>`;
@@ -1724,9 +2376,9 @@ function GroupLegend({ groups, suffix }) {
   </div>`)}</div>`;
 }
 
-function TopTags({ readings, dnfNoWords, onTag, limit }) {
+function TopTags({ readings, dnfNoWords, onTag, limit, minFics }) {
   const ctx = useContext(TagCtx);
-  const tags = useMemo(() => R.topTags(readings, ctx.isVisible, limit || 10), [readings, ctx.isVisible, limit]);
+  const tags = useMemo(() => R.topTags(readings, ctx.isVisible, limit || 10, minFics), [readings, ctx.isVisible, limit, minFics]);
   const max = tags.length ? tags[0].words : 1;
   return html`<div className="card">
     <div style=${{ marginBottom: 6 }}><${SexTagToggle} compact /></div>
@@ -1802,7 +2454,8 @@ function RecentlyFinished({ stats, onOpen, today }) {
   </div>`;
 }
 
-function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy }) {
+function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy, openRecap }) {
+  const streak = useMemo(() => R.streaks(model, today), [model, today]);
   const { period, custom, compare } = dash;
   const p = useMemo(() => R.makePeriod(period, today, custom), [period, today, custom.start, custom.end]);
   // Comparison period: previous period or same time last year, trimmed to the same number of days
@@ -1826,7 +2479,7 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
   const set = (patch) => setDash(d => ({ ...d, ...patch }));
   return html`<div>
     <h1 className="headline serif">${headline(cur, prev, p, cp, today, groupBy, model)}</h1>
-    <div className="small faint" style=${{ margin: '0 2px 14px' }}>${p.unit === 'all' ? 'Everything you’ve read, including undated reads.'
+    <div className="small faint" style=${{ margin: '0 2px 14px' }}>${streak.currentWeekly.len ? html`<span className="streak-chip" title=${`Weeks in a row with a reading day${streak.currentWeekly.est ? ' (includes estimated dates)' : ''}`}><${Icon} name="flame" size=${12} fill sw=${0} />${streak.currentWeekly.len}-week streak</span>` : null}${p.unit === 'all' ? 'Everything you’ve read, including undated reads.'
       : `${p.partial ? R.rangeLabel(p.start, today < p.end ? today : p.end, today) + ' so far' : R.rangeLabel(p.start, p.end, today)}${cp ? ` · compared with ${cmpLabel}` : ''}`}</div>
     <${PeriodPicker} period=${period} setPeriod=${v => set({ period: v })} custom=${custom} setCustom=${fn => setDash(d => ({ ...d, custom: fn(d.custom) }))} compare=${compare} setCompare=${v => set({ compare: v })} today=${today} />
 
@@ -1841,6 +2494,8 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
       <${StatTile} label="Median fic length" value=${cur.median === null ? '—' : fmtWords(cur.median)} d=${prev && cur.median !== null && prev.median !== null ? delta(cur.median, prev.median) : null} good=${null} spark=${sp(s => s.median)} cmpLabel=${cmpLabel}
         note="Words, finished fics" />
     </div>
+
+    <${RecapTeaser} model=${model} today=${today} openRecap=${openRecap} />
 
     <${CurrentlyReading} model=${model} onOpen=${onOpen} />
 
@@ -2178,8 +2833,77 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
 // ============================================================================================
 // TRENDS
 // ============================================================================================
-function TrendsScreen({ model, today, themeTick, onAuthor, onTag, groupBy, setGroupBy }) {
-  const [by, setBy] = useState('fics');
+// ============================================================================================
+// TRENDS (Phase 2): tabbed. Every number here comes from ShelfRules; every chart/table has a
+// one-sentence finding above it.
+// ============================================================================================
+const TREND_TABS = [['volume', 'Volume'], ['tastes', 'Tastes'], ['completion', 'Completion'], ['loyalty', 'Loyalty'], ['habits', 'Habits'], ['bests', 'Bests']];
+// Categorical slots in fixed order (reference palette, validated light + dark). Never cycled.
+const CAT = (i) => cssVar(`--cat-${i + 1}`);
+function Finding({ text }) { return text ? html`<p className="finding">${text}</p>` : null; }
+function TSection({ title, right, finding, children }) {
+  return html`<div className="section">
+    <div className="section-head"><h2 className="section-title">${title}</h2>${right || null}</div>
+    <${Finding} text=${finding} />
+    ${children}
+  </div>`;
+}
+function LoggedEmpty({ n, what }) {
+  return html`<div className="card logged-empty">
+    <div className="serif" style=${{ fontSize: 18, fontWeight: 600 }}>This fills in as you log reads in the fandom apps</div>
+    <div className="small muted" style=${{ marginTop: 6 }}>${what} needs reads with a start date${what.includes('clock') ? ' and time' : ''}. Backfilled reads only have a finish date.</div>
+    <div className="tiny faint" style=${{ marginTop: 8 }}>Based on ${n} logged read${n === 1 ? '' : 's'} so far · shows from ${R.MIN_LOGGED}</div>
+  </div>`;
+}
+const LoggedNote = ({ n }) => html`<div className="tiny faint" style=${{ marginTop: 8 }}>Based on ${n} logged read${n === 1 ? '' : 's'}</div>`;
+const EstNote = ({ est, total, what }) => est ? html`<div className="tiny faint" style=${{ marginTop: 8 }}>${est === total ? 'All' : `${est} of ${total}`} ${what || 'dates'} ${est === 1 ? 'is' : 'are'} estimated (backfilled from AO3).</div>` : null;
+function ScopeChips({ model, level, value, onChange }) {
+  const opts = level === 'pairing'
+    ? model.fandomList.flatMap(f => f.pairings.filter(p => p.readings >= R.MIN_RANK).map(p => ({ key: 'p:' + p.key, label: p.name, color: pairingColor(model, p.key) })))
+    : model.fandomList.filter(f => f.pairings.some(p => p.readings)).map(f => ({ key: 'f:' + f.name, label: f.short, color: fandomColor(f.name) }));
+  if (opts.length < 2 && level !== 'pairing') return null;
+  return html`<div className="chips" style=${{ marginTop: 10 }}>
+    <button className=${'chip sm' + (!value ? ' on' : '')} onClick=${() => onChange(null)}>All</button>
+    ${opts.map(o => html`<button key=${o.key} className=${'chip sm' + (value === o.key ? ' on' : '')} onClick=${() => onChange(o.key)}><span className="cdot" style=${{ background: o.color }}></span>${o.label}</button>`)}
+  </div>`;
+}
+const scopeFilter = (scope) => !scope ? () => true : scope.startsWith('f:') ? (r) => r.fandom === scope.slice(2) : (r) => r.pairingKey === scope.slice(2);
+function YearChips({ years, value, onChange }) {
+  return html`<div className="chips">${years.slice().reverse().map(y => html`<button key=${y} className=${'chip sm' + (value === y ? ' on' : '')} onClick=${() => onChange(y)}>${y}</button>`)}</div>`;
+}
+const fmtDayShort = (iso, today) => iso ? R.fmtDay(iso, today) : '—';
+function MiniBar({ value, max, color }) {
+  return html`<div className="hbar-track" style=${{ gridColumn: 'auto', marginTop: 4 }}><div style=${{ width: Math.max(2, (value / (max || 1)) * 100) + '%', background: color || 'var(--accent)', borderRadius: 99 }}></div></div>`;
+}
+function ShowMore({ total, shown, onMore }) {
+  return total > shown ? html`<button className="link-btn" style=${{ marginTop: 10 }} onClick=${onMore}>Show all ${total}</button>` : null;
+}
+
+// ---------- Year in Reading launcher (Trends + Dashboard) ----------
+function RecapLauncher({ model, today, openRecap }) {
+  const av = useMemo(() => R.availableRecaps(model.readings, today), [model, today]);
+  const [month, setMonth] = useState('');
+  if (!av.years.length) return null;
+  return html`<div className="card recap-launch">
+    <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+      <div><div className="serif" style=${{ fontSize: 19, fontWeight: 600 }}>Year in Reading</div><div className="tiny faint">Your recap, story-style</div></div>
+      <span style=${{ fontSize: 26 }} aria-hidden="true">✦</span>
+    </div>
+    <div className="chips" style=${{ marginTop: 10 }}>
+      ${av.years.slice().reverse().map(y => html`<button key=${y} className="chip sm" onClick=${() => openRecap({ type: 'year', year: y })}>${y}${String(y) === today.slice(0, 4) ? ' so far' : ''}</button>`)}
+    </div>
+    ${av.months.length ? html`<div className="row" style=${{ marginTop: 8, flexWrap: 'nowrap' }}>
+      <select className="plain-input" style=${{ flex: 1 }} value=${month} onChange=${e => setMonth(e.target.value)} aria-label="Monthly recap">
+        <option value="">Monthly recap…</option>
+        ${av.months.map(m => html`<option key=${m} value=${m}>${R.monthName(m)}</option>`)}
+      </select>
+      <button className="pill-btn" disabled=${!month} onClick=${() => month && openRecap({ type: 'month', month })}>Open</button>
+    </div>` : null}
+  </div>`;
+}
+
+// ---------- VOLUME ----------
+function VolumeTab({ model, today, themeTick, groupBy, setGroupBy }) {
   const keys = useMemo(() => R.monthKeys((model.firstDate || today).slice(0, 7), today.slice(0, 7)), [model, today]);
   const groups = useMemo(() => {
     const totals = {}, present = new Set();
@@ -2189,76 +2913,519 @@ function TrendsScreen({ model, today, themeTick, onAuthor, onTag, groupBy, setGr
   const s = useMemo(() => R.monthlySeries(model.readings, keys, groups.keys, groups.of), [model, keys, groups]);
   const multiYear = keys[0].slice(0, 4) !== keys[keys.length - 1].slice(0, 4);
   const labels = keys.map(k => R.monthLabel(k, multiYear));
+  const f = useMemo(() => R.volumeFindings(model.readings), [model]);
   const wordsCfg = useMemo(() => {
     const t = chartTheme();
-    const sc = baseScales(t, v => fmtWords(v));
-    sc.y1 = { position: 'right', beginAtZero: true, grid: { display: false }, border: { display: false }, ticks: { color: t.ink3, maxTicksLimit: 4, precision: 0, font: { size: 11 } } };
-    return {
-      type: 'bar',
-      data: { labels, datasets: [
-        ...groups.keys.map((k, i) => ({ label: groups.short(k), data: s.words[k], backgroundColor: groups.color(k), borderRadius: topRadius(s.words, groups.keys, i), borderSkipped: false, stack: 'w', maxBarThickness: 26, order: 2 })),
-        { type: 'line', label: 'Fics finished', data: s.finished, yAxisID: 'y1', borderColor: t.ink, backgroundColor: t.ink, borderWidth: 2, pointRadius: 2.5, cubicInterpolationMode: 'monotone', order: 1 },
-      ] },
+    return { type: 'bar',
+      data: { labels, datasets: groups.keys.map((k, i) => ({ label: groups.short(k), data: s.words[k], backgroundColor: groups.color(k), borderRadius: topRadius(s.words, groups.keys, i), borderSkipped: false, stack: 'w', maxBarThickness: 26 })) },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false }, tooltip: { ...tooltip(t, c => c.dataset.yAxisID === 'y1' ? ` Fics finished: ${c.parsed.y}` : ` ${c.dataset.label}: ${fmtWords(c.parsed.y)}`), filter: c => c.dataset.yAxisID === 'y1' || c.parsed.y > 0 } }, scales: sc },
-    };
+        plugins: { legend: { display: false }, tooltip: { ...tooltip(t, c => ` ${c.dataset.label}: ${fmtWords(c.parsed.y)}`), filter: c => c.parsed.y > 0 } }, scales: baseScales(t, v => fmtWords(v)) } };
   }, [s, groups, themeTick]);
-  const compCfg = useMemo(() => {
-    const t = chartTheme();
-    const sc = baseScales(t, v => Math.round(v * 100) + '%');
-    sc.y.min = 0; sc.y.max = 1; sc.x.stacked = false; sc.y.stacked = false;
-    return {
-      type: 'line',
-      data: { labels, datasets: [{ label: 'Completion', data: s.completion, borderColor: t.accent, backgroundColor: t.accent, pointRadius: 3, borderWidth: 2, cubicInterpolationMode: 'monotone', spanGaps: true }] },
-      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
-        plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${Math.round(c.parsed.y * 100)}% · ${s.finished[c.dataIndex]} finished, ${s.dnfs[c.dataIndex]} DNF`) }, scales: sc },
-    };
+  const ficsCfg = useMemo(() => {
+    const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0;
+    return { type: 'bar', data: { labels, datasets: [{ label: 'Fics finished', data: s.finished, backgroundColor: t.accent, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.parsed.y} finished`) }, scales: sc } };
   }, [s, themeTick]);
-  const top = useMemo(() => model.authors.slice().sort((a, b) => by === 'fics' ? b.fics - a.fics || b.words - a.words : b.words - a.words || b.fics - a.fics).slice(0, 10), [model, by]);
-  const max = top.length ? (by === 'fics' ? top[0].fics : top[0].words) : 1;
   const undated = model.readings.filter(r => !r.date).length;
   return html`<div>
-    <h1 className="headline serif" style=${{ marginTop: 10 }}>Trends</h1>
-    <div className="small faint" style=${{ margin: '0 2px' }}>Every dated read since ${model.firstDate ? R.fmtDay(model.firstDate, today) : '—'}.${undated ? ` ${undated} undated read${undated === 1 ? ' isn’t' : 's aren’t'} shown by month.` : ''}</div>
-    <div className="section">
-      <div className="section-head"><h2 className="section-title">Words and fics per month</h2><${GroupToggle} value=${groupBy} onChange=${setGroupBy} /></div>
-      <div className="card">
-        <${ChartBox} config=${wordsCfg} height=${230} />
-        <${GroupLegend} groups=${groups} />
-        <div className="legend"><span><i style=${{ background: 'var(--ink)', height: 3, borderRadius: 2 }}></i>Fics finished</span></div>
-      </div>
+    <div className="small faint" style=${{ margin: '12px 2px 0' }}>Every dated read since ${model.firstDate ? R.fmtDay(model.firstDate, today) : '—'}.${undated ? ` ${undated} undated read${undated === 1 ? ' isn’t' : 's aren’t'} shown by month.` : ''}</div>
+    <${TSection} title="Words per month" right=${html`<${GroupToggle} value=${groupBy} onChange=${setGroupBy} />`} finding=${f.words}>
+      <div className="card"><${ChartBox} config=${wordsCfg} height=${210} /><${GroupLegend} groups=${groups} /></div>
+    </${TSection}>
+    <${TSection} title="Fics finished per month" finding=${f.fics}>
+      <div className="card"><${ChartBox} config=${ficsCfg} height=${160} /></div>
+    </${TSection}>
+    <${TSection} title="Shelves by status" finding=${R.statusFinding(model)}>
+      <div className="table-wrap wrap-th"><table>
+        <thead><tr><th>Status</th>${model.fandomList.map(fd => html`<th key=${fd.name}>${fd.short}</th>`)}</tr></thead>
+        <tbody>${Object.keys(model.statusCounts).sort((a, b) => model.statusCounts[b] - model.statusCounts[a]).map(st => html`<tr key=${st}>
+          <td>${st}${st !== '(blank)' && !R.KNOWN_STATUSES.includes(st) ? html` <span className="badge est">other</span>` : null}</td>
+          ${model.fandomList.map(fd => html`<td key=${fd.name} className="num">${fmtInt(model.fics.filter(x => x.fandom === fd.name && (x.status || '(blank)') === st).length)}</td>`)}
+        </tr>`)}</tbody>
+      </table></div>
+    </${TSection}>
+  </div>`;
+}
+
+// ---------- TASTES ----------
+function BumpChart({ bump, onTag, themeTick }) {
+  const CAP = 15;
+  const config = useMemo(() => {
+    const t = chartTheme();
+    return { type: 'line',
+      data: { labels: bump.labels, datasets: bump.tags.map((x, i) => {
+        const color = i < 8 ? CAT(i) : t.ink3;
+        return { label: x.tag, data: x.ranks.map(r => r === null ? null : Math.min(r, CAP + 1)), borderColor: color, backgroundColor: color,
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, pointBorderColor: t.surface, pointBorderWidth: 2, borderDash: i < 8 ? [] : [5, 4], spanGaps: false, tension: 0 };
+      }) },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+        interaction: { mode: 'nearest', intersect: false },
+        onClick: (evt, els, chart) => { const el = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: false }, true)[0]; if (el) onTag(bump.tags[el.datasetIndex].tag); },
+        plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` #${bump.tags[c.datasetIndex].ranks[c.dataIndex]} ${c.dataset.label}`) },
+        scales: {
+          x: { grid: { display: false }, border: { display: false }, ticks: { color: t.ink3, font: { size: 11 }, maxRotation: 0, autoSkip: true } },
+          y: { reverse: true, min: 1, max: CAP + 1, grid: { color: t.line }, border: { display: false },
+            ticks: { color: t.ink3, font: { size: 11 }, stepSize: 1, callback: v => (v === CAP + 1 ? `${CAP}+` : [1, 5, 10, 15].includes(v) ? '#' + v : '') } } } } };
+  }, [bump, themeTick]);
+  if (!bump.tags.length) return html`<div className="card empty">No tag has 3 or more reads in the last 8 quarters yet.</div>`;
+  return html`<div className="card">
+    <${ChartBox} config=${config} height=${260} />
+    <div className="bump-legend">${bump.tags.map((x, i) => {
+      const now = x.ranks.filter(r => r !== null).slice(-1)[0];
+      return html`<button key=${x.tag} onClick=${() => onTag(x.tag)}><i style=${{ background: i < 8 ? CAT(i) : 'transparent', borderColor: i < 8 ? 'transparent' : 'var(--ink-3)' }}></i><span>${x.tag}</span><b className="num">${now ? '#' + now : '—'}</b></button>`;
+    })}</div>
+    <div className="tiny faint" style=${{ marginTop: 8 }}>Rank by words read each quarter, among tags with 3+ reads that quarter. Tap a line or a tag to see those reads.</div>
+  </div>`;
+}
+function DriftTable({ rows, kind, year, onTag }) {
+  if (!rows.length) return html`<div className="card empty small">${kind === 'risers' ? 'No tag with 3+ reads grew its share.' : `No tag with 3+ reads in ${year - 1} lost share.`}</div>`;
+  return html`<div className="table-wrap"><table>
+    <thead><tr><th>Tag</th><th>${year - 1}</th><th>${year}</th><th>Change</th></tr></thead>
+    <tbody>${rows.map(r => html`<tr key=${r.tag} className="click" onClick=${() => onTag(r.tag)}>
+      <td className="t" style=${{ fontWeight: 500 }}>${r.tag}</td><td className="num">${Math.round(r.shareThen * 100)}%</td><td className="num">${Math.round(r.shareNow * 100)}%</td>
+      <td className="num" style=${{ color: r.change > 0 ? 'var(--pos)' : 'var(--neg)', fontWeight: 700 }}>${r.change > 0 ? '+' : '−'}${Math.abs(r.change).toFixed(1)} pts</td>
+    </tr>`)}</tbody>
+  </table></div>`;
+}
+function TastesTab({ model, today, themeTick, onTag, groupBy, setGroupBy }) {
+  const ctx = useContext(TagCtx);
+  const [scope, setScope] = useState(null);
+  const years = R.yearsWithReads(model.readings);
+  const [year, setYear] = useState(+today.slice(0, 4));
+  const [newAll, setNewAll] = useState(false);
+  useEffect(() => setScope(null), [groupBy]);
+  const rs = useMemo(() => model.readings.filter(scopeFilter(scope)), [model, scope]);
+  const bump = useMemo(() => R.tagBump(rs, ctx.isVisible, today), [rs, ctx.isVisible, today]);
+  const drift = useMemo(() => R.tagDrift(rs, ctx.isVisible, year), [rs, ctx.isVisible, year]);
+  const top = useMemo(() => R.topTags(rs, ctx.isVisible, 15, R.MIN_RANK), [rs, ctx.isVisible]);
+  const topFinding = top.length ? `${top[0].tag} leads your all-time tags with ${fmtWords(top[0].words)} words across ${top[0].fics} fics.` : 'No tag has 3 or more reads yet.';
+  return html`<div>
+    <div className="row" style=${{ justifyContent: 'space-between', marginTop: 12 }}>
+      <${SexTagToggle} compact />
+      <${GroupToggle} value=${groupBy} onChange=${setGroupBy} />
     </div>
-    <div className="section">
-      <div className="section-head"><h2 className="section-title">Completion rate by month</h2></div>
-      <div className="card"><${ChartBox} config=${compCfg} height=${180} /></div>
-    </div>
-    <div className="section">
-      <div className="section-head"><h2 className="section-title">Top authors</h2>
-        <div className="seg"><button className=${by === 'fics' ? 'on' : ''} onClick=${() => setBy('fics')}>By fics</button><button className=${by === 'words' ? 'on' : ''} onClick=${() => setBy('words')}>By words</button></div>
-      </div>
+    <${ScopeChips} model=${model} level=${groupBy} value=${scope} onChange=${setScope} />
+    <${TSection} title="Tag ranks by quarter" finding=${bump.finding}><${BumpChart} bump=${bump} onTag=${onTag} themeTick=${themeTick} /></${TSection}>
+    <${TSection} title="Risers and fallers" finding=${drift.finding}>
+      ${years.length > 1 ? html`<${YearChips} years=${years} value=${year} onChange=${setYear} />` : null}
+      <div className="tiny faint" style=${{ margin: '6px 2px 8px' }}>Share of words read in ${year}${String(year) === today.slice(0, 4) ? ' so far' : ''} vs the 12 months before (${year - 1}).</div>
+      <div className="flabel" style=${{ marginTop: 6 }}>Top risers</div>
+      <${DriftTable} rows=${drift.risers} kind="risers" year=${year} onTag=${onTag} />
+      <div className="flabel" style=${{ marginTop: 14 }}>Top fallers</div>
+      <${DriftTable} rows=${drift.fallers} kind="fallers" year=${year} onTag=${onTag} />
+    </${TSection}>
+    <${TSection} title=${`New in ${year}`} finding=${drift.newFinding}>
+      ${drift.newTags.length ? html`<div className="card"><div className="wrap-chips">${(newAll ? drift.newTags : drift.newTags.slice(0, 20)).map(t => html`<button key=${t.tag} className="chip sm" onClick=${() => onTag(t.tag)}>${t.tag} <span className="faint">${t.readingsNow}</span></button>`)}</div>
+        ${drift.newTags.length > 20 && !newAll ? html`<${ShowMore} total=${drift.newTags.length} shown=${20} onMore=${() => setNewAll(true)} />` : null}</div>` : null}
+    </${TSection}>
+    <${TSection} title="Top tags by words read" right=${html`<span className="small faint">all time</span>`} finding=${topFinding}>
+      <${TopTags} readings=${rs} dnfNoWords=${rs.filter(r => r.kind === 'DNF' && r.words === null).length} onTag=${onTag} limit=${15} minFics=${R.MIN_RANK} />
+    </${TSection}>
+  </div>`;
+}
+
+// ---------- COMPLETION ----------
+function CompletionTab({ model, today, themeTick, onTag }) {
+  const ctx = useContext(TagCtx);
+  const [allTags, setAllTags] = useState(false);
+  const keys = useMemo(() => R.monthKeys((model.firstDate || today).slice(0, 7), today.slice(0, 7)), [model, today]);
+  const s = useMemo(() => R.monthlySeries(model.readings, keys, [], () => undefined), [model, keys]);
+  const multiYear = keys[0].slice(0, 4) !== keys[keys.length - 1].slice(0, 4);
+  const labels = keys.map(k => R.monthLabel(k, multiYear));
+  // Completion rate only for months with >= MIN_RATE closed reads.
+  const rateData = s.completion.map((c, i) => (s.finished[i] + s.dnfs[i] >= R.MIN_RATE ? c : null));
+  const compCfg = useMemo(() => {
+    const t = chartTheme(); const sc = baseScales(t, v => Math.round(v * 100) + '%');
+    sc.y.min = 0; sc.y.max = 1; sc.x.stacked = false; sc.y.stacked = false;
+    return { type: 'line', data: { labels, datasets: [{ label: 'Completion', data: rateData, borderColor: t.accent, backgroundColor: t.accent, pointRadius: 4, pointBorderColor: t.surface, pointBorderWidth: 2, borderWidth: 2, cubicInterpolationMode: 'monotone', spanGaps: true }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+        plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${Math.round(c.parsed.y * 100)}% · ${s.finished[c.dataIndex]} finished, ${s.dnfs[c.dataIndex]} DNF`) }, scales: sc } };
+  }, [s, themeTick]);
+  const bands = useMemo(() => R.completionByBand(model.readings), [model]);
+  const reasons = useMemo(() => R.dnfReasonsByQuarter(model.readings, today), [model, today]);
+  const pred = useMemo(() => R.dnfPredictorTags(model.readings, ctx.isVisible), [model, ctx.isVisible]);
+  const ab = useMemo(() => R.abandonPoints(model.readings), [model]);
+  const reasonsCfg = useMemo(() => {
+    const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0;
+    const colorOf = (x, i) => (x === 'No reason' ? t.ink3 : CAT(i));
+    return { type: 'bar', data: { labels: reasons.labels, datasets: reasons.reasons.map((x, i) => ({ label: x, data: reasons.counts[x], backgroundColor: colorOf(x, i), borderColor: t.surface, borderWidth: { top: 2 }, borderRadius: 3, borderSkipped: false, stack: 'r', maxBarThickness: 28 })) },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, tooltip: { ...tooltip(t, c => ` ${c.dataset.label}: ${c.parsed.y}`), filter: c => c.parsed.y > 0 } }, scales: sc } };
+  }, [reasons, themeTick]);
+  const abCfg = useMemo(() => {
+    const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0; sc.x.stacked = false; sc.y.stacked = false;
+    return { type: 'bar', data: { labels: ab.labels, datasets: [{ label: 'DNFs', data: ab.buckets, backgroundColor: t.dnf, borderRadius: 4, borderSkipped: false }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.parsed.y} DNF${c.parsed.y === 1 ? '' : 's'}`) }, scales: sc } };
+  }, [ab, themeTick]);
+  const bandMax = 1;
+  return html`<div>
+    <${TSection} title="Completion rate by month" finding=${R.completionMonthFinding(s)}>
+      <div className="card"><${ChartBox} config=${compCfg} height=${180} /><div className="tiny faint" style=${{ marginTop: 8 }}>Months with fewer than ${R.MIN_RATE} closed reads are left out.</div></div>
+    </${TSection}>
+    <${TSection} title="Completion by length" finding=${bands.finding}>
+      <div className="card">${bands.rows.map(b => html`<div key=${b.key} className="band-row">
+        <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+          <b style=${{ fontWeight: 600 }}>${b.label}</b>
+          <span className="small muted num">${!b.shown ? `${b.readings} read${b.readings === 1 ? '' : 's'} · not enough to show` : b.rate === null ? `${b.readings} reads · rate from ${R.MIN_RATE}` : `${Math.round(b.rate * 100)}% · ${b.finished} of ${b.readings}`}</span>
+        </div>
+        ${b.rate !== null ? html`<${MiniBar} value=${b.rate} max=${bandMax} />` : null}
+      </div>`)}</div>
+    </${TSection}>
+    <${TSection} title="DNF reasons by quarter" finding=${reasons.finding}>
+      <div className="card">${reasons.inWindow ? html`<${ChartBox} config=${reasonsCfg} height=${190} />
+        <div className="legend">${reasons.reasons.map((x, i) => html`<span key=${x}><i style=${{ background: x === 'No reason' ? 'var(--ink-3)' : CAT(i) }}></i>${x}</span>`)}</div>` : html`<div className="empty">No dated DNFs in the last 8 quarters.</div>`}</div>
+    </${TSection}>
+    <${TSection} title="Tags that predict a DNF" finding=${pred.finding}>
+      ${pred.rows.length ? html`<div className="table-wrap"><table>
+        <thead><tr><th>Tag</th><th>Reads</th><th>DNF rate</th><th>Overall</th></tr></thead>
+        <tbody>${(allTags ? pred.rows : pred.rows.slice(0, 10)).map(r => html`<tr key=${r.tag} className="click" onClick=${() => onTag(r.tag)}>
+          <td className="t" style=${{ fontWeight: 500 }}>${r.tag}</td><td className="num">${r.readings}</td><td className="num" style=${{ fontWeight: 700 }}>${Math.round(r.rate * 100)}%</td><td className="num faint">${Math.round(pred.overall * 100)}%</td>
+        </tr>`)}</tbody></table></div>
+        ${!allTags ? html`<${ShowMore} total=${pred.rows.length} shown=${10} onMore=${() => setAllTags(true)} />` : null}
+        <div className="tiny faint" style=${{ marginTop: 6 }}>Tags with ${R.MIN_RATE}+ reads and a DNF rate at least 15 points above your overall rate.</div>` : null}
+    </${TSection}>
+    <${TSection} title="Abandon point" finding=${ab.finding}>
+      <div className="card">${ab.covered ? html`<${ChartBox} config=${abCfg} height=${170} />` : html`<div className="small muted">Fill in Chapters Read when you DNF a fic in the fandom apps to see where you tend to stop.</div>`}
+        <div className="tiny faint" style=${{ marginTop: 8 }}>Covers ${ab.covered} of ${ab.total} DNFs (those with Chapters Read).</div></div>
+    </${TSection}>
+  </div>`;
+}
+
+// ---------- LOYALTY ----------
+function LoyaltyTab({ model, today, onAuthor, onOpen }) {
+  const [by, setBy] = useState('fics');
+  const [allGo, setAllGo] = useState(false);
+  const go = useMemo(() => R.goToAuthors(model.readings), [model]);
+  const ly = useMemo(() => R.loyaltyByYear(model.readings), [model]);
+  const rr = useMemo(() => R.rereadList(model), [model]);
+  const top = useMemo(() => model.authors.filter(a => a.readings >= R.MIN_RANK).slice().sort((a, b) => by === 'fics' ? b.fics - a.fics || b.words - a.words : b.words - a.words || b.fics - a.fics).slice(0, 10), [model, by]);
+  const max = top.length ? (by === 'fics' ? top[0].fics : top[0].words) : 1;
+  const topFinding = top.length ? (by === 'fics' ? `${top[0].author} is your most-read author, with ${top[0].fics} fics.` : `${top[0].author} has given you the most words: ${fmtWords(top[0].words)}.`) : 'No author has 3 or more reads yet.';
+  return html`<div>
+    <${TSection} title="Go-to authors" finding=${go.finding}>
+      ${go.rows.length ? html`<div className="table-wrap"><table>
+        <thead><tr><th>Author</th><th>Fics</th><th>Words</th><th>First</th><th>Latest</th><th>Avg ★</th></tr></thead>
+        <tbody>${(allGo ? go.rows : go.rows.slice(0, 15)).map(a => html`<tr key=${a.author} className="click" onClick=${() => onAuthor(a.author)}>
+          <td className="t" style=${{ minWidth: 130 }}>${a.author}</td><td className="num">${a.fics}</td><td className="num">${fmtWords(a.words)}</td>
+          <td className="num">${fmtDayShort(a.first, today)}</td><td className="num">${fmtDayShort(a.latest, today)}</td>
+          <td className="num">${a.avgEnjoyment === null ? '—' : a.avgEnjoyment.toFixed(1)}${a.rated && a.rated < a.fics ? html`<span className="tiny faint"> (${a.rated})</span>` : null}</td>
+        </tr>`)}</tbody></table></div>${!allGo ? html`<${ShowMore} total=${go.rows.length} shown=${15} onMore=${() => setAllGo(true)} />` : null}
+        <div className="tiny faint" style=${{ marginTop: 6 }}>Avg ★ is Enjoyment over the rated fics (count in brackets when not all are rated).</div>` : null}
+    </${TSection}>
+    <${TSection} title="Return rate and top-5 share" finding=${ly.finding}>
+      <div className="card">${ly.years.map(y => html`<div key=${y.year} className="band-row">
+        <div className="row" style=${{ justifyContent: 'space-between' }}><b style=${{ fontWeight: 600 }}>${y.year}</b><span className="tiny faint">${y.authors} authors · ${y.readings} reads</span></div>
+        ${y.returnRate === null ? html`<div className="small faint">Fewer than ${R.MIN_RATE} authors that year.</div>` : html`
+          <div className="row small" style=${{ justifyContent: 'space-between', marginTop: 4 }}><span className="muted">Went back to</span><span className="num">${Math.round(y.returnRate * 100)}% of authors</span></div><${MiniBar} value=${y.returnRate} max=${1} />
+          <div className="row small" style=${{ justifyContent: 'space-between', marginTop: 6 }}><span className="muted">Top 5 authors’ share of words</span><span className="num">${Math.round(y.top5Share * 100)}%</span></div><${MiniBar} value=${y.top5Share} max=${1} color="var(--cat-2)" />`}
+      </div>`)}
+      <div className="tiny faint" style=${{ marginTop: 8 }}>Return rate: authors with 2+ different fics read that year.</div></div>
+    </${TSection}>
+    <${TSection} title="Re-reads" finding=${rr.finding}>
+      ${rr.rows.length ? html`<div className="card" style=${{ padding: '6px 16px' }}>${rr.rows.slice(0, 15).map(x => html`<button key=${x.fic.key} className="set-row" onClick=${() => onOpen(x.fic.key)}>
+        <span style=${{ minWidth: 0 }}><b style=${{ fontWeight: 600 }}>${x.fic.title}</b><div className="tiny faint">${x.fic.authors.join(', ')}${x.latest ? ' · latest ' + R.fmtDay(x.latest, today) : ''}</div></span>
+        <span className="badge plain">${x.times}×</span></button>`)}</div>` : html`<div className="card small muted">Re-reads show here once a fic has Times Read above 1, or a re-read is logged in the fandom apps.</div>`}
+    </${TSection}>
+    <${TSection} title="Top authors" right=${html`<div className="seg"><button className=${by === 'fics' ? 'on' : ''} onClick=${() => setBy('fics')}>By fics</button><button className=${by === 'words' ? 'on' : ''} onClick=${() => setBy('words')}>By words</button></div>`} finding=${topFinding}>
       <div className="card">
         ${top.length ? top.map((a, i) => html`<div className="hbar-row" key=${a.author} onClick=${() => onAuthor(a.author)} style=${{ cursor: 'pointer' }}>
           <span className="hbar-label"><span className="faint num" style=${{ display: 'inline-block', width: 22 }}>${i + 1}</span>${a.author}</span>
           <span className="hbar-val num">${by === 'fics' ? `${a.fics} fic${a.fics === 1 ? '' : 's'} · ${fmtWords(a.words)}` : `${fmtWords(a.words)} · ${a.fics} fic${a.fics === 1 ? '' : 's'}`}</span>
           <div className="hbar-track"><div style=${{ width: Math.max(2, (by === 'fics' ? a.fics : a.words) / max * 100) + '%', background: 'var(--accent)', borderRadius: 99 }}></div></div>
-        </div>`) : html`<div className="empty">No authors yet.</div>`}
+        </div>`) : html`<div className="empty">No author has 3 or more reads yet.</div>`}
+      </div>
+    </${TSection}>
+  </div>`;
+}
+
+// ---------- HABITS ----------
+const heat = (level) => level <= 0 ? 'var(--surface-2)' : `color-mix(in srgb, var(--accent) ${[0, 28, 50, 74, 100][level]}%, var(--surface-2))`;
+function StreakTile({ label, s, unit, today }) {
+  return html`<div className="tile">
+    <div className="tile-label">${label}</div>
+    <div className="tile-value serif num">${s.len}<span className="small muted" style=${{ fontFamily: 'DM Sans', fontWeight: 500 }}> ${unit}${s.len === 1 ? '' : 's'}</span></div>
+    <div className="tile-note">${s.len ? `${R.fmtDay(s.start, today)} – ${R.fmtDay(s.end, today)}` : 'None yet'}</div>
+    <div>${s.est ? html`<${EstBadge} />` : null}</div>
+  </div>`;
+}
+function CalendarHeat({ cal, year, today }) {
+  const ref = useRef(null);
+  const start = R.weekStart(`${year}-01-01`);
+  const weeks = [];
+  for (let w = start; w <= `${year}-12-31`; w = R.addDays(w, 7)) weeks.push(w);
+  const levels = (words) => { if (!words) return 0; const q = words / (cal.max || 1); return q > 0.75 ? 4 : q > 0.45 ? 3 : q > 0.2 ? 2 : 1; };
+  useEffect(() => { if (ref.current) ref.current.scrollLeft = ref.current.scrollWidth; }, [year]);
+  return html`<div className="card">
+    <div className="cal-scroll" ref=${ref}>
+      <div className="cal-grid" style=${{ gridTemplateColumns: `repeat(${weeks.length}, 11px)` }}>
+        ${weeks.map(w => html`<div key=${w} className="cal-col">
+          ${[0, 1, 2, 3, 4, 5, 6].map(i => { const d = R.addDays(w, i); const inYear = d.startsWith(year + '-') && d <= today; const e = cal.days.get(d);
+            return html`<i key=${d} title=${inYear ? `${R.fmtDay(d)}: ${e ? `${fmtWords(e.words)} words, ${e.fics} fic${e.fics === 1 ? '' : 's'}${e.est ? ' (est.)' : ''}` : 'nothing finished'}` : ''} style=${{ background: inYear ? heat(levels(e && e.words)) : 'transparent' }}></i>`; })}
+        </div>`)}
       </div>
     </div>
-    <div className="section">
-      <div className="section-head"><h2 className="section-title">Top tags by words read</h2><span className="small faint">all time</span></div>
-      <${TopTags} readings=${model.readings} dnfNoWords=${model.readings.filter(r => r.kind === 'DNF' && r.words === null).length} onTag=${onTag} limit=${15} />
+    <div className="row tiny faint" style=${{ justifyContent: 'flex-end', gap: 4, marginTop: 8 }}>Less ${[0, 1, 2, 3, 4].map(l => html`<i key=${l} className="cal-key" style=${{ background: heat(l) }}></i>`)} More</div>
+  </div>`;
+}
+function HabitsTab({ model, today, themeTick }) {
+  const st = useMemo(() => R.streaks(model, today), [model, today]);
+  const wd = useMemo(() => R.weekdayCounts(model.readings), [model]);
+  const clock = useMemo(() => R.readingClock(model), [model]);
+  const pace = useMemo(() => R.paceByBand(model.readings), [model]);
+  const years = R.yearsWithReads(model.readings);
+  const [year, setYear] = useState(+today.slice(0, 4));
+  const cal = useMemo(() => R.calendarYear(model.readings, year), [model, year]);
+  const wdCfg = useMemo(() => {
+    const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0; sc.x.stacked = false; sc.y.stacked = false;
+    return { type: 'bar', data: { labels: wd.labels, datasets: [{ label: 'Finished', data: wd.counts, backgroundColor: t.accent, borderRadius: 4, borderSkipped: false, maxBarThickness: 34 }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.parsed.y} finished`) }, scales: sc } };
+  }, [wd, themeTick]);
+  const clockMax = Math.max(1, ...clock.grid.flat());
+  return html`<div>
+    <${TSection} title="Streaks" finding=${st.finding}>
+      <div className="tiles">
+        <${StreakTile} label="Current weekly streak" s=${st.currentWeekly} unit="week" today=${today} />
+        <${StreakTile} label="Longest weekly streak" s=${st.longestWeekly} unit="week" today=${today} />
+        <${StreakTile} label="Current daily streak" s=${st.currentDaily} unit="day" today=${today} />
+        <${StreakTile} label="Longest daily streak" s=${st.longestDaily} unit="day" today=${today} />
+      </div>
+      <div className="tiny faint" style=${{ marginTop: 8 }}>A reading day is any day with a Reading Log event or a finish/DNF date. Weeks run Monday to Sunday.</div>
+    </${TSection}>
+    <${TSection} title="Finished by weekday" finding=${wd.finding}>
+      <div className="card"><${ChartBox} config=${wdCfg} height=${170} /><${EstNote} est=${wd.est} total=${wd.total} what="finish dates" /></div>
+    </${TSection}>
+    <${TSection} title="Reading clock" finding=${clock.finding}>
+      ${clock.enough ? html`<div className="card"><div className="clock-grid">
+          <span></span>${Array.from({ length: 24 }, (_, h) => html`<span key=${'h' + h} className="tiny faint" style=${{ textAlign: 'center' }}>${h % 6 === 0 ? h : ''}</span>`)}
+          ${clock.grid.map((row, d) => html`<${React.Fragment} key=${d}><span className="tiny faint">${R.WEEKDAYS[d].slice(0, 3)}</span>${row.map((c, h) => html`<i key=${h} title=${`${R.WEEKDAYS[d]} ${h}:00 — ${c} event${c === 1 ? '' : 's'}`} style=${{ background: heat(c ? Math.max(1, Math.ceil(c / clockMax * 4)) : 0) }}></i>`)}</${React.Fragment}>`)}
+        </div><${LoggedNote} n=${clock.loggedReads} /></div>` : html`<${LoggedEmpty} n=${clock.loggedReads} what="The reading clock" />`}
+    </${TSection}>
+    <${TSection} title=${`Calendar ${year}`} finding=${cal.finding}>
+      ${years.length > 1 ? html`<div style=${{ marginBottom: 8 }}><${YearChips} years=${years} value=${year} onChange=${setYear} /></div>` : null}
+      <${CalendarHeat} cal=${cal} year=${year} today=${today} />
+    </${TSection}>
+    <${TSection} title="Pace" finding=${pace.finding}>
+      ${pace.enough ? html`<div className="card">${pace.rows.map(b => html`<div key=${b.key} className="row" style=${{ justifyContent: 'space-between', padding: '7px 0', borderTop: '1px solid var(--line)' }}>
+          <b style=${{ fontWeight: 600 }}>${b.label}</b><span className="small muted num">${b.median === null ? `${b.n} read${b.n === 1 ? '' : 's'} · not enough` : `${b.median} day${b.median === 1 ? '' : 's'} median · ${b.n} reads`}</span></div>`)}
+        <${LoggedNote} n=${pace.loggedReads} /></div>` : html`<${LoggedEmpty} n=${pace.loggedReads} what="Pace" />`}
+    </${TSection}>
+  </div>`;
+}
+
+// ---------- BESTS ----------
+function BestsTab({ model, today, onOpen, onRange, onAuthor }) {
+  const bests = useMemo(() => R.personalBests(model, today), [model, today]);
+  const tap = (b) => { const t = b.target; if (!t) return; if (t.type === 'fic') onOpen(t.key); else if (t.type === 'range') onRange(t.start, t.end); else if (t.type === 'author') onAuthor(t.author); };
+  const estN = bests.filter(b => b.est).length;
+  return html`<div>
+    <${Finding} text=${bests.length ? `${bests.length} personal bests so far${estN ? `; ${estN} rest on estimated dates` : ''}.` : 'Personal bests appear once you have dated reads.'} />
+    <div className="bests">${bests.map(b => b.key === 'fastest' && !b.enough
+      ? html`<div key=${b.key} className="best-card"><div className="tile-label">${b.title}</div><div className="small muted" style=${{ marginTop: 6 }}>This fills in as you log reads in the fandom apps.</div><div className="tiny faint" style=${{ marginTop: 6 }}>Based on ${b.logged} logged read${b.logged === 1 ? '' : 's'} so far · shows from ${R.MIN_LOGGED}</div></div>`
+      : html`<button key=${b.key} className="best-card" onClick=${() => tap(b)}>
+        <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><span className="tile-label">${b.title}</span>${b.est ? html`<${EstBadge} />` : null}</div>
+        <div className="serif best-value">${b.value}</div>
+        <div className="small muted best-sub">${b.sub}</div>
+        ${b.list ? html`<div className="tiny faint" style=${{ marginTop: 4 }}>${b.list.length > 3 ? `+${b.list.length - 3} more · ` : ''}tap for the latest</div>` : null}
+        ${b.logged ? html`<div className="tiny faint" style=${{ marginTop: 4 }}>Based on ${b.logged} logged reads</div>` : null}
+      </button>`)}</div>
+  </div>`;
+}
+
+function TrendsScreen({ model, today, themeTick, onAuthor, onTag, onOpen, onRange, groupBy, setGroupBy, tab, setTab, openRecap }) {
+  const barRef = useRef(null);
+  useEffect(() => { const el = barRef.current && barRef.current.querySelector('.on'); if (el && el.scrollIntoView) el.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [tab]);
+  const props = { model, today, themeTick, onAuthor, onTag, onOpen, onRange, groupBy, setGroupBy };
+  return html`<div>
+    <h1 className="headline serif" style=${{ marginTop: 10 }}>Trends</h1>
+    <${RecapLauncher} model=${model} today=${today} openRecap=${openRecap} />
+    <div className="trend-tabs" role="tablist" ref=${barRef}>
+      ${TREND_TABS.map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${tab === k} className=${tab === k ? 'on' : ''} onClick=${() => setTab(k)}>${l}</button>`)}
     </div>
-    <div className="section">
-      <div className="section-head"><h2 className="section-title">Shelves by status</h2></div>
-      <div className="table-wrap wrap-th"><table>
-        <thead><tr><th>Status</th>${model.fandomList.map(f => html`<th key=${f.name}>${f.short}</th>`)}</tr></thead>
-        <tbody>${Object.keys(model.statusCounts).sort((a, b) => model.statusCounts[b] - model.statusCounts[a]).map(st => html`<tr key=${st}>
-          <td>${st}${st !== '(blank)' && !R.KNOWN_STATUSES.includes(st) ? html` <span className="badge est">other</span>` : null}</td>
-          ${model.fandomList.map(f => html`<td key=${f.name} className="num">${fmtInt(model.fics.filter(x => x.fandom === f.name && (x.status || '(blank)') === st).length)}</td>`)}
-        </tr>`)}</tbody>
-      </table></div>
+    ${tab === 'volume' ? html`<${VolumeTab} ...${props} />` : null}
+    ${tab === 'tastes' ? html`<${TastesTab} ...${props} />` : null}
+    ${tab === 'completion' ? html`<${CompletionTab} ...${props} />` : null}
+    ${tab === 'loyalty' ? html`<${LoyaltyTab} ...${props} />` : null}
+    ${tab === 'habits' ? html`<${HabitsTab} ...${props} />` : null}
+    ${tab === 'bests' ? html`<${BestsTab} ...${props} />` : null}
+  </div>`;
+}
+
+// ============================================================================================
+// YEAR IN READING: a full-screen, story-style recap. Cards come from R.recap(); redaction only
+// changes what's displayed/saved. Each card is designed at 360×640 and saved at 3× = 1080×1920.
+// ============================================================================================
+const RC_BG = { violet: '#5B45E0', ink: '#1C1A27', rust: '#B9402B', green: '#1C7F52', blue: '#2C79BE', plum: '#7A3E8F' };
+function cardColor(card, rc, model) {
+  const lightAccent = (name) => { const src = SOURCES.find(s => s.fandom === name); return src ? sourceAccent(src, false) : RC_BG.violet; };
+  const top = rc.cards.find(c => c.type === 'fandom');
+  const topColor = top ? lightAccent(top.fandom) : RC_BG.violet;
+  switch (card.type) {
+    case 'words': return topColor;
+    case 'counts': return RC_BG.ink;
+    case 'fandom': return topColor;
+    case 'tags': return RC_BG.violet;
+    case 'longest': return lightAccent(card.fic.fandom);
+    case 'author': return RC_BG.plum;
+    case 'month': return RC_BG.blue;
+    case 'weekday': return RC_BG.green;
+    case 'completion': return RC_BG.ink;
+    case 'riser': return RC_BG.rust;
+    case 'rated': return RC_BG.violet;
+    case 'persona': return topColor;
+    case 'ago': return RC_BG.plum;
+    default: return RC_BG.ink;
+  }
+}
+function RecapCard({ card, rc, redact, model, ctx, total, index }) {
+  const titleOf = (fic) => (redact.hideE && fic.rating === 'E' ? 'An E-rated fic' : fic.title);
+  const authorOf = (a) => (redact.hideAuthors ? 'An author you love' : a);
+  const authorsOf = (fic) => (redact.hideAuthors ? '' : fic.authors.join(', '));
+  const tagHidden = (t) => redact.hideSex && ctx.hidden.has(t);
+  const big = (txt, size) => html`<div className="rc-big serif" style=${{ fontSize: size || 92 }}>${txt}</div>`;
+  let body;
+  switch (card.type) {
+    case 'words': body = html`<div className="rc-kicker">You read</div>${big(fmtWords(card.words), 104)}<div className="rc-unit">words</div>
+      <div className="rc-line">That’s ${card.yardstick}.</div>`; break;
+    case 'counts': body = html`<div className="rc-kicker">You finished</div>${big(card.finished)}<div className="rc-unit">fic${card.finished === 1 ? '' : 's'}</div>
+      <div className="rc-split"><div><b className="serif">${card.dnfs}</b><span>DNF${card.dnfs === 1 ? '' : 's'}</span></div><div><b className="serif">${card.finished + card.dnfs}</b><span>started</span></div></div>`; break;
+    case 'fandom': body = html`<div className="rc-kicker">Your top fandom</div><div className="rc-title serif">${card.fandom}</div><div className="rc-line">${Math.round(card.fandomShare * 100)}% of your words</div>
+      <div className="rc-rule"></div><div className="rc-kicker">Your top pairing</div><div className="rc-title serif" style=${{ fontSize: 30 }}>${card.pairing}</div><div className="rc-line">${Math.round(card.pairingShare * 100)}% of your words</div>`; break;
+    case 'tags': { const tags = card.tags.filter(t => !tagHidden(t.tag));
+      body = html`<div className="rc-kicker">Your top tags</div>${tags.length ? html`<ol className="rc-list">${tags.map(t => html`<li key=${t.tag}><span>${t.tag}</span><em>${fmtWords(t.words)}</em></li>`)}</ol>` : html`<div className="rc-line">Kept private.</div>`}
+        ${tags.length < card.tags.length ? html`<div className="rc-small">${card.tags.length - tags.length} sex-related tag${card.tags.length - tags.length === 1 ? '' : 's'} hidden</div>` : null}`; break; }
+    case 'longest': body = html`<div className="rc-kicker">Your longest fic</div><div className="rc-title serif">${titleOf(card.fic)}</div>${authorsOf(card.fic) ? html`<div className="rc-line">by ${authorsOf(card.fic)}</div>` : null}
+      ${big(fmtWords(card.fic.words), 72)}<div className="rc-unit">words</div>`; break;
+    case 'author': body = html`<div className="rc-kicker">Your most-read author</div><div className="rc-title serif">${authorOf(card.author)}</div>
+      <div className="rc-split"><div><b className="serif">${card.fics}</b><span>fics</span></div><div><b className="serif">${fmtWords(card.words)}</b><span>words</span></div></div>`; break;
+    case 'month': body = html`<div className="rc-kicker">Your biggest month</div><div className="rc-title serif" style=${{ fontSize: 50 }}>${R.MONTHS[+card.month.slice(5) - 1]}</div>
+      <div className="rc-split"><div><b className="serif">${fmtWords(card.words)}</b><span>words</span></div><div><b className="serif">${card.finished}</b><span>finished</span></div></div>`; break;
+    case 'weekday': { const max = Math.max(...card.counts);
+      body = html`<div className="rc-kicker">You finish the most on</div><div className="rc-title serif" style=${{ fontSize: 50 }}>${card.day}s</div><div className="rc-line">${card.count} of ${card.total} finished fics</div>
+        <div className="rc-bars">${card.counts.map((c, i) => html`<div key=${i}><i style=${{ height: Math.max(4, c / max * 90) + 'px', opacity: c === max ? 1 : 0.45 }}></i><span>${R.WEEKDAYS[i][0]}</span></div>`)}</div>`; break; }
+    case 'completion': body = html`<div className="rc-kicker">Completion rate</div>${big(Math.round(card.rate * 100) + '%')}<div className="rc-line">You finished ${card.finished} of the ${card.closed} fics you started.</div>`; break;
+    case 'riser': body = html`<div className="rc-kicker">A new obsession</div><div className="rc-title serif">${tagHidden(card.tag) ? 'A tag kept private' : card.tag}</div>
+      <div className="rc-split"><div><b className="serif">${Math.round(card.then * 100)}%</b><span>of your words before</span></div><div><b className="serif">${Math.round(card.now * 100)}%</b><span>now</span></div></div>`; break;
+    case 'rated': body = html`<div className="rc-kicker">Your highest-rated</div><div className="rc-stars">${'★'.repeat(card.score)}</div>
+      <ol className="rc-list plain">${card.fics.map(f => html`<li key=${f.key}><span>${titleOf(f.fic)}</span>${authorsOf(f.fic) ? html`<em>${authorsOf(f.fic)}</em>` : null}</li>`)}</ol>`; break;
+    case 'persona': body = html`<div className="rc-kicker">Your reading persona</div><div className="rc-title serif" style=${{ fontSize: 46 }}>${card.name}</div><div className="rc-line">Because ${card.rule}.</div>`; break;
+    case 'ago': body = html`<div className="rc-kicker">One year ago you were reading…</div><div className="rc-small" style=${{ marginBottom: 10 }}>${R.monthName(card.month)}</div>
+      <ol className="rc-list plain">${card.fics.map(f => html`<li key=${f.key}><span>${titleOf(f.fic)}</span><em>${f.kind === 'DNF' ? 'DNF' : fmtWords(f.fic.words) + ' words'}</em></li>`)}</ol>`; break;
+    case 'summary': body = html`<div className="rc-kicker">${rc.label}</div><div className="rc-title serif" style=${{ fontSize: 40 }}>That’s a wrap</div>
+      <div className="rc-grid"><div><b className="serif">${fmtWords(card.words)}</b><span>words</span></div><div><b className="serif">${card.finished}</b><span>finished</span></div>
+        <div><b className="serif">${card.dnfs}</b><span>DNFs</span></div><div><b className="serif" style=${{ fontSize: 20 }}>${card.persona || '—'}</b><span>persona</span></div></div>
+      ${card.fandom ? html`<div className="rc-line">Mostly ${R.shortFandom(card.fandom)}.</div>` : null}`; break;
+    default: body = null;
+  }
+  return html`<div className="rc-card" style=${{ background: cardColor(card, rc, model) }}>
+    <div className="rc-top"><span>Shelf Life</span><span>${rc.label}</span></div>
+    <div className="rc-body">${body}</div>
+    <div className="rc-foot"><span>${rc.est ? 'est. dates included' : ''}</span><span>${index + 1} / ${total}</span></div>
+  </div>`;
+}
+async function cardToPng(node) {
+  const opts = { width: 360, height: 640, pixelRatio: 3, cacheBust: true };
+  try { return await htmlToImage.toPng(node, opts); }
+  catch (e) { return await htmlToImage.toPng(node, { ...opts, skipFonts: true }); }
+}
+const dataUrlToFile = async (url, name) => new File([await (await fetch(url)).blob()], name, { type: 'image/png' });
+function RecapStory({ model, scope, today, onClose }) {
+  const ctx = useContext(TagCtx);
+  const rc = useMemo(() => R.recap(model, scope, today, ctx.isVisible), [model, scope, today, ctx.isVisible]);
+  const cards = rc.cards;
+  const [i, setI] = useState(0);
+  const [panel, setPanel] = useState(false);
+  const [redact, setRedact] = useState({ hideE: false, hideSex: !ctx.include, hideAuthors: false });
+  const [busy, setBusy] = useState('');
+  const [stageAll, setStageAll] = useState(false);
+  const stageRef = useRef(null);
+  const down = useRef(null);
+  const viewRef = useRef(null);
+  const [fit, setFit] = useState({ w: 360, h: 640, k: 1 });
+  useEffect(() => {
+    const el = viewRef.current; if (!el) return;
+    const measure = () => { const w = el.clientWidth, h = el.clientHeight; const fw = Math.min(w, h * 9 / 16); setFit({ w: fw, h: fw * 16 / 9, k: fw / 360 }); };
+    measure();
+    const ro = window.ResizeObserver ? new ResizeObserver(measure) : null;
+    if (ro) ro.observe(el); else window.addEventListener('resize', measure);
+    return () => { if (ro) ro.disconnect(); else window.removeEventListener('resize', measure); };
+  }, []);
+  const next = useCallback(() => setI(x => Math.min(cards.length - 1, x + 1)), [cards.length]);
+  const prev = useCallback(() => setI(x => Math.max(0, x - 1)), []);
+  useEffect(() => {
+    const onKey = (e) => { if (panel) return; if (e.key === 'ArrowRight' || e.key === ' ') next(); else if (e.key === 'ArrowLeft') prev(); else if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey); document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+  }, [next, prev, panel]);
+  const onDown = (e) => { down.current = { x: e.clientX, y: e.clientY }; };
+  const onUp = (e) => {
+    const d = down.current; down.current = null; if (!d) return;
+    const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); return; }
+    const box = e.currentTarget.getBoundingClientRect();
+    (e.clientX - box.left) < box.width * 0.3 ? prev() : next();
+  };
+  const fileName = (c) => `shelf-life-${rc.label.replace(/\s+/g, '-').toLowerCase()}-${String(c.n).padStart(2, '0')}-${c.type}.png`;
+  const saveOne = async () => {
+    setBusy('Saving…');
+    try { await new Promise(r => setTimeout(r, 60)); const node = stageRef.current.querySelector(`[data-card="${i}"] .rc-card`); downloadDataUrl(fileName(cards[i]), await cardToPng(node)); setBusy('Saved.'); }
+    catch (e) { setBusy('Couldn’t save the image: ' + (e && e.message || e)); }
+  };
+  const saveAll = async () => {
+    setBusy('Preparing ' + cards.length + ' images…'); setStageAll(true);
+    try {
+      await new Promise(r => setTimeout(r, 150));
+      const urls = [];
+      for (let k = 0; k < cards.length; k++) { setBusy(`Saving ${k + 1} of ${cards.length}…`); urls.push(await cardToPng(stageRef.current.querySelector(`[data-card="${k}"] .rc-card`))); }
+      const files = await Promise.all(urls.map((u, k) => dataUrlToFile(u, fileName(cards[k]))));
+      if (navigator.canShare && navigator.canShare({ files })) { try { await navigator.share({ files, title: `Shelf Life · ${rc.label}` }); setBusy('Shared.'); return; } catch (e) { if (e && e.name === 'AbortError') { setBusy(''); return; } } }
+      for (let k = 0; k < urls.length; k++) { downloadDataUrl(fileName(cards[k]), urls[k]); await new Promise(r => setTimeout(r, 350)); }
+      setBusy(`Saved ${urls.length} images.`);
+    } catch (e) { setBusy('Couldn’t save the images: ' + (e && e.message || e)); }
+    finally { setStageAll(false); }
+  };
+  if (!cards.length) return html`<div className="rc-overlay"><div className="rc-empty"><p>Not enough dated reads for this recap yet.</p><button className="pill-btn" onClick=${onClose}>Close</button></div></div>`;
+  const card = cards[i];
+  return html`<div className="rc-overlay" role="dialog" aria-modal="true" aria-label=${`Year in Reading: ${rc.label}`}>
+    <div className="rc-progress">${cards.map((_, k) => html`<i key=${k} className=${k < i ? 'done' : k === i ? 'on' : ''}></i>`)}</div>
+    <div className="rc-bar">
+      <span className="rc-label">${rc.label}</span>
+      <button className="rc-btn" onClick=${() => { setPanel(true); setBusy(''); }} aria-label="Save images">Save</button>
+      <button className="rc-btn" onClick=${onClose} aria-label="Close recap"><${Icon} name="close" size=${18} /></button>
+    </div>
+    <div className="rc-stage" ref=${viewRef} onPointerDown=${onDown} onPointerUp=${onUp}>
+      <div className="rc-fit" style=${{ width: fit.w, height: fit.h }}><div className="rc-scale" style=${{ transform: `scale(${fit.k})` }}><${RecapCard} card=${card} rc=${rc} redact=${redact} model=${model} ctx=${ctx} total=${cards.length} index=${i} /></div></div>
+    </div>
+    ${panel ? html`<div className="rc-panel-back" onClick=${() => setPanel(false)}><div className="rc-panel" onClick=${e => e.stopPropagation()}>
+      <div className="serif" style=${{ fontSize: 20, fontWeight: 600 }}>Save as images</div>
+      <div className="small muted" style=${{ margin: '4px 0 12px' }}>1080 × 1920 PNG. Choose what to hide first.</div>
+      ${[['hideE', 'Hide E-rated fic titles'], ['hideSex', 'Hide sex-related tags'], ['hideAuthors', 'Hide author names']].map(([k, l]) => html`<label key=${k} className="switch-row" style=${{ padding: '9px 0' }}><span>${l}</span><input type="checkbox" role="switch" className="switch" checked=${redact[k]} onChange=${e => setRedact(r => ({ ...r, [k]: e.target.checked }))} /></label>`)}
+      ${rc.est ? html`<div className="tiny faint" style=${{ marginTop: 4 }}>Images include an “est. dates included” note, because ${rc.est} of ${rc.readings} reads have estimated dates.</div>` : null}
+      <div className="row" style=${{ marginTop: 14, flexWrap: 'nowrap' }}>
+        <button className="big-btn" onClick=${saveOne} disabled=${!!busy && busy.endsWith('…')}>Save this card</button>
+        <button className="big-btn ghost" onClick=${saveAll} disabled=${!!busy && busy.endsWith('…')}>Save all ${cards.length}</button>
+      </div>
+      ${busy ? html`<div className="small muted" style=${{ marginTop: 10 }}>${busy}</div>` : null}
+    </div></div>` : null}
+    <div className="rc-export" ref=${stageRef} aria-hidden="true">
+      ${(stageAll ? cards : [card]).map((c) => { const k = stageAll ? cards.indexOf(c) : i;
+        return html`<div key=${k} data-card=${k}><${RecapCard} card=${c} rc=${rc} redact=${redact} model=${model} ctx=${ctx} total=${cards.length} index=${k} /></div>`; })}
     </div>
   </div>`;
+}
+// Dashboard teaser: "Your 2026 so far".
+function RecapTeaser({ model, today, openRecap }) {
+  const ctx = useContext(TagCtx);
+  const av = useMemo(() => R.availableRecaps(model.readings, today), [model, today]);
+  const year = av.years.includes(+today.slice(0, 4)) ? +today.slice(0, 4) : av.years[av.years.length - 1];
+  const rc = useMemo(() => year ? R.recap(model, { type: 'year', year }, today, ctx.isVisible) : null, [model, year, today, ctx.isVisible]);
+  if (!rc || !rc.cards.length) return null;
+  const w = rc.cards.find(c => c.type === 'words'), n = rc.cards.find(c => c.type === 'counts'), per = rc.cards.find(c => c.type === 'persona');
+  return html`<button className="recap-teaser" onClick=${() => openRecap({ type: 'year', year })} style=${{ background: cardColor(rc.cards[0], rc, model) }}>
+    <span className="tiny" style=${{ opacity: 0.85, letterSpacing: '.08em', textTransform: 'uppercase', fontWeight: 700 }}>Year in Reading</span>
+    <span className="serif" style=${{ fontSize: 24, fontWeight: 600, lineHeight: 1.15 }}>Your ${rc.label}</span>
+    <span className="small" style=${{ opacity: 0.9 }}>${w ? fmtWords(w.words) + ' words' : ''}${n ? ` · ${n.finished} finished` : ''}${per ? ` · ${per.name}` : ''}</span>
+    <span className="small" style=${{ fontWeight: 700, marginTop: 4 }}>Watch your recap →</span>
+  </button>`;
 }
 
 // ============================================================================================
@@ -2478,6 +3645,8 @@ function App() {
   const [ui, setUi] = useState({ sub: 'diary', filtersOpen: false, libView: 'cards' });
   const [groupBy, setGroupBy] = useState('fandom');
   const [settingsView, setSettingsView] = useState('main');
+  const [trendsTab, setTrendsTab] = useState('volume');
+  const [recapScope, setRecapScope] = useState(null);
   // Sex-related tag toggle (remembered on this device; default off) and your tag overrides (IndexedDB).
   const [includeSex, setIncludeSexState] = useState(() => { try { return localStorage.getItem(SEXTAG_KEY) === '1'; } catch (e) { return false; } });
   const setIncludeSex = useCallback((v) => { setIncludeSexState(!!v); try { localStorage.setItem(SEXTAG_KEY, v ? '1' : '0'); } catch (e) {} }, []);
@@ -2580,6 +3749,7 @@ function App() {
   }, [auth.getToken, auth.expire]);
 
   const openAuthor = (a) => { setDetail(null); setFilters({ ...R.emptyFilters(), author: a }); setUi(u => ({ ...u, sub: 'library', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
+  const openRange = (start, end) => { setDetail(null); setFilters({ ...R.emptyFilters(), from: start, to: end }); setUi(u => ({ ...u, sub: 'diary', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
   const openTag = (t) => { setFilters({ ...R.emptyFilters(), tagsInc: [t] }); setUi(u => ({ ...u, sub: 'diary', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
   const reset = async () => { await idb.clearExcept([OVERRIDES_KEY]); dataRef.current = null; setData(null); setSync({ state: auth.signedIn ? 'idle' : 'needsAuth' }); if (auth.getToken()) doSync(false); };
   const switchTab = (t) => { setTab(t); if (t !== 'settings') setSettingsView('main'); window.scrollTo(0, 0); };
@@ -2606,9 +3776,9 @@ function App() {
         <span>${sync.message || 'Showing your saved copy.'}</span><button className="pill-btn" onClick=${() => doSync(true)}>Sign in to sync</button></div>` : null}
       ${sync.state === 'error' || sync.state === 'partial' ? html`<div className="banner err">Sync ${sync.state === 'partial' ? 'partly ' : ''}failed — showing the last copy. ${sync.message}</div>` : null}
 
-      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} />` : null}
+      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} openRecap=${setRecapScope} />` : null}
       ${tab === 'diary' ? html`<${DiaryScreen} model=${model} filters=${filters} setFilters=${setFilters} onOpen=${setDetail} today=${today} ui=${ui} setUi=${setUi} />` : null}
-      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} onTag=${openTag} groupBy=${groupBy} setGroupBy=${setGroupBy} />` : null}
+      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} onTag=${openTag} onOpen=${setDetail} onRange=${openRange} groupBy=${groupBy} setGroupBy=${setGroupBy} tab=${trendsTab} setTab=${setTrendsTab} openRecap=${setRecapScope} />` : null}
       ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today}
         goFilters=${() => { setUi(u => ({ ...u, filtersOpen: true })); switchTab('diary'); }} />` : null}
       ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} />` : null}
@@ -2619,6 +3789,7 @@ function App() {
     </div></nav>
 
     ${detail ? html`<${FicDetail} ficKey=${detail} model=${model} onClose=${() => setDetail(null)} loadSummary=${loadSummary} onAuthor=${openAuthor} today=${today} />` : null}
+    ${recapScope ? html`<${RecapStory} model=${model} scope=${recapScope} today=${today} onClose=${() => setRecapScope(null)} />` : null}
   </div></${TagCtx.Provider}>`;
 }
 

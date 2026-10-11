@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#F4F2EE" />
+<meta name="theme-color" content="#F6F6F9" />
 <title>Shelf Life</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" />
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
 <!-- Libraries, pinned to exact versions. No in-browser Babel: the app is written with htm so it starts fast on a phone. -->
 <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -16,291 +16,340 @@
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+  /* ==========================================================================================
+     DESIGN TOKENS. Light is the default; dark follows the system setting or the manual toggle.
+     ========================================================================================== */
   :root {
-    --bg: #F4F2EE; --surface: #FFFFFF; --surface-2: #ECE9E3; --surface-3: #E2DED6;
-    --ink: #18171C; --ink-2: #5D5A64; --ink-3: #8E8A95; --line: #E3DFD8;
-    --accent: #5B45E0; --accent-soft: #ECE8FF; --accent-ink: #FFFFFF;
-    --pos: #1C7F52; --pos-soft: #E1F3E9; --neg: #B9402B; --neg-soft: #FBE7E2; --neutral-soft: #ECE9E3;
-    --est: #8A5A00; --est-soft: #FBEFD5;
-    --dnf: #7A6A9C;
-    --shadow: 0 1px 2px rgba(24, 20, 40, .05), 0 6px 20px rgba(24, 20, 40, .05);
-    --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100; --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
-    --radius: 18px; --radius-sm: 12px;
+    --bg: #F6F6F9; --surface: #FFFFFF; --surface-2: #E8E8EF; --line: #ECECF2;
+    --ink: #111111; --ink-2: #3E3E48;
+    --blue: #2D5BFF; --lime: #D4F55B; --coral: #FF6B4A; --pink: #FFA8D8;
+    --dnf-tint: #FFE4DD; --dnf-strike: #E2401F;
+    --on-blue: #FFFFFF; --on-bright: #111111;
+    --solid: #111111; --on-solid: #FFFFFF;   /* active segment / primary button */
+    --shadow-card: 0 8px 24px rgba(17, 17, 40, .10);
+    --shadow-nav: 0 8px 24px rgba(17, 17, 40, .14);
+    --shadow-chip: 0 2px 8px rgba(17, 17, 40, .08);
+    --r-card: 26px; --r-row: 22px; --r-chip-val: 14px; --r-nav: 28px;
+    --font: 'Plus Jakarta Sans', sans-serif;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #111114; --surface: #1B1B20; --surface-2: #24242B; --surface-3: #2E2E36;
-      --ink: #F1F0F4; --ink-2: #ADA9B6; --ink-3: #7D7987; --line: #2C2C34;
-      --accent: #A08FFF; --accent-soft: #2A2547; --accent-ink: #15131F;
-      --pos: #52C690; --pos-soft: #183326; --neg: #F07D66; --neg-soft: #3A1E19; --neutral-soft: #26262D;
-      --est: #E8B654; --est-soft: #3A2E12;
-      --dnf: #A797CC;
-      --shadow: 0 1px 2px rgba(0, 0, 0, .3);
-      --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
+      --bg: #121218; --solid: #F4F4F8; --on-solid: #111111; --surface: #1E1E27; --surface-2: #2A2A35; --line: #2E2E3A;
+      --ink: #F4F4F8; --ink-2: #B4B4C2;
+      --dnf-tint: #3A2220; --dnf-strike: #FF6B4A;
+      --shadow-card: none; --shadow-nav: none; --shadow-chip: none;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #111114; --surface: #1B1B20; --surface-2: #24242B; --surface-3: #2E2E36;
-    --ink: #F1F0F4; --ink-2: #ADA9B6; --ink-3: #7D7987; --line: #2C2C34;
-    --accent: #A08FFF; --accent-soft: #2A2547; --accent-ink: #15131F;
-    --pos: #52C690; --pos-soft: #183326; --neg: #F07D66; --neg-soft: #3A1E19; --neutral-soft: #26262D;
-    --est: #E8B654; --est-soft: #3A2E12;
-    --dnf: #A797CC;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
-    --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
+    --bg: #121218; --solid: #F4F4F8; --on-solid: #111111; --surface: #1E1E27; --surface-2: #2A2A35; --line: #2E2E3A;
+    --ink: #F4F4F8; --ink-2: #B4B4C2;
+    --dnf-tint: #3A2220; --dnf-strike: #FF6B4A;
+    --shadow-card: none; --shadow-nav: none; --shadow-chip: none;
     color-scheme: dark;
   }
+
+  /* ---------- base + type ---------- */
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
-  body { font-family: 'DM Sans', system-ui, -apple-system, sans-serif; font-size: 15px; line-height: 1.45; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
+  body { font-family: var(--font); font-size: 13px; font-weight: 500; line-height: 1.45; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
   button, input, select { font: inherit; color: inherit; }
-  button { cursor: pointer; }
+  button { cursor: pointer; border: 0; outline: none; }
+  input, select { outline: none; }
+  :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--blue) !important; }
   a { color: inherit; }
-  .serif { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; letter-spacing: -0.01em; }
+  .serif { font-family: var(--font); font-weight: 800; letter-spacing: -0.02em; }
   .num { font-variant-numeric: tabular-nums; }
   .muted { color: var(--ink-2); }
-  .faint { color: var(--ink-3); }
-  .small { font-size: 13px; }
-  .tiny { font-size: 11.5px; }
+  .faint { color: var(--ink-2); }
+  .small { font-size: 12.5px; }
+  .tiny { font-size: 11.5px; font-weight: 600; }
 
-  .shell { max-width: 760px; margin: 0 auto; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
-  .topbar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-  .topbar-inner { max-width: 760px; margin: 0 auto; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; display: flex; align-items: center; gap: 10px; }
-  .wordmark { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .wordmark .mark { width: 22px; height: 22px; border-radius: 7px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; background: var(--ink); }
+  /* Highlighter: a marker band in light mode; coloured text in dark mode. */
+  .hl { padding: 0 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .hl.lime { background: linear-gradient(transparent 52%, var(--lime) 52%, var(--lime) 92%, transparent 92%); }
+  .hl.pink { background: linear-gradient(transparent 52%, var(--pink) 52%, var(--pink) 92%, transparent 92%); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hl { background: none; } :root:not([data-theme="light"]) .hl.lime { color: var(--lime); } :root:not([data-theme="light"]) .hl.pink { color: var(--pink); } }
+  :root[data-theme="dark"] .hl { background: none; }
+  :root[data-theme="dark"] .hl.lime { color: var(--lime); }
+  :root[data-theme="dark"] .hl.pink { color: var(--pink); }
+
+  /* ---------- layout ---------- */
+  .shell { max-width: 760px; margin: 0 auto; padding: 0 20px calc(120px + env(safe-area-inset-bottom)); }
+  .topbar { position: sticky; top: 0; z-index: 20; background: var(--bg); }
+  .topbar-inner { max-width: 760px; margin: 0 auto; padding: calc(10px + env(safe-area-inset-top)) 20px 10px; display: flex; align-items: center; gap: 10px; }
+  .wordmark { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+  .wordmark .mark { width: 24px; height: 24px; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 4px; background: var(--ink); }
   .wordmark .mark span { border-radius: 2px; }
-  .sync { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
-  .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: inline-grid; place-items: center; color: var(--ink-2); flex-shrink: 0; }
-  .icon-btn:active { transform: scale(.96); }
-  .pill-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
-  .pill-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-  .spin { animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .sync { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+  .icon-btn { width: 44px; height: 44px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-chip); display: inline-grid; place-items: center; color: var(--ink); flex-shrink: 0; }
+  .pill-btn { min-height: 44px; border-radius: 999px; padding: 0 16px; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; background: var(--surface); box-shadow: var(--shadow-chip); color: var(--ink); }
+  .pill-btn.primary { background: var(--blue); color: var(--on-blue); }
+  .pill-btn:disabled, .big-btn:disabled { opacity: .5; }
+  .spin { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
 
-  .nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-  .nav-inner { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
-  .nav button { background: none; border: 0; padding: 10px 0 9px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--ink-3); }
-  .nav button.on { color: var(--ink); }
-  .nav button.on svg { color: var(--accent); }
+  /* Floating pill nav */
+  .nav { position: fixed; left: 14px; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; }
+  .nav-inner { max-width: 732px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface); border-radius: var(--r-nav); box-shadow: var(--shadow-nav); padding: 8px 6px; }
+  .nav button { background: none; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--ink-2); }
+  .nav button .nav-ic { width: 40px; height: 30px; border-radius: 999px; display: grid; place-items: center; }
+  .nav button.on { color: var(--ink); font-weight: 800; }
+  .nav button.on .nav-ic { background: var(--blue); color: var(--on-blue); }
 
-  .section { margin-top: 22px; }
-  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 2px 10px; }
-  .section-title { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
-  .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
-  .banner { border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; margin-top: 10px; }
-  .banner.warn { background: var(--est-soft); color: var(--est); }
-  .banner.err { background: var(--neg-soft); color: var(--neg); }
+  /* ---------- sections + cards ---------- */
+  .section { margin-top: 24px; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 2px 10px; }
+  .section-title { font-size: 17px; font-weight: 800; letter-spacing: -0.2px; color: var(--ink); margin: 0; }
+  .card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; }
+  .banner { border-radius: 999px; padding: 10px 16px; font-size: 12.5px; font-weight: 600; margin-top: 10px; color: var(--on-bright); }
+  .banner.warn { background: var(--lime); }
+  .banner.err { background: var(--coral); border-radius: 20px; }
+  .finding { margin: -2px 2px 12px; font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--ink); }
 
-  .headline { font-size: 25px; line-height: 1.22; font-weight: 500; margin: 8px 2px 4px; text-wrap: balance; }
-  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
+  /* ---------- headline + period picker ---------- */
+  .headline { font-size: 23px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.3; margin: 10px 2px 6px; text-wrap: balance; }
+  .page-title { font-size: 30px; font-weight: 800; letter-spacing: -0.6px; line-height: 1.15; margin: 10px 2px 6px; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { flex-shrink: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; font-weight: 500; white-space: nowrap; }
-  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-  .chip.sm { padding: 5px 10px; font-size: 12.5px; }
-  .chip .x { margin-left: 6px; opacity: .7; }
-  .seg { display: inline-flex; background: var(--surface-2); border-radius: 999px; padding: 3px; gap: 2px; }
-  .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
-  .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .chip { flex-shrink: 0; min-height: 44px; background: var(--surface); box-shadow: var(--shadow-chip); border-radius: 999px; padding: 0 16px; font-size: 12.5px; font-weight: 700; white-space: nowrap; color: var(--ink); display: inline-flex; align-items: center; }
+  .chip.on { background: var(--blue); color: var(--on-blue); }
+  .chip .faint { margin-left: 5px; color: inherit; opacity: .7; }
+  .chip.sm { padding: 0 13px; }
+  .chip .x { margin-left: 6px; opacity: .8; }
+  .chip .cdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; flex-shrink: 0; }
+  .chip.on .cdot { box-shadow: 0 0 0 2px rgba(255,255,255,.85); }
+  .seg { display: inline-flex; background: var(--surface-2); border-radius: 999px; padding: 4px; gap: 2px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .seg::-webkit-scrollbar { display: none; }
+  .seg button { flex-shrink: 0; background: none; border-radius: 999px; min-height: 44px; padding: 0 14px; font-size: 12.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .seg button.on { background: var(--solid); color: var(--on-solid); }
+  .seg.full { display: flex; width: 100%; }
+  .seg.full button { flex: 1 0 auto; }
   .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .date-input { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 10px; font-size: 14px; min-height: 38px; }
-  .text-input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 10px 14px 10px 38px; font-size: 15px; outline: none; }
-  .text-input:focus { border-color: var(--accent); }
+  .date-input { background: var(--surface); box-shadow: var(--shadow-chip); border-radius: 999px; padding: 0 14px; font-size: 13px; font-weight: 600; min-height: 44px; border: 0; }
+  .text-input { width: 100%; background: var(--surface); box-shadow: var(--shadow-chip); border: 0; border-radius: 999px; padding: 0 16px 0 42px; min-height: 48px; font-size: 13.5px; font-weight: 600; }
   .search-wrap { position: relative; flex: 1; min-width: 0; }
-  .search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--ink-3); }
+  .search-wrap svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--ink-2); }
 
-  .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  @media (min-width: 620px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  .tile { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .tile-label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
-  .tile-value { font-size: 28px; font-weight: 600; line-height: 1.05; }
+  /* ---------- stat tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); color: var(--ink); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .tile.c-blue { background: var(--blue); color: var(--on-blue); box-shadow: 0 8px 20px rgba(45, 91, 255, .25); }
+  .tile.c-lime { background: var(--lime); color: var(--on-bright); box-shadow: 0 8px 20px rgba(212, 245, 91, .25); }
+  .tile.c-coral { background: var(--coral); color: var(--on-bright); box-shadow: 0 8px 20px rgba(255, 107, 74, .25); }
+  .tile.c-pink { background: var(--pink); color: var(--on-bright); box-shadow: 0 8px 20px rgba(255, 168, 216, .25); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tile { box-shadow: none !important; } }
+  :root[data-theme="dark"] .tile { box-shadow: none !important; }
+  .tile-label { font-size: 12.5px; font-weight: 700; }
+  .tile-value { font-size: 30px; font-weight: 800; letter-spacing: -0.8px; line-height: 1.05; }
   .tile-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 22px; }
-  .tile-note { font-size: 11px; color: var(--ink-3); line-height: 1.3; }
-  .delta { font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 2px 7px; white-space: nowrap; }
-  .delta.pos { background: var(--pos-soft); color: var(--pos); }
-  .delta.neg { background: var(--neg-soft); color: var(--neg); }
-  .delta.flat { background: var(--neutral-soft); color: var(--ink-2); }
+  .tile-note { font-size: 11.5px; font-weight: 600; line-height: 1.3; opacity: .85; }
+  .delta { font-size: 12px; font-weight: 800; white-space: nowrap; }
 
-  .hscroll { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 8px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scroll-snap-type: x proximity; scrollbar-width: none; }
+  /* ---------- currently reading / recently finished ---------- */
+  .hscroll { display: flex; gap: 12px; overflow-x: auto; padding: 4px 20px 14px; margin: 0 -20px; scroll-snap-type: x proximity; scrollbar-width: none; }
   .hscroll::-webkit-scrollbar { display: none; }
-  .mini { flex: 0 0 auto; width: 228px; scroll-snap-align: start; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; text-align: left; border: 0; display: flex; flex-direction: column; gap: 6px; }
-  .mini-title { font-weight: 600; font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .bar-track { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 99px; }
+  .mini { flex: 0 0 auto; width: 250px; scroll-snap-align: start; background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 8px; color: var(--ink); }
+  .mini-title { font-weight: 700; font-size: 14.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .reading-top { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 12px; align-items: center; }
+  .fandom-square { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; font-weight: 800; font-size: 14px; letter-spacing: -0.2px; }
+  .bar-track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; }
 
-  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .02em; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  /* ---------- badges, chips, small bits ---------- */
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
   .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .badge.est { background: var(--est-soft); color: var(--est); }
-  .badge.dnf { background: color-mix(in srgb, var(--dnf) 16%, transparent); color: var(--dnf); }
-  .badge.plain { background: var(--surface-2); color: var(--ink-2); }
-  .badge.rating { background: var(--surface-2); color: var(--ink-2); min-width: 24px; justify-content: center; }
+  .badge.est { background: var(--surface-2); color: var(--ink-2); }
+  .badge.dnf { background: var(--solid); color: var(--on-solid); }
+  .badge.plain { background: var(--surface-2); color: var(--ink); }
+  .badge.rating { background: var(--surface-2); color: var(--ink); min-width: 26px; justify-content: center; }
+  .dnf-reason { font-size: 11.5px; font-weight: 700; color: var(--ink-2); }
   .enjoy { display: inline-flex; gap: 2.5px; vertical-align: middle; }
-  .enjoy i { width: 7px; height: 7px; border-radius: 50%; background: var(--surface-3); display: block; }
-  .enjoy i.on { background: var(--accent); }
-
-  .hbar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 6px 0; }
+  .enjoy i { width: 7px; height: 7px; border-radius: 50%; background: var(--surface-2); display: block; }
+  .enjoy i.on { background: var(--blue); }
+  .hbar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 0; min-height: 44px; }
   .hbar-row + .hbar-row { border-top: 1px solid var(--line); }
-  .hbar-label { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hbar-val { font-size: 12.5px; color: var(--ink-2); }
-  .hbar-track { grid-column: 1 / -1; height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; display: flex; }
-
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12.5px; color: var(--ink-2); }
+  .hbar-label { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hbar-val { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+  .hbar-track { grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; display: flex; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
-
-  .month-head { font-size: 13px; font-weight: 700; color: var(--ink-2); margin: 20px 4px 8px; display: flex; justify-content: space-between; }
-  .diary { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-  .drow { display: grid; grid-template-columns: 44px 4px minmax(0, 1fr); gap: 12px; padding: 12px 14px; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--line); }
-  .drow:first-child { border-top: 0; }
-  .drow:active { background: var(--surface-2); }
-  .dday { text-align: center; }
-  .dday b { display: block; font-size: 21px; font-weight: 600; line-height: 1.1; }
-  .dday span { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; }
-  .dstripe { border-radius: 4px; }
-  .dtitle { font-weight: 600; font-size: 15px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .dmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; font-size: 12.5px; color: var(--ink-2); }
-  .kb { display: inline-flex; gap: 4px; color: var(--ink-2); }
-
-  .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-  .lcard { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; text-align: left; border: 0; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; }
-  .lcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--fc); }
-  .table-wrap { overflow-x: auto; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
-  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); font-weight: 700; }
-  td.t { white-space: normal; min-width: 180px; font-weight: 600; }
-  tr.click { cursor: pointer; }
-
-  .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; margin-top: 10px; display: flex; flex-direction: column; gap: 14px; }
-  .flabel { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 7px; }
-  .wrap-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .plain-input { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 9px 12px; font-size: 14px; outline: none; }
-
-  .sheet-back { position: fixed; inset: 0; z-index: 50; background: rgba(10, 8, 20, .42); display: flex; align-items: flex-end; justify-content: center; animation: fade .18s ease; }
-  .sheet { background: var(--bg); width: 100%; max-width: 760px; max-height: 92vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 8px 16px calc(28px + env(safe-area-inset-bottom)); animation: up .22s cubic-bezier(.2,.8,.2,1); }
-  @media (min-width: 760px) { .sheet-back { align-items: center; } .sheet { border-radius: 24px; max-height: 88vh; } }
-  .grab { width: 40px; height: 5px; border-radius: 9px; background: var(--surface-3); margin: 4px auto 10px; }
-  @keyframes fade { from { opacity: 0; } }
-  @keyframes up { from { transform: translateY(30px); opacity: .6; } }
-  .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
-  .meta-grid div b { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
-  .tagchip { display: inline-block; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); margin: 0 6px 6px 0; }
-  .tagchip.ship { background: color-mix(in srgb, var(--fc) 15%, transparent); color: var(--ink); }
-  .timeline { position: relative; padding-left: 18px; }
-  .timeline::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--line); border-radius: 2px; }
-  .tl-item { position: relative; padding: 4px 0 10px; }
-  .tl-item::before { content: ''; position: absolute; left: -17px; top: 9px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--ink-3); }
-  .tl-item.fin::before { background: var(--pos); border-color: var(--pos); }
-  .tl-item.dnf::before { background: var(--dnf); border-color: var(--dnf); }
-  .summary { white-space: pre-line; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
-  .big-btn { width: 100%; padding: 13px; border-radius: 14px; border: 0; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-  .big-btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
-  .link-btn { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; font-size: 13.5px; }
-  .empty { text-align: center; color: var(--ink-3); padding: 28px 12px; font-size: 14px; }
-  .notes li { margin-bottom: 6px; }
-  .check { display: flex; align-items: center; gap: 10px; font-size: 14.5px; }
-  .check input { width: 20px; height: 20px; accent-color: var(--accent); }
-  .srcline { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; color: var(--ink-2); min-width: 0; line-height: 1.35; }
+  .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .srcline { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; font-weight: 600; color: var(--ink-2); min-width: 0; line-height: 1.35; }
   .srcline > i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
   .srcline > span { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .srcline.one > span { -webkit-line-clamp: 1; }
   .srcline.full > span { display: block; -webkit-line-clamp: unset; }
-  .srcline b { font-weight: 600; color: var(--ink); }
-  .wrap-chips .chip { white-space: normal; text-align: left; flex-shrink: 1; max-width: 100%; }
-  .chip .cdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+  .srcline b { font-weight: 700; color: var(--ink); }
+
+  /* ---------- Diary ---------- */
+  .month-head { font-size: 17px; font-weight: 800; margin: 22px 4px 10px; display: flex; justify-content: space-between; align-items: baseline; }
+  .month-head .faint { font-size: 12.5px; font-weight: 700; }
+  .diary { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); overflow: hidden; }
+  .drow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 12px 14px; width: 100%; text-align: left; background: none; color: var(--ink); align-items: start; }
+  .drow + .drow { border-top: 1px solid var(--line); }
+  .drow.is-dnf { background: var(--dnf-tint); }
+  .date-dot { width: 44px; height: 44px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+  .date-dot b { font-size: 16px; font-weight: 800; }
+  .date-dot span { font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-top: 2px; }
+  .dtitle { font-weight: 700; font-size: 14.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .struck { text-decoration: line-through; text-decoration-color: var(--dnf-strike); text-decoration-thickness: 2.5px; }
+  .dmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 5px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+  .kb { display: inline-flex; gap: 4px; color: var(--ink-2); }
+
+  /* ---------- Library ---------- */
+  .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .lcard { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 7px; color: var(--ink); }
+  .lcard.is-dnf { background: var(--dnf-tint); }
+  .table-wrap { overflow-x: auto; background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-weight: 600; }
+  th, td { padding: 11px 12px; text-align: left; white-space: nowrap; }
+  tbody tr { border-top: 1px solid var(--line); }
+  tbody tr.is-dnf { background: var(--dnf-tint); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); font-weight: 800; }
+  td.t { white-space: normal; min-width: 180px; font-weight: 700; }
+  tr.click { cursor: pointer; }
   .wrap-th th { white-space: normal; min-width: 104px; vertical-align: bottom; text-transform: none; letter-spacing: 0; font-size: 12px; }
-  .group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 22px 2px 0; }
-  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+
+  /* ---------- filters + panels ---------- */
+  .panel { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 16px 14px; margin-top: 12px; display: flex; flex-direction: column; gap: 16px; }
+  .flabel { font-size: 12.5px; font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+  .wrap-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wrap-chips .chip { white-space: normal; text-align: left; flex-shrink: 1; max-width: 100%; padding-top: 6px; padding-bottom: 6px; }
+  .panel .chip { box-shadow: none; background: var(--surface-2); }
+  .panel .chip.on { box-shadow: none; }
+  .plain-input { width: 100%; background: var(--surface-2); border: 0; border-radius: 999px; padding: 0 16px; min-height: 44px; font-size: 13px; font-weight: 600; }
+  .panel .date-input { background: var(--surface-2); box-shadow: none; }
+
+  /* ---------- fic detail sheet ---------- */
+  .sheet-back { position: fixed; inset: 0; z-index: 50; background: rgba(10, 10, 20, .45); display: flex; align-items: flex-end; justify-content: center; animation: fade .18s ease; }
+  .sheet { background: var(--bg); width: 100%; max-width: 760px; max-height: 92vh; overflow-y: auto; border-radius: 28px 28px 0 0; padding: 8px 20px calc(28px + env(safe-area-inset-bottom)); animation: up .22s cubic-bezier(.2,.8,.2,1); }
+  @media (min-width: 760px) { .sheet-back { align-items: center; } .sheet { border-radius: 28px; max-height: 88vh; } }
+  .grab { width: 40px; height: 5px; border-radius: 9px; background: var(--surface-2); margin: 4px auto 10px; }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes up { from { transform: translateY(30px); opacity: .6; } }
+  .detail-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; margin: 8px 0 4px; }
+  .dnf-banner { background: var(--dnf-tint); border-radius: 18px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+  .meta-grid div b { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+  .tagchip { display: inline-block; font-size: 12px; font-weight: 600; padding: 6px 11px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-chip); color: var(--ink); margin: 0 6px 8px 0; }
+  .tagchip.ship { background: var(--surface); }
+  .tagchip.ship::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--fc); margin-right: 6px; }
+  .tagchip.revealed { background: var(--surface-2); box-shadow: none; }
+  button.tagchip { font: inherit; font-size: 12px; font-weight: 700; min-height: 32px; }
+  button.tagchip.more { background: var(--blue); color: var(--on-blue); }
+  .timeline { position: relative; padding-left: 18px; }
+  .timeline::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--line); border-radius: 2px; }
+  .tl-item { position: relative; padding: 4px 0 10px; }
+  .tl-item::before { content: ''; position: absolute; left: -17px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); }
+  .tl-item.fin::before { background: var(--blue); }
+  .tl-item.dnf::before { background: var(--coral); }
+  .summary { white-space: pre-line; font-size: 13.5px; font-weight: 500; line-height: 1.6; color: var(--ink); }
+  .big-btn { width: 100%; min-height: 48px; padding: 0 16px; border-radius: 999px; background: var(--solid); color: var(--on-solid); font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+  .big-btn.ghost { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-chip); }
+  .link-btn { background: none; padding: 0; min-height: 44px; color: var(--blue); font-weight: 700; font-size: 13px; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .link-btn { color: #8FA6FF; } }
+  :root[data-theme="dark"] .link-btn { color: #8FA6FF; }
+  .empty { text-align: center; color: var(--ink-2); padding: 28px 12px; font-size: 13px; font-weight: 600; }
+  .notes li { margin-bottom: 6px; }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; min-height: 44px; }
+  .check input { width: 20px; height: 20px; accent-color: var(--blue); }
+  .center-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; text-align: center; }
+
+  /* ---------- switches, settings, tag review ---------- */
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 44px; }
   .switch-row.compact { font-size: 12.5px; color: var(--ink-2); justify-content: flex-start; }
-  .switch { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 38px; height: 22px; border-radius: 99px; background: var(--surface-3); position: relative; margin: 0; cursor: pointer; transition: background .15s; }
-  .switch::before { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
-  .switch:checked { background: var(--accent); }
-  .switch:checked::before { transform: translateX(16px); }
-  .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .tagchip.revealed { background: transparent; border: 1px dashed var(--line); }
-  button.tagchip { border: 0; cursor: pointer; font: inherit; font-size: 12.5px; }
-  button.tagchip.more { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-  .seg.sm button { padding: 5px 10px; font-size: 12.5px; }
-  .seg button.on.cls-sexual { background: var(--neg-soft); color: var(--neg); }
-  .seg button.on.cls-unsure { background: var(--est-soft); color: var(--est); }
-  .tr-row { padding: 12px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
-  .tr-row:first-child { border-top: 0; }
-  .tr-tag { font-weight: 600; font-size: 14.5px; line-height: 1.3; word-break: break-word; }
-  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; background: none; border: 0; padding: 12px 0; text-align: left; border-top: 1px solid var(--line); }
-  .set-row:first-child { border-top: 0; padding-top: 2px; }
-  /* Phase 2 */
-  .finding { margin: -2px 2px 10px; font-size: 14px; line-height: 1.45; color: var(--ink); }
-  .trend-tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 16px -16px 0; padding: 0 16px 2px; position: sticky; top: calc(56px + env(safe-area-inset-top)); z-index: 15; background: var(--bg); }
+  .switch { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 44px; height: 26px; border-radius: 999px; background: var(--surface-2); position: relative; margin: 0; cursor: pointer; transition: background .15s; }
+  .switch::before { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+  .switch:checked { background: var(--blue); }
+  .switch:checked::before { transform: translateX(18px); }
+  .seg button.on.cls-sexual { background: var(--coral); color: var(--on-bright); }
+  .seg button.on.cls-unsure { background: var(--lime); color: var(--on-bright); }
+  .tr-row { padding: 12px 0; display: flex; flex-direction: column; gap: 6px; }
+  .tr-row + .tr-row { border-top: 1px solid var(--line); }
+  .tr-tag { font-weight: 700; font-size: 14.5px; line-height: 1.3; word-break: break-word; }
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; background: none; padding: 12px 0; min-height: 44px; text-align: left; color: var(--ink); }
+  .set-row + .set-row { border-top: 1px solid var(--line); }
+
+  /* ---------- Phase 2: trends ---------- */
+  .trend-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 16px -20px 0; padding: 6px 20px 8px; position: sticky; top: calc(64px + env(safe-area-inset-top)); z-index: 15; background: var(--bg); }
   .trend-tabs::-webkit-scrollbar { display: none; }
-  .trend-tabs button { flex-shrink: 0; border: 0; background: none; padding: 10px 12px 9px; font-size: 14.5px; font-weight: 600; color: var(--ink-3); border-bottom: 2px solid transparent; }
-  .trend-tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
-  .recap-launch { margin-top: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)), var(--surface)); }
-  .logged-empty { text-align: left; border: 1px dashed var(--line); box-shadow: none; background: transparent; }
-  .bump-legend { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 10px; }
-  .bump-legend button { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: none; border: 0; padding: 6px 0; text-align: left; border-top: 1px solid var(--line); font-size: 13.5px; }
-  .bump-legend button:first-child { border-top: 0; }
-  .bump-legend i { width: 12px; height: 3px; border-radius: 2px; border: 1.5px dashed transparent; box-sizing: content-box; }
+  .trend-tabs button { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-chip); font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  .trend-tabs button.on { background: var(--solid); color: var(--on-solid); }
+  .recap-launch { margin-top: 14px; }
+  .logged-empty { background: var(--surface); }
+  .logged-empty .title { font-size: 14.5px; font-weight: 700; }
+  .bump-legend { display: grid; grid-template-columns: 1fr; margin-top: 10px; }
+  .bump-legend button { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: none; min-height: 44px; text-align: left; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .bump-legend button + button { border-top: 1px solid var(--line); }
   .bump-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bump-legend b { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
-  .band-row { padding: 9px 0; border-top: 1px solid var(--line); }
-  .band-row:first-child { border-top: 0; padding-top: 2px; }
+  .bump-legend b { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+  .band-row { padding: 10px 0; }
+  .band-row + .band-row { border-top: 1px solid var(--line); }
   .cal-scroll { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
-  .cal-grid { display: grid; gap: 2px; width: max-content; }
-  .cal-col { display: grid; grid-template-rows: repeat(7, 11px); gap: 2px; }
+  .cal-grid { display: grid; gap: 3px; width: max-content; }
+  .cal-col { display: grid; grid-template-rows: repeat(7, 11px); gap: 3px; }
   .cal-col i, .cal-key { display: block; width: 11px; height: 11px; border-radius: 3px; }
   .clock-grid { display: grid; grid-template-columns: 30px repeat(24, minmax(0, 1fr)); gap: 2px; align-items: center; }
   .clock-grid i { display: block; aspect-ratio: 1; border-radius: 3px; }
-  .bests { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .bests { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   @media (min-width: 620px) { .bests { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  .best-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; text-align: left; border: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .best-value { font-size: 24px; font-weight: 600; line-height: 1.15; overflow-wrap: anywhere; }
+  .best-card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 6px; min-width: 0; color: var(--ink); }
+  .value-chip { display: inline-block; align-self: flex-start; border-radius: var(--r-chip-val); padding: 6px 10px; font-size: 17px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; max-width: 100%; overflow-wrap: anywhere; color: var(--on-bright); }
+  .value-chip.blue { color: var(--on-blue); }
   .best-sub { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .streak-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px 3px 7px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); margin-right: 8px; vertical-align: 1px; }
-  .recap-teaser { width: 100%; border: 0; border-radius: var(--radius); padding: 18px; color: #fff; text-align: left; display: flex; flex-direction: column; gap: 4px; margin-top: 14px; box-shadow: var(--shadow); }
-  /* Year in Reading */
-  .rc-overlay { position: fixed; inset: 0; z-index: 70; background: #0d0c12; color: #fff; display: flex; flex-direction: column; padding: calc(8px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
-  .rc-progress { display: flex; gap: 3px; }
-  .rc-progress i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.25); }
-  .rc-progress i.done, .rc-progress i.on { background: #fff; }
-  .rc-bar { display: flex; align-items: center; gap: 8px; padding: 10px 2px; }
-  .rc-label { flex: 1; font-weight: 700; font-size: 14px; }
-  .rc-btn { background: rgba(255,255,255,.14); color: #fff; border: 0; border-radius: 999px; padding: 7px 12px; font-weight: 700; font-size: 13px; display: inline-grid; place-items: center; min-height: 34px; }
+  .streak-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 4px 10px 4px 8px; background: var(--lime); color: var(--on-bright); margin-right: 8px; vertical-align: 1px; }
+  .recap-teaser { width: 100%; border-radius: var(--r-card); padding: 18px; background: var(--blue); color: var(--on-blue); text-align: left; display: flex; flex-direction: column; gap: 6px; margin-top: 16px; box-shadow: 0 8px 20px rgba(45, 91, 255, .25); min-height: 44px; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .recap-teaser { box-shadow: none; } }
+  :root[data-theme="dark"] .recap-teaser { box-shadow: none; }
+  .recap-teaser .go { align-self: flex-start; margin-top: 6px; background: #FFFFFF; color: #111111; border-radius: 999px; padding: 8px 14px; font-weight: 800; font-size: 12.5px; }
+  .group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 24px 2px 0; }
+
+  /* ---------- Year in Reading ---------- */
+  .rc-overlay { position: fixed; inset: 0; z-index: 70; background: #2D5BFF; color: #FFFFFF; display: flex; flex-direction: column; padding: calc(8px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); }
+  .rc-bar { display: flex; align-items: center; gap: 8px; padding: 2px 2px 8px; }
+  .rc-label { flex: 1; font-weight: 800; font-size: 13px; }
+  .rc-close { width: 44px; height: 44px; border-radius: 999px; background: rgba(255,255,255,.18); color: #FFFFFF; display: inline-grid; place-items: center; }
   .rc-stage { flex: 1; min-height: 0; display: grid; place-items: center; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: pointer; }
   .rc-fit { position: relative; }
   .rc-scale { position: absolute; left: 0; top: 0; width: 360px; height: 640px; transform-origin: 0 0; }
+  .rc-actions { display: flex; gap: 10px; padding-top: 12px; max-width: 520px; width: 100%; margin: 0 auto; }
+  .rc-actions button { flex: 1; min-height: 48px; border-radius: 999px; font-weight: 800; font-size: 14px; }
+  .rc-save { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF !important; }
+  .rc-next { background: #FFFFFF; color: #111111; }
+  .rc-card { width: 360px; height: 640px; border-radius: 26px; overflow: hidden; background: #2D5BFF; color: #FFFFFF; display: flex; flex-direction: column; padding: 18px 22px 20px; font-family: var(--font); position: relative; }
   .rc-export .rc-card { border-radius: 0; }
-  .rc-card { width: 360px; height: 640px; border-radius: 22px; overflow: hidden; color: #fff; display: flex; flex-direction: column; padding: 26px 26px 20px; font-family: 'DM Sans', system-ui, sans-serif; position: relative; }
-  .rc-card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 70% at 100% 0%, rgba(255,255,255,.18), transparent 60%); pointer-events: none; }
-  .rc-top, .rc-foot { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .85; position: relative; z-index: 1; }
-  .rc-foot { text-transform: none; letter-spacing: 0; font-weight: 600; opacity: .75; }
-  .rc-body { flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
-  .rc-kicker { font-size: 15px; font-weight: 700; letter-spacing: .02em; opacity: .9; margin-bottom: 6px; }
-  .rc-big { font-weight: 600; line-height: .95; letter-spacing: -0.03em; }
-  .rc-unit { font-size: 22px; font-weight: 600; opacity: .9; margin-top: 2px; }
-  .rc-title { font-size: 36px; font-weight: 600; line-height: 1.08; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-  .rc-line { font-size: 16px; line-height: 1.4; margin-top: 12px; opacity: .95; }
-  .rc-small { font-size: 13px; opacity: .8; margin-top: 8px; }
-  .rc-rule { height: 1px; background: rgba(255,255,255,.35); margin: 26px 0 22px; }
-  .rc-split, .rc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 26px; }
-  .rc-split b, .rc-grid b { display: block; font-size: 38px; font-weight: 600; line-height: 1; overflow-wrap: anywhere; }
-  .rc-split span, .rc-grid span { font-size: 13px; opacity: .85; }
-  .rc-list { margin: 14px 0 0; padding: 0; list-style: none; counter-reset: rc; display: flex; flex-direction: column; gap: 14px; }
-  .rc-list li { counter-increment: rc; display: grid; grid-template-columns: 34px 1fr; column-gap: 6px; font-size: 18px; font-weight: 600; line-height: 1.25; }
-  .rc-list li::before { content: counter(rc); font-family: 'Fraunces', Georgia, serif; font-size: 26px; opacity: .7; grid-row: span 2; }
-  .rc-list.plain li::before { content: '—'; font-size: 18px; }
-  .rc-list em { font-style: normal; font-size: 13px; opacity: .8; font-weight: 500; grid-column: 2; }
-  .rc-stars { font-size: 34px; letter-spacing: 4px; }
-  .rc-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 120px; margin-top: 26px; }
+  .rc-seg { display: flex; gap: 4px; margin-bottom: 14px; }
+  .rc-seg i { flex: 1; height: 4px; border-radius: 999px; background: rgba(255,255,255,.35); }
+  .rc-seg i.on { background: #FFFFFF; }
+  .rc-top, .rc-foot { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .rc-foot { text-transform: none; letter-spacing: 0; font-weight: 700; opacity: .9; }
+  .rc-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .rc-kicker { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .rc-big { font-size: 90px; font-weight: 800; letter-spacing: -3px; line-height: .95; }
+  .rc-unit { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .rc-title { font-size: 32px; font-weight: 800; letter-spacing: -0.6px; line-height: 1.15; overflow-wrap: anywhere; }
+  .rc-line { font-size: 15px; font-weight: 600; line-height: 1.45; margin-top: 12px; }
+  .rc-small { font-size: 12.5px; font-weight: 600; opacity: .9; margin-top: 8px; }
+  .rc-hl { background: var(--lime); color: #111111; border-radius: 8px; padding: 0 6px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .rc-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 22px; }
+  .rc-row { background: #FFFFFF; color: #111111; border-radius: var(--r-row); padding: 10px 10px 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; }
+  .rc-row > span:first-child { font-size: 13.5px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .rc-val { flex-shrink: 0; border-radius: var(--r-chip-val); padding: 6px 10px; font-size: 15px; font-weight: 800; color: #111111; max-width: 55%; text-align: right; overflow-wrap: anywhere; }
+  .rc-val.lime { background: #D4F55B; } .rc-val.pink { background: #FFA8D8; } .rc-val.coral { background: #FF6B4A; }
+  .rc-stars { font-size: 32px; letter-spacing: 4px; }
+  .rc-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 120px; margin-top: 22px; }
   .rc-bars div { display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; height: 100%; }
-  .rc-bars i { width: 100%; background: #fff; border-radius: 6px; display: block; }
-  .rc-bars span { font-size: 12px; opacity: .85; font-weight: 700; }
+  .rc-bars i { width: 100%; background: #FFFFFF; border-radius: 8px; display: block; }
+  .rc-bars i.top { background: #D4F55B; }
+  .rc-bars span { font-size: 11px; font-weight: 800; }
   .rc-panel-back { position: absolute; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; z-index: 2; }
-  .rc-panel { background: var(--bg); color: var(--ink); width: 100%; max-width: 520px; border-radius: 22px 22px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); }
+  .rc-panel { background: var(--bg); color: var(--ink); width: 100%; max-width: 520px; border-radius: 28px 28px 0 0; padding: 18px 20px calc(22px + env(safe-area-inset-bottom)); }
+  .rc-panel-title { font-size: 17px; font-weight: 800; }
   .rc-export { position: fixed; left: -10000px; top: 0; width: 360px; pointer-events: none; }
   .rc-export > div { margin-bottom: 10px; }
   .rc-empty { margin: auto; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
-  .center-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; text-align: center; }
 </style>
 </head>
 <body>
@@ -318,6 +367,7 @@
 //   color       the fandom's accent: '#RRGGBB' (dark mode gets a lighter version automatically),
 //               or { light: '#RRGGBB', dark: '#RRGGBB' }. Pairings use shades of it. When two
 //               Sheets share a fandom, the first one's colour is used.
+//   initials    optional: the short label on the fandom's coloured square (display only).
 // ============================================================================================
 const SOURCES = [
   {
@@ -326,7 +376,8 @@ const SOURCES = [
     fandom: 'Game Changers (All)',
     pairing: 'Ilya Rozanov/Shane Hollander',
     pairingMode: 'fixed',
-    color: { light: '#2C79BE', dark: '#64A9E8' },
+    color: { light: '#2D5BFF', dark: '#2D5BFF' },
+    initials: 'GC',
   },
   {
     id: 'asoiaf',
@@ -334,7 +385,8 @@ const SOURCES = [
     fandom: 'A Song of Ice and Fire (All)',
     pairing: 'Multiple pairings',
     pairingMode: 'perFic',
-    color: { light: '#C24E36', dark: '#EF8068' },
+    color: { light: '#FF6B4A', dark: '#FF6B4A' },
+    initials: 'ASOIAF',
   },
   {
     id: 'drarry',
@@ -342,7 +394,8 @@ const SOURCES = [
     fandom: 'Harry Potter (All)',
     pairing: 'Draco Malfoy/Harry Potter',
     pairingMode: 'fixed',
-    color: { light: '#1F8C66', dark: '#4CC79B' },
+    color: { light: '#D4F55B', dark: '#D4F55B' },
+    initials: 'HP',
   },
 ];
 </script>
@@ -1231,8 +1284,9 @@ const ShelfRules = (() => {
   //   MIN_RANK        fewest readings before a tag, author or length band is ranked or charted (3).
   //   MIN_RATE        fewest closed readings before a completion / DNF rate is shown (5).
   //   MIN_LOGGED      fewest logged reads before a logged-only metric is shown (5).
+  //   MIN_PREDICT     fewest readings before a tag can appear in "Tags that predict a DNF" (10).
   // ==========================================================================================
-  const MIN_RANK = 3, MIN_RATE = 5, MIN_LOGGED = 5;
+  const MIN_RANK = 3, MIN_RATE = 5, MIN_LOGGED = 5, MIN_PREDICT = 10;
   const LENGTH_BANDS = [
     { key: 'lt20', label: 'Under 20k', min: 0, max: 20000 },
     { key: '20-50', label: '20–50k', min: 20000, max: 50000 },
@@ -1383,17 +1437,19 @@ const ShelfRules = (() => {
     return { quarters, labels: quarters.map(quarterLabel), reasons: reasons.filter(x => counts[x].some(c => c > 0)), counts, inWindow, finding };
   }
 
-  // TAGS THAT PREDICT A DNF: overall DNF rate = DNFs ÷ all readings. A tag qualifies with >= MIN_RATE
-  // readings and a DNF rate at least 15 points above the overall rate.
+  // TAGS THAT PREDICT A DNF: overall DNF rate = DNFs ÷ all readings. A tag qualifies with >= MIN_PREDICT
+  // readings and a DNF rate at least 15 points above the overall rate. AO3 placeholder tags are left
+  // out: "Other Additional Tags to Be Added" and any tag ending in " - Freeform" or " - Relationship".
+  const isPlaceholderTag = (t) => /^other additional tags to be added$/i.test(t.trim()) || / - (freeform|relationship)$/i.test(t.trim());
   function dnfPredictorTags(readings, isVisible) {
     const dnfs = readings.filter(r => r.kind === 'DNF').length;
     const overall = readings.length ? dnfs / readings.length : 0;
-    const rows = [...tagTotals(readings, isVisible)].filter(([, v]) => v.readings >= MIN_RATE)
+    const rows = [...tagTotals(readings, isVisible)].filter(([t, v]) => v.readings >= MIN_PREDICT && !isPlaceholderTag(t))
       .map(([tag, v]) => ({ tag, readings: v.readings, dnfs: v.dnfs, rate: v.dnfs / v.readings }))
       .filter(r => r.rate - overall >= 0.15).sort((a, b) => b.rate - a.rate || b.readings - a.readings);
     const finding = !readings.length ? 'No readings yet.' : rows.length
       ? `You DNF ${pct(rows[0].rate)}% of fics tagged ${rows[0].tag}, against ${pct(overall)}% overall.`
-      : `No tag with 5+ reads has a DNF rate 15 points above your overall ${pct(overall)}%.`;
+      : `No tag with ${MIN_PREDICT}+ reads has a DNF rate 15 points above your overall ${pct(overall)}%.`;
     return { overall, rows, finding };
   }
 
@@ -1791,7 +1847,7 @@ const ShelfRules = (() => {
     median, authorFirstDates, periodStats, monthKeys, monthlySeries, monthLabel, topTags, authorRanking,
     emptyFilters, filterCount, filterReadings, sortDiary, exportRow, toCSV, buildModel, REQUIRED_COLS,
     // Phase 2
-    MIN_RANK, MIN_RATE, MIN_LOGGED, LENGTH_BANDS, WEEKDAYS, DNF_REASONS, lengthBand, weekdayOf, weekStart, quarterKey, quarterLabel, quarterKeys,
+    MIN_RANK, MIN_RATE, MIN_LOGGED, MIN_PREDICT, isPlaceholderTag, LENGTH_BANDS, WEEKDAYS, DNF_REASONS, lengthBand, weekdayOf, weekStart, quarterKey, quarterLabel, quarterKeys,
     monthName, yearsWithReads, tagTotals, tagBump, tagDrift, completionByBand, dnfReasonOf, dnfReasonsByQuarter, dnfPredictorTags, abandonPoints,
     goToAuthors, loyaltyByYear, rereadList, weekdayCounts, readingClock, readingDays, streaks, calendarYear, paceByBand, monthTotals,
     personalBests, persona, availableRecaps, recap, yardstick, volumeFindings, completionMonthFinding, statusFinding, fmtK,
@@ -2024,7 +2080,7 @@ function shadeOf(hex, i) {
 }
 function pairingColor(model, key) {
   const p = model.pairingByKey.get(key);
-  return p ? shadeOf(fandomColor(p.fandom), p.rank) : 'var(--ink-3)';
+  return p ? shadeOf(fandomColor(p.fandom), p.rank) : 'var(--ink-2)';
 }
 
 // ---------- grouping: fandom (default) or pairing ----------
@@ -2055,6 +2111,24 @@ function makeGroups(model, level, totals, present, max) {
     color: (k) => isOther(k) ? shadeOf(fandomColor(fandomOf(k)), 5) : pairingColor(model, k),
   };
 }
+// Text colour on a coloured fill: white on dark fills (blue, #111), #111111 on bright ones (lime, coral, pink).
+function onFill(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim()); if (!m) return '#FFFFFF';
+  const n = parseInt(m[1], 16), lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(n >> 16 & 255) + 0.7152 * lin(n >> 8 & 255) + 0.0722 * lin(n & 255);
+  return (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? '#111111' : '#FFFFFF';
+}
+const chipOn = (hex) => ({ background: hex, color: onFill(hex) });
+function fandomInitials(name) {
+  const src = SOURCES.find(s => s.fandom === name);
+  if (src && src.initials) return src.initials;
+  return R.shortFandom(name).split(/\s+/).filter(w => !/^(of|and|the|a)$/i.test(w)).map(w => w[0]).join('').slice(0, 3).toUpperCase();
+}
+function FandomSquare({ fandom, size }) {
+  const c = fandomColor(fandom), ini = fandomInitials(fandom);
+  return html`<span className="fandom-square" aria-hidden="true" style=${{ background: c, color: onFill(c), width: size || 54, height: size || 54, fontSize: ini.length > 3 ? 11 : 15 }}>${ini}</span>`;
+}
+
 function GroupToggle({ value, onChange }) {
   return html`<div className="seg" role="group" aria-label="Break down by">
     <button className=${value === 'fandom' ? 'on' : ''} onClick=${() => onChange('fandom')}>Fandom</button>
@@ -2093,6 +2167,7 @@ const ICONS = {
   table: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
   settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   back: 'M15 18l-6-6 6-6',
+  chevron: 'M9 18l6-6-6-6',
   flame: 'M12 22c4 0 7-2.7 7-6.6 0-3.4-2.3-5.6-4-7.4-.4 2-1.4 3.2-2.6 3.8.3-3.3-1.1-6.4-4.4-8.8.2 3.6-3 6.1-3 10.6C5 19.4 8 22 12 22z',
 };
 function Icon({ name, size = 18, fill = false, sw = 2 }) {
@@ -2119,12 +2194,12 @@ function Sparkline({ values, color }) {
   const vs = values.map(v => v === null ? 0 : v);
   const max = Math.max(...vs), min = Math.min(...vs);
   const w = 64, h = 20;
-  if (!vs.length || max === min && max === 0) return html`<svg width=${w} height=${h} aria-hidden="true"><line x1="0" y1=${h - 1} x2=${w} y2=${h - 1} stroke="var(--surface-3)" strokeWidth="2" strokeLinecap="round" /></svg>`;
+  if (!vs.length || max === min && max === 0) return html`<svg width=${w} height=${h} aria-hidden="true"><line x1="0" y1=${h - 1} x2=${w} y2=${h - 1} stroke="currentColor" strokeOpacity=".3" strokeWidth="2" strokeLinecap="round" /></svg>`;
   const pts = vs.map((v, i) => [i * (w - 4) / Math.max(1, vs.length - 1) + 2, h - 2 - (max === min ? (h - 4) / 2 : (v - min) / (max - min) * (h - 4))]);
   const last = pts[pts.length - 1];
   return html`<svg width=${w} height=${h} aria-hidden="true">
-    <polyline points=${pts.map(p => p.join(',')).join(' ')} fill="none" stroke=${color || 'var(--ink-3)'} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
-    <circle cx=${last[0]} cy=${last[1]} r="2.6" fill=${color || 'var(--ink)'} />
+    <polyline points=${pts.map(p => p.join(',')).join(' ')} fill="none" stroke=${color || 'currentColor'} strokeOpacity=".75" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    <circle cx=${last[0]} cy=${last[1]} r="3" fill=${color || 'currentColor'} />
   </svg>`;
 }
 
@@ -2139,7 +2214,8 @@ function ChartBox({ config, height }) {
   return html`<div style=${{ position: 'relative', height: height || 220 }}><canvas ref=${ref} role="img"></canvas></div>`;
 }
 function chartTheme() {
-  return { ink: cssVar('--ink'), ink2: cssVar('--ink-2'), ink3: cssVar('--ink-3'), line: cssVar('--line'), surface: cssVar('--surface'), accent: cssVar('--accent'), pos: cssVar('--pos'), dnf: cssVar('--dnf') };
+  return { ink: cssVar('--ink'), ink2: cssVar('--ink-2'), ink3: cssVar('--ink-2'), line: cssVar('--line'), surface: cssVar('--surface'), surface2: cssVar('--surface-2'),
+    accent: cssVar('--blue'), blue: cssVar('--blue'), lime: cssVar('--lime'), coral: cssVar('--coral'), pink: cssVar('--pink'), dnf: cssVar('--coral') };
 }
 function baseScales(t, yFmt) {
   return {
@@ -2152,11 +2228,12 @@ function topRadius(wordsByGroup, keys, i) {
   return (ctx) => {
     const j = ctx.dataIndex;
     const top = keys.map(k => wordsByGroup[k][j]).reduce((acc, v, k) => v > 0 ? k : acc, -1);
-    return i === top ? { topLeft: 5, topRight: 5, bottomLeft: 0, bottomRight: 0 } : 0;
+    return i === top ? { topLeft: 8, topRight: 8, bottomLeft: 0, bottomRight: 0 } : 0;
   };
 }
 function tooltip(t, label) {
-  return { backgroundColor: t.ink, titleColor: t.surface, bodyColor: t.surface, padding: 10, cornerRadius: 10, displayColors: true, boxPadding: 4, callbacks: label ? { label } : {} };
+  return { backgroundColor: '#111111', titleColor: '#FFFFFF', bodyColor: '#FFFFFF', padding: 10, cornerRadius: 12, displayColors: true, boxPadding: 4,
+    titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '700' }, bodyFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' }, callbacks: label ? { label } : {} };
 }
 
 // ---------- auth ----------
@@ -2239,22 +2316,27 @@ function headline(cur, prev, p, cp, today, level, model) {
   const name = R.periodName(p, today);
   const when = p.unit === 'all' ? 'in total' : (p.unit === 'days' ? `from ${name}` : `in ${name}`) + (p.partial ? ' so far' : '');
   if (!cur.finished && !cur.dnfs) return p.unit === 'all' ? 'No finished reads yet.' : `Nothing finished ${when} yet.`;
-  let s = `You read ${fmtWords(cur.words)} words ${when}`;
+  // Built as parts so the words figure and the fandom/pairing names can carry the highlighter.
+  const s = ['You read ', { hl: 'lime', t: `${fmtWords(cur.words)} words` }, ` ${when}`];
   if (prev && cp) {
     const cname = R.periodName(cp, today);
     if (prev.words > 0) {
       const d = (cur.words - prev.words) / prev.words, pct = Math.round(Math.abs(d) * 100);
-      s += pct === 0 ? `, about the same as ${cname}` : `, ${pct}% ${d > 0 ? 'more' : 'fewer'} than ${cname}`;
-    } else if (cur.words > 0) s += cp.type === 'likeForLike' ? `, up from none over ${cname}` : `, up from none in ${cname}`;
+      s.push(pct === 0 ? `, about the same as ${cname}` : `, ${pct}% ${d > 0 ? 'more' : 'fewer'} than ${cname}`);
+    } else if (cur.words > 0) s.push(cp.type === 'likeForLike' ? `, up from none over ${cname}` : `, up from none in ${cname}`);
   }
   // "mostly …" names the biggest fandom (or pairing, when the breakdown is set to Pairing).
   const byPairing = level === 'pairing';
   const nameOf = (k) => byPairing ? ((model.pairingByKey.get(k) || {}).name || k) : R.shortFandom(k);
   const parts = Object.entries(byPairing ? cur.byPairing : cur.byFandom).filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1]);
   const total = parts.reduce((t, [, w]) => t + w, 0);
-  if (parts.length === 1 && total > 0) s += `, all ${nameOf(parts[0][0])}`;
-  else if (parts.length > 1) s += parts[0][1] / total >= 0.6 ? `, mostly ${nameOf(parts[0][0])}` : `, split between ${nameOf(parts[0][0])} and ${nameOf(parts[1][0])}`;
-  return s + '.';
+  if (parts.length === 1 && total > 0) s.push(', all ', { hl: 'pink', t: nameOf(parts[0][0]) });
+  else if (parts.length > 1) {
+    if (parts[0][1] / total >= 0.6) s.push(', mostly ', { hl: 'pink', t: nameOf(parts[0][0]) });
+    else s.push(', split between ', { hl: 'pink', t: nameOf(parts[0][0]) }, ' and ', { hl: 'lime', t: nameOf(parts[1][0]) });
+  }
+  s.push('.');
+  return s.map((x, i) => typeof x === 'string' ? x : html`<span key=${i} className=${'hl ' + x.hl}>${x.t}</span>`);
 }
 
 function delta(cur, prev, kind) {
@@ -2268,31 +2350,31 @@ function delta(cur, prev, kind) {
   return { text: pct === 0 ? '±0%' : `${d > 0 ? '↑' : '↓'} ${pct}%`, dir: pct === 0 ? 0 : Math.sign(d) };
 }
 
-function StatTile({ label, value, d, good, spark, note, cmpLabel }) {
-  const cls = !d ? '' : d.dir === 0 || good === null ? 'flat' : (d.dir > 0) === good ? 'pos' : 'neg';
-  return html`<div className="tile">
+// tone: 'blue' | 'lime' | 'coral' | 'pink' for the four headline tiles; none for the rest.
+function StatTile({ label, value, d, good, spark, note, cmpLabel, tone }) {
+  return html`<div className=${'tile' + (tone ? ' c-' + tone : '')}>
     <div className="tile-label">${label}</div>
-    <div className="tile-value serif num">${value}</div>
+    <div className="tile-value num">${value}</div>
     ${note ? html`<div className="tile-note">${note}</div>` : null}
     <div className="tile-foot">
-      ${d ? html`<span className=${'delta ' + cls} title=${cmpLabel ? 'vs ' + cmpLabel : ''}>${d.text}</span>` : html`<span></span>`}
-      <${Sparkline} values=${spark} color=${cls === 'neg' ? 'var(--neg)' : 'var(--accent)'} />
+      ${d ? html`<span className="delta" title=${cmpLabel ? 'vs ' + cmpLabel : ''}>${d.text}</span>` : html`<span></span>`}
+      <${Sparkline} values=${spark} />
     </div>
   </div>`;
 }
 
 function PeriodPicker({ period, setPeriod, custom, setCustom, compare, setCompare, today }) {
   return html`<div>
-    <div className="chips" role="tablist">
-      ${PERIOD_OPTIONS.map(([k, label]) => html`<button key=${k} className=${'chip' + (period === k ? ' on' : '')} onClick=${() => setPeriod(k)}>${label}</button>`)}
+    <div className="seg full" role="tablist" aria-label="Period">
+      ${PERIOD_OPTIONS.map(([k, label]) => html`<button key=${k} role="tab" aria-selected=${period === k} className=${period === k ? 'on' : ''} onClick=${() => setPeriod(k)}>${label}</button>`)}
     </div>
     ${period === 'custom' ? html`<div className="row" style=${{ marginTop: 8 }}>
       <input type="date" className="date-input" value=${custom.start} max=${today} onChange=${e => setCustom(c => ({ ...c, start: e.target.value }))} aria-label="From" />
       <span className="faint">to</span>
       <input type="date" className="date-input" value=${custom.end} max=${today} onChange=${e => setCustom(c => ({ ...c, end: e.target.value }))} aria-label="To" />
     </div>` : null}
-    ${period !== 'all' ? html`<div className="row" style=${{ marginTop: 10 }}>
-      <span className="small faint">Compare with</span>
+    ${period !== 'all' ? html`<div style=${{ marginTop: 12 }}>
+      <div className="small faint" style=${{ fontWeight: 700, margin: '0 2px 6px' }}>Compare with</div>
       <div className="seg">
         <button className=${compare === 'prev' ? 'on' : ''} onClick=${() => setCompare('prev')}>Previous period</button>
         <button className=${compare === 'year' ? 'on' : ''} onClick=${() => setCompare('year')}>Same time last year</button>
@@ -2310,10 +2392,15 @@ function CurrentlyReading({ model, onOpen }) {
         const total = f.chaptersPlanned;
         const pct = total ? Math.min(100, Math.round(f.chaptersRead / total * 100)) : Math.min(100, Math.round(f.chaptersRead / Math.max(1, f.chapters) * 100));
         return html`<button key=${f.key} className="mini" onClick=${() => onOpen(f.key)}>
-          ${f.status === 'Paused' ? html`<div><span className="badge plain">Paused</span></div>` : null}
-          <div className="mini-title">${f.title}</div>
-          <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${f.authors.join(', ') || '—'}</div>
-          <${SourceLine} fic=${f} />
+          <div className="reading-top">
+            <${FandomSquare} fandom=${f.fandom} />
+            <div style=${{ minWidth: 0 }}>
+              <div className="mini-title">${f.title}</div>
+              <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${f.authors.join(', ') || '—'}</div>
+              <div className="tiny faint">${f.dateStarted ? 'Started ' + R.fmtDay(f.dateStarted, R.melbourneToday()) : 'Start date not logged'}${f.status === 'Paused' ? ' · Paused' : ''}</div>
+            </div>
+          </div>
+          <${SourceLine} fic=${f} mode="one" />
           <div className="row" style=${{ gap: 10, flexWrap: 'nowrap', marginTop: 'auto' }}>
             <div className="bar-track" style=${{ flex: 1 }}><div className="bar-fill" style=${{ width: pct + '%', background: fandomColor(f.fandom) }}></div></div>
             <span className="small num" style=${{ fontWeight: 700 }}>${f.chaptersRead} / ${total === null ? '?' : total}</span>
@@ -2385,7 +2472,7 @@ function TopTags({ readings, dnfNoWords, onTag, limit, minFics }) {
     ${!tags.length ? html`<div className="empty">No tagged words in this period.</div>` : tags.map(t => html`<div className="hbar-row" key=${t.tag} onClick=${() => onTag(t.tag)} style=${{ cursor: 'pointer' }}>
       <span className="hbar-label">${t.tag}</span>
       <span className="hbar-val num">${fmtWords(t.words)} · ${t.fics} fic${t.fics === 1 ? '' : 's'}</span>
-      <div className="hbar-track"><div style=${{ width: Math.max(2, t.words / max * 100) + '%', background: 'var(--accent)', borderRadius: 99 }}></div></div>
+      <div className="hbar-track"><div style=${{ width: Math.max(2, t.words / max * 100) + '%', background: 'var(--blue)', borderRadius: 99 }}></div></div>
     </div>`)}
     ${dnfNoWords ? html`<div className="tiny faint" style=${{ marginTop: 8 }}>${dnfNoWords} DNF${dnfNoWords === 1 ? '' : 's'} with no Chapters Read add no words here.</div>` : null}
   </div>`;
@@ -2416,7 +2503,7 @@ function GroupSplit({ model, stats, themeTick, level }) {
   const stacked = groups.level === 'pairing';
   const ring = stacked ? 150 : 112;
   return html`<div className="card" style=${{ display: 'grid', gridTemplateColumns: stacked ? 'minmax(0, 1fr)' : '112px minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
-    <div style=${{ width: ring, justifySelf: stacked ? 'center' : 'start' }}>${total ? html`<${ChartBox} config=${config} height=${ring} />` : html`<div style=${{ width: ring, height: ring, borderRadius: '50%', border: '14px solid var(--surface-2)' }}></div>`}</div>
+    <div style=${{ width: ring, justifySelf: stacked ? 'center' : 'start' }}>${total ? html`<${ChartBox} config=${config} height=${ring} />` : html`<div style=${{ width: ring, height: ring, borderRadius: '50%', boxShadow: 'inset 0 0 0 14px var(--surface-2)' }}></div>`}</div>
     <div>
       ${!keys.length ? html`<div className="small faint">No readings in this period.</div>` : null}
       ${keys.map((k, i) => {
@@ -2478,18 +2565,18 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
   const cmpLabel = cp ? R.periodName(cp, today) : '';
   const set = (patch) => setDash(d => ({ ...d, ...patch }));
   return html`<div>
-    <h1 className="headline serif">${headline(cur, prev, p, cp, today, groupBy, model)}</h1>
+    <h1 className="headline">${headline(cur, prev, p, cp, today, groupBy, model)}</h1>
     <div className="small faint" style=${{ margin: '0 2px 14px' }}>${streak.currentWeekly.len ? html`<span className="streak-chip" title=${`Weeks in a row with a reading day${streak.currentWeekly.est ? ' (includes estimated dates)' : ''}`}><${Icon} name="flame" size=${12} fill sw=${0} />${streak.currentWeekly.len}-week streak</span>` : null}${p.unit === 'all' ? 'Everything you’ve read, including undated reads.'
       : `${p.partial ? R.rangeLabel(p.start, today < p.end ? today : p.end, today) + ' so far' : R.rangeLabel(p.start, p.end, today)}${cp ? ` · compared with ${cmpLabel}` : ''}`}</div>
     <${PeriodPicker} period=${period} setPeriod=${v => set({ period: v })} custom=${custom} setCustom=${fn => setDash(d => ({ ...d, custom: fn(d.custom) }))} compare=${compare} setCompare=${v => set({ compare: v })} today=${today} />
 
     <div className="tiles" style=${{ marginTop: 16 }}>
-      <${StatTile} label="Words read" value=${fmtWords(cur.words)} d=${prev && delta(cur.words, prev.words)} good=${true} spark=${sp(s => s.words)} cmpLabel=${cmpLabel}
+      <${StatTile} tone="blue" label="Words read" value=${fmtWords(cur.words)} d=${prev && delta(cur.words, prev.words)} good=${true} spark=${sp(s => s.words)} cmpLabel=${cmpLabel}
         note=${cur.dnfNoWords ? `Leaves out ${cur.dnfNoWords} DNF${cur.dnfNoWords === 1 ? '' : 's'} with no chapters read` : null} />
-      <${StatTile} label="Fics finished" value=${fmtInt(cur.finished)} d=${prev && delta(cur.finished, prev.finished)} good=${true} spark=${sp(s => s.finished)} cmpLabel=${cmpLabel}
+      <${StatTile} tone="lime" label="Fics finished" value=${fmtInt(cur.finished)} d=${prev && delta(cur.finished, prev.finished)} good=${true} spark=${sp(s => s.finished)} cmpLabel=${cmpLabel}
         note=${cur.est ? `${cur.est} est.` : null} />
-      <${StatTile} label="DNFs" value=${fmtInt(cur.dnfs)} d=${prev && delta(cur.dnfs, prev.dnfs)} good=${null} spark=${sp(s => s.dnfs)} cmpLabel=${cmpLabel} />
-      <${StatTile} label="Completion rate" value=${fmtPct(cur.completion)} d=${prev && cur.completion !== null && prev.completion !== null ? delta(cur.completion, prev.completion, 'pts') : null} good=${true} spark=${sp(s => s.completion)} cmpLabel=${cmpLabel} />
+      <${StatTile} tone="coral" label="DNFs" value=${fmtInt(cur.dnfs)} d=${prev && delta(cur.dnfs, prev.dnfs)} good=${null} spark=${sp(s => s.dnfs)} cmpLabel=${cmpLabel} />
+      <${StatTile} tone="pink" label="Completion rate" value=${fmtPct(cur.completion)} d=${prev && cur.completion !== null && prev.completion !== null ? delta(cur.completion, prev.completion, 'pts') : null} good=${true} spark=${sp(s => s.completion)} cmpLabel=${cmpLabel} />
       <${StatTile} label="New authors" value=${fmtInt(cur.newAuthors)} d=${prev && delta(cur.newAuthors, prev.newAuthors)} good=${true} spark=${sp(s => s.newAuthors)} cmpLabel=${cmpLabel} />
       <${StatTile} label="Median fic length" value=${cur.median === null ? '—' : fmtWords(cur.median)} d=${prev && cur.median !== null && prev.median !== null ? delta(cur.median, prev.median) : null} good=${null} spark=${sp(s => s.median)} cmpLabel=${cmpLabel}
         note="Words, finished fics" />
@@ -2534,7 +2621,7 @@ function TagPicker({ label, chosen, onAdd, onRemove, vocab, exclude, tone }) {
   }, [q, vocab, chosen, exclude, ctx.isVisible]);
   return html`<div>
     <div className="flabel">${label}</div>
-    ${chosen.length ? html`<div className="wrap-chips" style=${{ marginBottom: 8 }}>${chosen.map(t => html`<button key=${t} className="chip sm on" style=${tone ? { background: 'var(--neg)', borderColor: 'var(--neg)', color: '#fff' } : null} onClick=${() => onRemove(t)}>${t}<span className="x">✕</span></button>`)}</div>` : null}
+    ${chosen.length ? html`<div className="wrap-chips" style=${{ marginBottom: 8 }}>${chosen.map(t => html`<button key=${t} className="chip sm on" style=${tone ? { background: '#111111', color: '#FFFFFF' } : null} onClick=${() => onRemove(t)}>${t}<span className="x">✕</span></button>`)}</div>` : null}
     <input className="plain-input" value=${q} onChange=${e => setQ(e.target.value)} placeholder=${q ? 'Search tags…' : 'Most common shown — or search…'} />
     <div className="wrap-chips" style=${{ marginTop: 8 }}>${sugg.map(([t, n]) => html`<button key=${t} className="chip sm" onClick=${() => { onAdd(t); setQ(''); }}>${t} <span className="faint">${n}</span></button>`)}</div>
   </div>`;
@@ -2562,10 +2649,10 @@ function FilterPanel({ filters, setFilters, model }) {
   const multiFandom = new Set(pairingOpts.map(p => p.fandom)).size > 1;
   return html`<div className="panel">
     <div><div className="flabel">Fandom</div>
-      <div className="wrap-chips">${fandomsRead.map(f => html`<button key=${f.name} className=${'chip sm' + (filters.fandoms.includes(f.name) ? ' on' : '')} onClick=${() => toggleFandom(f.name)}><span className="cdot" style=${{ background: fandomColor(f.name) }}></span>${f.name}</button>`)}</div>
+      <div className="wrap-chips">${fandomsRead.map(f => html`<button key=${f.name} className=${'chip sm' + (filters.fandoms.includes(f.name) ? ' on' : '')} style=${filters.fandoms.includes(f.name) ? chipOn(fandomColor(f.name)) : null} onClick=${() => toggleFandom(f.name)}><span className="cdot" style=${{ background: fandomColor(f.name) }}></span>${f.name}</button>`)}</div>
     </div>
     <div><div className="flabel">Pairing</div>
-      <div className="wrap-chips">${shownPairings.map(pr => html`<button key=${pr.key} className=${'chip sm' + (filters.pairings.includes(pr.key) ? ' on' : '')} onClick=${() => toggle('pairings', pr.key)} title=${pr.fandom}>
+      <div className="wrap-chips">${shownPairings.map(pr => html`<button key=${pr.key} className=${'chip sm' + (filters.pairings.includes(pr.key) ? ' on' : '')} style=${filters.pairings.includes(pr.key) ? chipOn(fandomColor(pr.fandom)) : null} onClick=${() => toggle('pairings', pr.key)} title=${pr.fandom}>
         ${multiFandom ? html`<span className="cdot" style=${{ background: pairingColor(model, pr.key) }}></span>` : null}${pr.name} <span className="faint">${pr.readings}</span></button>`)}</div>
       ${pairingOpts.length > PAIRING_LIMIT ? html`<button className="link-btn" style=${{ marginTop: 8 }} onClick=${() => setAllPairings(v => !v)}>${allPairings ? 'Show fewer' : `Show all ${pairingOpts.length} pairings`}</button>` : null}
     </div>
@@ -2611,25 +2698,33 @@ function SearchAndFilters({ filters, setFilters, model, open, setOpen }) {
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+// DNF marker: a #111 "DNF" pill plus the DNR reason beside it.
+function DnfPill({ fic }) {
+  return html`<span className="row" style=${{ gap: 6, flexWrap: 'nowrap', display: 'inline-flex' }}><span className="badge dnf">DNF</span>${fic.dnrReason ? html`<span className="dnf-reason">${fic.dnrReason}</span>` : null}</span>`;
+}
+const fmtKudos = (n) => (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n || 0));
 function DiaryRow({ r, onOpen }) {
   const d = r.date ? r.date.split('-').map(Number) : null;
   const wd = d ? WEEKDAYS[new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay()] : '';
-  return html`<button className="drow" onClick=${() => onOpen(r.ficKey)}>
-    <div className="dday">${d ? html`<b className="num">${d[2]}</b><span>${wd}</span>` : html`<span>—</span>`}</div>
-    <div className="dstripe" style=${{ background: fandomColor(r.fandom) }}></div>
+  const c = fandomColor(r.fandom), dnf = r.kind === 'DNF';
+  return html`<button className=${'drow' + (dnf ? ' is-dnf' : '')} onClick=${() => onOpen(r.ficKey)}>
+    <div className="date-dot" style=${{ background: c, color: onFill(c) }}>${d ? html`<b className="num">${d[2]}</b><span>${wd}</span>` : html`<b>—</b>`}</div>
     <div style=${{ minWidth: 0 }}>
-      <div className="dtitle">${r.fic.title}</div>
-      <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${r.fic.authors.join(', ') || '—'}</div>
-      <${SourceLine} fic=${r.fic} mode="one" style=${{ marginTop: 2 }} />
+      <div className=${'dtitle' + (dnf ? ' struck' : '')}>${r.fic.title}</div>
       <div className="dmeta">
-        <span className="num">${r.kind === 'DNF' ? (r.words === null ? `${fmtWords(r.fic.words)} · words not counted` : `${fmtWords(r.words)} of ${fmtWords(r.fic.words)}`) : fmtWords(r.words)}</span>
-        <${Enjoy} n=${r.fic.enjoyment} />
-        <${KB} fic=${r.fic} />
-        ${r.kind === 'DNF' ? html`<span className="badge dnf">DNF</span>` : null}
+        <span style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>${r.fic.authors.join(', ') || '—'}</span>
+        <span>·</span><span className="num">${dnf ? (r.words === null ? `${fmtWords(r.fic.words)} (not counted)` : `${fmtWords(r.words)} of ${fmtWords(r.fic.words)}`) : fmtWords(r.words)}</span>
+        ${r.fic.enjoyment ? html`<span>·</span><span>★ ${r.fic.enjoyment}</span>` : null}
+        <span>·</span><span className="num">${fmtKudos(r.fic.kudos)} kudos</span>
+      </div>
+      <${SourceLine} fic=${r.fic} mode="one" style=${{ marginTop: 4 }} />
+      ${dnf || r.readNumber > 1 || (r.origin === 'dataList' && r.fic.timesRead > r.readNumber) || r.est || r.fic.kg || r.fic.bk ? html`<div className="dmeta">
+        ${dnf ? html`<${DnfPill} fic=${r.fic} />` : null}
         ${r.readNumber > 1 ? html`<span className="badge plain">${ordinal(r.readNumber)} read</span>` : null}
         ${r.origin === 'dataList' && r.fic.timesRead > r.readNumber ? html`<span className="badge plain">Read ${r.fic.timesRead} times</span>` : null}
         ${r.est ? html`<${EstBadge} />` : null}
-      </div>
+        <${KB} fic=${r.fic} />
+      </div>` : null}
     </div>
   </button>`;
 }
@@ -2649,7 +2744,7 @@ function Diary({ readings, onOpen, today }) {
   if (!sorted.length) return html`<div className="card empty" style=${{ marginTop: 14 }}>Nothing matches these filters.</div>`;
   return html`<div>
     ${groups.map(g => html`<div key=${g.key}>
-      <div className="month-head"><span>${g.key === 'undated' ? 'No date' : `${R.MONTHS[+g.key.slice(5) - 1]} ${g.key.slice(0, 4)}`}</span><span className="faint">${counts[g.key]}</span></div>
+      <div className="month-head"><span className="hl lime">${g.key === 'undated' ? 'No date' : `${R.MONTHS[+g.key.slice(5) - 1]} ${g.key.slice(0, 4)}`}</span><span className="faint">${counts[g.key]}</span></div>
       <div className="diary">${g.items.map(r => html`<${DiaryRow} key=${r.id} r=${r} onOpen=${onOpen} />`)}</div>
     </div>`)}
     ${limit < sorted.length ? html`<button className="big-btn ghost" style=${{ marginTop: 14 }} onClick=${() => setLimit(l => l + 80)}>Show more (${sorted.length - limit} left)</button>` : null}
@@ -2680,9 +2775,9 @@ function Library({ readings, onOpen, today, view, setView }) {
         <button className=${view === 'table' ? 'on' : ''} onClick=${() => setView('table')} aria-label="Table"><${Icon} name="table" size=${15} /></button>
       </div>
     </div>
-    ${view === 'cards' ? html`<div className="lib-grid">${shown.map(e => html`<button key=${e.fic.key} className="lcard" style=${{ '--fc': fandomColor(e.fic.fandom) }} onClick=${() => onOpen(e.fic.key)}>
-        <div className="row" style=${{ gap: 6 }}><span className="badge rating">${e.fic.rating || '—'}</span>${statusOf(e) === 'DNF' ? html`<span className="badge dnf">DNF</span>` : null}${e.est ? html`<${EstBadge} />` : null}</div>
-        <div className="mini-title">${e.fic.title}</div>
+    ${view === 'cards' ? html`<div className="lib-grid">${shown.map(e => html`<button key=${e.fic.key} className=${'lcard' + (statusOf(e) === 'DNF' ? ' is-dnf' : '')} style=${{ '--fc': fandomColor(e.fic.fandom) }} onClick=${() => onOpen(e.fic.key)}>
+        <div className="row" style=${{ gap: 6 }}><span className="badge rating">${e.fic.rating || '—'}</span>${statusOf(e) === 'DNF' ? html`<${DnfPill} fic=${e.fic} />` : null}${e.est ? html`<${EstBadge} />` : null}</div>
+        <div className=${'mini-title' + (statusOf(e) === 'DNF' ? ' struck' : '')}>${e.fic.title}</div>
         <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${e.fic.authors.join(', ')}</div>
         <${SourceLine} fic=${e.fic} />
         <div className="row small faint" style=${{ gap: 8, marginTop: 'auto' }}>
@@ -2694,10 +2789,10 @@ function Library({ readings, onOpen, today, view, setView }) {
       </button>`)}</div>`
     : html`<div className="table-wrap"><table>
         <thead><tr><th>Title</th><th>Fandom · Pairing</th><th>Status</th><th>Last</th><th>Words</th><th>Enjoy</th><th>Rating</th><th>Reads</th></tr></thead>
-        <tbody>${shown.map(e => html`<tr key=${e.fic.key} className="click" onClick=${() => onOpen(e.fic.key)}>
-          <td className="t">${e.fic.title}<div className="tiny faint" style=${{ fontWeight: 400 }}>${e.fic.authors.join(', ')}</div></td>
+        <tbody>${shown.map(e => html`<tr key=${e.fic.key} className=${'click' + (statusOf(e) === 'DNF' ? ' is-dnf' : '')} onClick=${() => onOpen(e.fic.key)}>
+          <td className="t"><span className=${statusOf(e) === 'DNF' ? 'struck' : ''}>${e.fic.title}</span><div className="tiny faint" style=${{ fontWeight: 600 }}>${e.fic.authors.join(', ')}</div></td>
           <td style=${{ whiteSpace: 'normal', minWidth: 190 }}><${SourceLine} fic=${e.fic} mode="full" /></td>
-          <td>${statusOf(e) === 'Read' ? 'Finished' : 'DNF'}${e.est ? ' · est.' : ''}</td>
+          <td>${statusOf(e) === 'Read' ? 'Finished' : html`<${DnfPill} fic=${e.fic} />`}${e.est ? ' · est.' : ''}</td>
           <td className="num">${e.last ? R.fmtDay(e.last, today) : '—'}</td>
           <td className="num">${fmtWords(e.fic.words)}</td>
           <td>${e.fic.enjoyment ? e.fic.enjoyment + '/5' : '—'}</td>
@@ -2784,7 +2879,8 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
         <button className="icon-btn" onClick=${onClose} aria-label="Close"><${Icon} name="close" size=${16} /></button>
       </div>
       <${SourceLine} fic=${fic} mode="full" style=${{ marginTop: 14, fontSize: 13.5 }} />
-      <h2 className="serif" style=${{ fontSize: 26, lineHeight: 1.18, margin: '8px 0 4px', fontWeight: 600 }}>${fic.title}</h2>
+      <h2 className=${'detail-title' + (fic.status === 'DNF' ? ' struck' : '')}>${fic.title}</h2>
+      ${fic.status === 'DNF' ? html`<div className="dnf-banner"><${DnfPill} fic=${fic} />${fic.lastReadDate ? html`<span className="tiny faint">${R.fmtDay(fic.lastReadDate, today)}</span>` : null}</div>` : null}
       <div className="muted">by ${fic.authors.length ? fic.authors.map((a, i) => html`<span key=${a}>${i ? ', ' : ''}<button className="link-btn" style=${{ fontSize: 15 }} onClick=${() => onAuthor(a)}>${a}</button></span>`) : '—'}</div>
 
       ${authorCtx.length ? html`<div className="card" style=${{ marginTop: 14, padding: 14 }}>
@@ -2838,8 +2934,10 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
 // one-sentence finding above it.
 // ============================================================================================
 const TREND_TABS = [['volume', 'Volume'], ['tastes', 'Tastes'], ['completion', 'Completion'], ['loyalty', 'Loyalty'], ['habits', 'Habits'], ['bests', 'Bests']];
-// Categorical slots in fixed order (reference palette, validated light + dark). Never cycled.
-const CAT = (i) => cssVar(`--cat-${i + 1}`);
+// Chart series that aren't fandoms use the brand colours in a fixed order; series 6–10 reuse them
+// with a dashed line, and every series is also named in its legend.
+const CAT_VARS = ['--blue', '--coral', '--lime', '--pink', '--ink'];
+const CAT = (i) => cssVar(CAT_VARS[i % CAT_VARS.length]);
 function Finding({ text }) { return text ? html`<p className="finding">${text}</p>` : null; }
 function TSection({ title, right, finding, children }) {
   return html`<div className="section">
@@ -2850,7 +2948,7 @@ function TSection({ title, right, finding, children }) {
 }
 function LoggedEmpty({ n, what }) {
   return html`<div className="card logged-empty">
-    <div className="serif" style=${{ fontSize: 18, fontWeight: 600 }}>This fills in as you log reads in the fandom apps</div>
+    <div className="title">This fills in as you log reads in the fandom apps</div>
     <div className="small muted" style=${{ marginTop: 6 }}>${what} needs reads with a start date${what.includes('clock') ? ' and time' : ''}. Backfilled reads only have a finish date.</div>
     <div className="tiny faint" style=${{ marginTop: 8 }}>Based on ${n} logged read${n === 1 ? '' : 's'} so far · shows from ${R.MIN_LOGGED}</div>
   </div>`;
@@ -2859,12 +2957,12 @@ const LoggedNote = ({ n }) => html`<div className="tiny faint" style=${{ marginT
 const EstNote = ({ est, total, what }) => est ? html`<div className="tiny faint" style=${{ marginTop: 8 }}>${est === total ? 'All' : `${est} of ${total}`} ${what || 'dates'} ${est === 1 ? 'is' : 'are'} estimated (backfilled from AO3).</div>` : null;
 function ScopeChips({ model, level, value, onChange }) {
   const opts = level === 'pairing'
-    ? model.fandomList.flatMap(f => f.pairings.filter(p => p.readings >= R.MIN_RANK).map(p => ({ key: 'p:' + p.key, label: p.name, color: pairingColor(model, p.key) })))
-    : model.fandomList.filter(f => f.pairings.some(p => p.readings)).map(f => ({ key: 'f:' + f.name, label: f.short, color: fandomColor(f.name) }));
+    ? model.fandomList.flatMap(f => f.pairings.filter(p => p.readings >= R.MIN_RANK).map(p => ({ key: 'p:' + p.key, label: p.name, color: pairingColor(model, p.key), fill: fandomColor(f.name) })))
+    : model.fandomList.filter(f => f.pairings.some(p => p.readings)).map(f => ({ key: 'f:' + f.name, label: f.short, color: fandomColor(f.name), fill: fandomColor(f.name) }));
   if (opts.length < 2 && level !== 'pairing') return null;
   return html`<div className="chips" style=${{ marginTop: 10 }}>
     <button className=${'chip sm' + (!value ? ' on' : '')} onClick=${() => onChange(null)}>All</button>
-    ${opts.map(o => html`<button key=${o.key} className=${'chip sm' + (value === o.key ? ' on' : '')} onClick=${() => onChange(o.key)}><span className="cdot" style=${{ background: o.color }}></span>${o.label}</button>`)}
+    ${opts.map(o => html`<button key=${o.key} className=${'chip sm' + (value === o.key ? ' on' : '')} style=${value === o.key ? chipOn(o.fill) : null} onClick=${() => onChange(o.key)}><span className="cdot" style=${{ background: o.color }}></span>${o.label}</button>`)}
   </div>`;
 }
 const scopeFilter = (scope) => !scope ? () => true : scope.startsWith('f:') ? (r) => r.fandom === scope.slice(2) : (r) => r.pairingKey === scope.slice(2);
@@ -2873,7 +2971,7 @@ function YearChips({ years, value, onChange }) {
 }
 const fmtDayShort = (iso, today) => iso ? R.fmtDay(iso, today) : '—';
 function MiniBar({ value, max, color }) {
-  return html`<div className="hbar-track" style=${{ gridColumn: 'auto', marginTop: 4 }}><div style=${{ width: Math.max(2, (value / (max || 1)) * 100) + '%', background: color || 'var(--accent)', borderRadius: 99 }}></div></div>`;
+  return html`<div className="hbar-track" style=${{ gridColumn: 'auto', marginTop: 4 }}><div style=${{ width: Math.max(2, (value / (max || 1)) * 100) + '%', background: color || 'var(--blue)', borderRadius: 99 }}></div></div>`;
 }
 function ShowMore({ total, shown, onMore }) {
   return total > shown ? html`<button className="link-btn" style=${{ marginTop: 10 }} onClick=${onMore}>Show all ${total}</button>` : null;
@@ -2886,7 +2984,7 @@ function RecapLauncher({ model, today, openRecap }) {
   if (!av.years.length) return null;
   return html`<div className="card recap-launch">
     <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-      <div><div className="serif" style=${{ fontSize: 19, fontWeight: 600 }}>Year in Reading</div><div className="tiny faint">Your recap, story-style</div></div>
+      <div><div className="section-title">Year in Reading</div><div className="tiny faint">Your recap, story-style</div></div>
       <span style=${{ fontSize: 26 }} aria-hidden="true">✦</span>
     </div>
     <div className="chips" style=${{ marginTop: 10 }}>
@@ -2923,7 +3021,7 @@ function VolumeTab({ model, today, themeTick, groupBy, setGroupBy }) {
   }, [s, groups, themeTick]);
   const ficsCfg = useMemo(() => {
     const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0;
-    return { type: 'bar', data: { labels, datasets: [{ label: 'Fics finished', data: s.finished, backgroundColor: t.accent, borderRadius: 4, borderSkipped: false, maxBarThickness: 26 }] },
+    return { type: 'bar', data: { labels, datasets: [{ label: 'Fics finished', data: s.finished, backgroundColor: t.accent, borderRadius: 8, borderSkipped: false, maxBarThickness: 26 }] },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.parsed.y} finished`) }, scales: sc } };
   }, [s, themeTick]);
   const undated = model.readings.filter(r => !r.date).length;
@@ -2954,9 +3052,9 @@ function BumpChart({ bump, onTag, themeTick }) {
     const t = chartTheme();
     return { type: 'line',
       data: { labels: bump.labels, datasets: bump.tags.map((x, i) => {
-        const color = i < 8 ? CAT(i) : t.ink3;
+        const color = CAT(i);
         return { label: x.tag, data: x.ranks.map(r => r === null ? null : Math.min(r, CAP + 1)), borderColor: color, backgroundColor: color,
-          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, pointBorderColor: t.surface, pointBorderWidth: 2, borderDash: i < 8 ? [] : [5, 4], spanGaps: false, tension: 0 };
+          borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6, pointBorderColor: t.surface, pointBorderWidth: 2, borderDash: i < 5 ? [] : [6, 4], spanGaps: false, tension: 0 };
       }) },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
         interaction: { mode: 'nearest', intersect: false },
@@ -2972,7 +3070,7 @@ function BumpChart({ bump, onTag, themeTick }) {
     <${ChartBox} config=${config} height=${260} />
     <div className="bump-legend">${bump.tags.map((x, i) => {
       const now = x.ranks.filter(r => r !== null).slice(-1)[0];
-      return html`<button key=${x.tag} onClick=${() => onTag(x.tag)}><i style=${{ background: i < 8 ? CAT(i) : 'transparent', borderColor: i < 8 ? 'transparent' : 'var(--ink-3)' }}></i><span>${x.tag}</span><b className="num">${now ? '#' + now : '—'}</b></button>`;
+      return html`<button key=${x.tag} onClick=${() => onTag(x.tag)}><svg width="18" height="6" aria-hidden="true"><line x1="1" y1="3" x2="17" y2="3" stroke=${CAT(i)} strokeWidth="3" strokeLinecap="round" strokeDasharray=${i < 5 ? null : '4 3'} /></svg><span>${x.tag}</span><b className="num">${now ? '#' + now : '—'}</b></button>`;
     })}</div>
     <div className="tiny faint" style=${{ marginTop: 8 }}>Rank by words read each quarter, among tags with 3+ reads that quarter. Tap a line or a tag to see those reads.</div>
   </div>`;
@@ -2983,7 +3081,7 @@ function DriftTable({ rows, kind, year, onTag }) {
     <thead><tr><th>Tag</th><th>${year - 1}</th><th>${year}</th><th>Change</th></tr></thead>
     <tbody>${rows.map(r => html`<tr key=${r.tag} className="click" onClick=${() => onTag(r.tag)}>
       <td className="t" style=${{ fontWeight: 500 }}>${r.tag}</td><td className="num">${Math.round(r.shareThen * 100)}%</td><td className="num">${Math.round(r.shareNow * 100)}%</td>
-      <td className="num" style=${{ color: r.change > 0 ? 'var(--pos)' : 'var(--neg)', fontWeight: 700 }}>${r.change > 0 ? '+' : '−'}${Math.abs(r.change).toFixed(1)} pts</td>
+      <td className="num" style=${{ fontWeight: 800 }}>${r.change > 0 ? '▲ +' : '▼ −'}${Math.abs(r.change).toFixed(1)} pts</td>
     </tr>`)}</tbody>
   </table></div>`;
 }
@@ -3047,14 +3145,14 @@ function CompletionTab({ model, today, themeTick, onTag }) {
   const ab = useMemo(() => R.abandonPoints(model.readings), [model]);
   const reasonsCfg = useMemo(() => {
     const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0;
-    const colorOf = (x, i) => (x === 'No reason' ? t.ink3 : CAT(i));
-    return { type: 'bar', data: { labels: reasons.labels, datasets: reasons.reasons.map((x, i) => ({ label: x, data: reasons.counts[x], backgroundColor: colorOf(x, i), borderColor: t.surface, borderWidth: { top: 2 }, borderRadius: 3, borderSkipped: false, stack: 'r', maxBarThickness: 28 })) },
+    const colorOf = (x, i) => (x === 'No reason' ? t.surface2 : CAT(i));
+    return { type: 'bar', data: { labels: reasons.labels, datasets: reasons.reasons.map((x, i) => ({ label: x, data: reasons.counts[x], backgroundColor: colorOf(x, i), borderRadius: 8, borderSkipped: false, stack: 'r', maxBarThickness: 28 })) },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false }, tooltip: { ...tooltip(t, c => ` ${c.dataset.label}: ${c.parsed.y}`), filter: c => c.parsed.y > 0 } }, scales: sc } };
   }, [reasons, themeTick]);
   const abCfg = useMemo(() => {
     const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0; sc.x.stacked = false; sc.y.stacked = false;
-    return { type: 'bar', data: { labels: ab.labels, datasets: [{ label: 'DNFs', data: ab.buckets, backgroundColor: t.dnf, borderRadius: 4, borderSkipped: false }] },
+    return { type: 'bar', data: { labels: ab.labels, datasets: [{ label: 'DNFs', data: ab.buckets, backgroundColor: t.dnf, borderRadius: 8, borderSkipped: false }] },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.parsed.y} DNF${c.parsed.y === 1 ? '' : 's'}`) }, scales: sc } };
   }, [ab, themeTick]);
   const bandMax = 1;
@@ -3073,7 +3171,7 @@ function CompletionTab({ model, today, themeTick, onTag }) {
     </${TSection}>
     <${TSection} title="DNF reasons by quarter" finding=${reasons.finding}>
       <div className="card">${reasons.inWindow ? html`<${ChartBox} config=${reasonsCfg} height=${190} />
-        <div className="legend">${reasons.reasons.map((x, i) => html`<span key=${x}><i style=${{ background: x === 'No reason' ? 'var(--ink-3)' : CAT(i) }}></i>${x}</span>`)}</div>` : html`<div className="empty">No dated DNFs in the last 8 quarters.</div>`}</div>
+        <div className="legend">${reasons.reasons.map((x, i) => html`<span key=${x}><i style=${{ background: x === 'No reason' ? 'var(--surface-2)' : CAT(i) }}></i>${x}</span>`)}</div>` : html`<div className="empty">No dated DNFs in the last 8 quarters.</div>`}</div>
     </${TSection}>
     <${TSection} title="Tags that predict a DNF" finding=${pred.finding}>
       ${pred.rows.length ? html`<div className="table-wrap"><table>
@@ -3082,7 +3180,7 @@ function CompletionTab({ model, today, themeTick, onTag }) {
           <td className="t" style=${{ fontWeight: 500 }}>${r.tag}</td><td className="num">${r.readings}</td><td className="num" style=${{ fontWeight: 700 }}>${Math.round(r.rate * 100)}%</td><td className="num faint">${Math.round(pred.overall * 100)}%</td>
         </tr>`)}</tbody></table></div>
         ${!allTags ? html`<${ShowMore} total=${pred.rows.length} shown=${10} onMore=${() => setAllTags(true)} />` : null}
-        <div className="tiny faint" style=${{ marginTop: 6 }}>Tags with ${R.MIN_RATE}+ reads and a DNF rate at least 15 points above your overall rate.</div>` : null}
+        <div className="tiny faint" style=${{ marginTop: 6 }}>Tags with ${R.MIN_PREDICT}+ reads and a DNF rate at least 15 points above your overall rate. AO3 placeholder tags are left out.</div>` : null}
     </${TSection}>
     <${TSection} title="Abandon point" finding=${ab.finding}>
       <div className="card">${ab.covered ? html`<${ChartBox} config=${abCfg} height=${170} />` : html`<div className="small muted">Fill in Chapters Read when you DNF a fic in the fandom apps to see where you tend to stop.</div>`}
@@ -3117,7 +3215,7 @@ function LoyaltyTab({ model, today, onAuthor, onOpen }) {
         <div className="row" style=${{ justifyContent: 'space-between' }}><b style=${{ fontWeight: 600 }}>${y.year}</b><span className="tiny faint">${y.authors} authors · ${y.readings} reads</span></div>
         ${y.returnRate === null ? html`<div className="small faint">Fewer than ${R.MIN_RATE} authors that year.</div>` : html`
           <div className="row small" style=${{ justifyContent: 'space-between', marginTop: 4 }}><span className="muted">Went back to</span><span className="num">${Math.round(y.returnRate * 100)}% of authors</span></div><${MiniBar} value=${y.returnRate} max=${1} />
-          <div className="row small" style=${{ justifyContent: 'space-between', marginTop: 6 }}><span className="muted">Top 5 authors’ share of words</span><span className="num">${Math.round(y.top5Share * 100)}%</span></div><${MiniBar} value=${y.top5Share} max=${1} color="var(--cat-2)" />`}
+          <div className="row small" style=${{ justifyContent: 'space-between', marginTop: 6 }}><span className="muted">Top 5 authors’ share of words</span><span className="num">${Math.round(y.top5Share * 100)}%</span></div><${MiniBar} value=${y.top5Share} max=${1} color="var(--coral)" />`}
       </div>`)}
       <div className="tiny faint" style=${{ marginTop: 8 }}>Return rate: authors with 2+ different fics read that year.</div></div>
     </${TSection}>
@@ -3131,7 +3229,7 @@ function LoyaltyTab({ model, today, onAuthor, onOpen }) {
         ${top.length ? top.map((a, i) => html`<div className="hbar-row" key=${a.author} onClick=${() => onAuthor(a.author)} style=${{ cursor: 'pointer' }}>
           <span className="hbar-label"><span className="faint num" style=${{ display: 'inline-block', width: 22 }}>${i + 1}</span>${a.author}</span>
           <span className="hbar-val num">${by === 'fics' ? `${a.fics} fic${a.fics === 1 ? '' : 's'} · ${fmtWords(a.words)}` : `${fmtWords(a.words)} · ${a.fics} fic${a.fics === 1 ? '' : 's'}`}</span>
-          <div className="hbar-track"><div style=${{ width: Math.max(2, (by === 'fics' ? a.fics : a.words) / max * 100) + '%', background: 'var(--accent)', borderRadius: 99 }}></div></div>
+          <div className="hbar-track"><div style=${{ width: Math.max(2, (by === 'fics' ? a.fics : a.words) / max * 100) + '%', background: 'var(--blue)', borderRadius: 99 }}></div></div>
         </div>`) : html`<div className="empty">No author has 3 or more reads yet.</div>`}
       </div>
     </${TSection}>
@@ -3139,11 +3237,11 @@ function LoyaltyTab({ model, today, onAuthor, onOpen }) {
 }
 
 // ---------- HABITS ----------
-const heat = (level) => level <= 0 ? 'var(--surface-2)' : `color-mix(in srgb, var(--accent) ${[0, 28, 50, 74, 100][level]}%, var(--surface-2))`;
+const heat = (level) => level <= 0 ? 'var(--surface-2)' : `color-mix(in srgb, var(--blue) ${[0, 28, 50, 74, 100][level]}%, var(--surface-2))`;
 function StreakTile({ label, s, unit, today }) {
   return html`<div className="tile">
     <div className="tile-label">${label}</div>
-    <div className="tile-value serif num">${s.len}<span className="small muted" style=${{ fontFamily: 'DM Sans', fontWeight: 500 }}> ${unit}${s.len === 1 ? '' : 's'}</span></div>
+    <div className="tile-value serif num">${s.len}<span className="small muted" style=${{ fontWeight: 600, letterSpacing: 0 }}> ${unit}${s.len === 1 ? '' : 's'}</span></div>
     <div className="tile-note">${s.len ? `${R.fmtDay(s.start, today)} – ${R.fmtDay(s.end, today)}` : 'None yet'}</div>
     <div>${s.est ? html`<${EstBadge} />` : null}</div>
   </div>`;
@@ -3177,7 +3275,7 @@ function HabitsTab({ model, today, themeTick }) {
   const cal = useMemo(() => R.calendarYear(model.readings, year), [model, year]);
   const wdCfg = useMemo(() => {
     const t = chartTheme(); const sc = baseScales(t); sc.y.ticks.precision = 0; sc.x.stacked = false; sc.y.stacked = false;
-    return { type: 'bar', data: { labels: wd.labels, datasets: [{ label: 'Finished', data: wd.counts, backgroundColor: t.accent, borderRadius: 4, borderSkipped: false, maxBarThickness: 34 }] },
+    return { type: 'bar', data: { labels: wd.labels, datasets: [{ label: 'Finished', data: wd.counts, backgroundColor: t.accent, borderRadius: 8, borderSkipped: false, maxBarThickness: 34 }] },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.parsed.y} finished`) }, scales: sc } };
   }, [wd, themeTick]);
   const clockMax = Math.max(1, ...clock.grid.flat());
@@ -3213,17 +3311,18 @@ function HabitsTab({ model, today, themeTick }) {
 }
 
 // ---------- BESTS ----------
+const BEST_TONES = ['lime', 'pink', 'coral', 'blue'];
 function BestsTab({ model, today, onOpen, onRange, onAuthor }) {
   const bests = useMemo(() => R.personalBests(model, today), [model, today]);
   const tap = (b) => { const t = b.target; if (!t) return; if (t.type === 'fic') onOpen(t.key); else if (t.type === 'range') onRange(t.start, t.end); else if (t.type === 'author') onAuthor(t.author); };
   const estN = bests.filter(b => b.est).length;
   return html`<div>
     <${Finding} text=${bests.length ? `${bests.length} personal bests so far${estN ? `; ${estN} rest on estimated dates` : ''}.` : 'Personal bests appear once you have dated reads.'} />
-    <div className="bests">${bests.map(b => b.key === 'fastest' && !b.enough
+    <div className="bests">${bests.map((b, bi) => b.key === 'fastest' && !b.enough
       ? html`<div key=${b.key} className="best-card"><div className="tile-label">${b.title}</div><div className="small muted" style=${{ marginTop: 6 }}>This fills in as you log reads in the fandom apps.</div><div className="tiny faint" style=${{ marginTop: 6 }}>Based on ${b.logged} logged read${b.logged === 1 ? '' : 's'} so far · shows from ${R.MIN_LOGGED}</div></div>`
       : html`<button key=${b.key} className="best-card" onClick=${() => tap(b)}>
         <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><span className="tile-label">${b.title}</span>${b.est ? html`<${EstBadge} />` : null}</div>
-        <div className="serif best-value">${b.value}</div>
+        <span className=${'value-chip' + (BEST_TONES[bi % 4] === 'blue' ? ' blue' : '')} style=${{ background: `var(--${BEST_TONES[bi % 4]})` }}>${b.value}</span>
         <div className="small muted best-sub">${b.sub}</div>
         ${b.list ? html`<div className="tiny faint" style=${{ marginTop: 4 }}>${b.list.length > 3 ? `+${b.list.length - 3} more · ` : ''}tap for the latest</div>` : null}
         ${b.logged ? html`<div className="tiny faint" style=${{ marginTop: 4 }}>Based on ${b.logged} logged reads</div>` : null}
@@ -3236,7 +3335,7 @@ function TrendsScreen({ model, today, themeTick, onAuthor, onTag, onOpen, onRang
   useEffect(() => { const el = barRef.current && barRef.current.querySelector('.on'); if (el && el.scrollIntoView) el.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [tab]);
   const props = { model, today, themeTick, onAuthor, onTag, onOpen, onRange, groupBy, setGroupBy };
   return html`<div>
-    <h1 className="headline serif" style=${{ marginTop: 10 }}>Trends</h1>
+    <h1 className="page-title">Trends</h1>
     <${RecapLauncher} model=${model} today=${today} openRecap=${openRecap} />
     <div className="trend-tabs" role="tablist" ref=${barRef}>
       ${TREND_TABS.map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${tab === k} className=${tab === k ? 'on' : ''} onClick=${() => setTab(k)}>${l}</button>`)}
@@ -3254,69 +3353,52 @@ function TrendsScreen({ model, today, themeTick, onAuthor, onTag, onOpen, onRang
 // YEAR IN READING: a full-screen, story-style recap. Cards come from R.recap(); redaction only
 // changes what's displayed/saved. Each card is designed at 360×640 and saved at 3× = 1080×1920.
 // ============================================================================================
-const RC_BG = { violet: '#5B45E0', ink: '#1C1A27', rust: '#B9402B', green: '#1C7F52', blue: '#2C79BE', plum: '#7A3E8F' };
-function cardColor(card, rc, model) {
-  const lightAccent = (name) => { const src = SOURCES.find(s => s.fandom === name); return src ? sourceAccent(src, false) : RC_BG.violet; };
-  const top = rc.cards.find(c => c.type === 'fandom');
-  const topColor = top ? lightAccent(top.fandom) : RC_BG.violet;
-  switch (card.type) {
-    case 'words': return topColor;
-    case 'counts': return RC_BG.ink;
-    case 'fandom': return topColor;
-    case 'tags': return RC_BG.violet;
-    case 'longest': return lightAccent(card.fic.fandom);
-    case 'author': return RC_BG.plum;
-    case 'month': return RC_BG.blue;
-    case 'weekday': return RC_BG.green;
-    case 'completion': return RC_BG.ink;
-    case 'riser': return RC_BG.rust;
-    case 'rated': return RC_BG.violet;
-    case 'persona': return topColor;
-    case 'ago': return RC_BG.plum;
-    default: return RC_BG.ink;
-  }
-}
+// Every Year in Reading card is full blue (#2D5BFF) with white text; value chips are lime, pink or coral.
 function RecapCard({ card, rc, redact, model, ctx, total, index }) {
   const titleOf = (fic) => (redact.hideE && fic.rating === 'E' ? 'An E-rated fic' : fic.title);
   const authorOf = (a) => (redact.hideAuthors ? 'An author you love' : a);
   const authorsOf = (fic) => (redact.hideAuthors ? '' : fic.authors.join(', '));
   const tagHidden = (t) => redact.hideSex && ctx.hidden.has(t);
-  const big = (txt, size) => html`<div className="rc-big serif" style=${{ fontSize: size || 92 }}>${txt}</div>`;
+  const TONES = ['lime', 'pink', 'coral'];
+  const big = (txt, size) => html`<div className="rc-big num" style=${size ? { fontSize: size } : null}>${txt}</div>`;
+  const hl = (txt) => html`<span className="rc-hl">${txt}</span>`;
+  // Stats as stacked white rows: label on the left, a coloured value chip on the right.
+  const rows = (items) => html`<div className="rc-rows">${items.filter(Boolean).map(([label, value], i) => html`<div key=${i} className="rc-row"><span>${label}</span><span className=${'rc-val ' + TONES[i % 3]}>${value}</span></div>`)}</div>`;
   let body;
   switch (card.type) {
-    case 'words': body = html`<div className="rc-kicker">You read</div>${big(fmtWords(card.words), 104)}<div className="rc-unit">words</div>
-      <div className="rc-line">That’s ${card.yardstick}.</div>`; break;
-    case 'counts': body = html`<div className="rc-kicker">You finished</div>${big(card.finished)}<div className="rc-unit">fic${card.finished === 1 ? '' : 's'}</div>
-      <div className="rc-split"><div><b className="serif">${card.dnfs}</b><span>DNF${card.dnfs === 1 ? '' : 's'}</span></div><div><b className="serif">${card.finished + card.dnfs}</b><span>started</span></div></div>`; break;
-    case 'fandom': body = html`<div className="rc-kicker">Your top fandom</div><div className="rc-title serif">${card.fandom}</div><div className="rc-line">${Math.round(card.fandomShare * 100)}% of your words</div>
-      <div className="rc-rule"></div><div className="rc-kicker">Your top pairing</div><div className="rc-title serif" style=${{ fontSize: 30 }}>${card.pairing}</div><div className="rc-line">${Math.round(card.pairingShare * 100)}% of your words</div>`; break;
+    case 'words': body = html`<div className="rc-kicker">You read</div>${big(fmtWords(card.words))}<div className="rc-unit">words</div>
+      <div className="rc-line">That’s ${hl(card.yardstick)}.</div>`; break;
+    case 'counts': body = html`<div className="rc-kicker">You finished</div>${big(card.finished)}<div className="rc-unit">${hl(`fic${card.finished === 1 ? '' : 's'}`)}</div>
+      ${rows([['DNFs', card.dnfs], ['Started', card.finished + card.dnfs]])}`; break;
+    case 'fandom': body = html`<div className="rc-kicker">Your top fandom</div><div className="rc-title">${hl(card.fandom)}</div>
+      ${rows([['Share of your words', Math.round(card.fandomShare * 100) + '%'], ['Top pairing', card.pairing], ['Pairing’s share', Math.round(card.pairingShare * 100) + '%']])}`; break;
     case 'tags': { const tags = card.tags.filter(t => !tagHidden(t.tag));
-      body = html`<div className="rc-kicker">Your top tags</div>${tags.length ? html`<ol className="rc-list">${tags.map(t => html`<li key=${t.tag}><span>${t.tag}</span><em>${fmtWords(t.words)}</em></li>`)}</ol>` : html`<div className="rc-line">Kept private.</div>`}
+      body = html`<div className="rc-kicker">Your top tags</div>${tags.length ? rows(tags.map((t, i) => [`${i + 1}. ${t.tag}`, fmtWords(t.words)])) : html`<div className="rc-line">${hl('Kept private.')}</div>`}
         ${tags.length < card.tags.length ? html`<div className="rc-small">${card.tags.length - tags.length} sex-related tag${card.tags.length - tags.length === 1 ? '' : 's'} hidden</div>` : null}`; break; }
-    case 'longest': body = html`<div className="rc-kicker">Your longest fic</div><div className="rc-title serif">${titleOf(card.fic)}</div>${authorsOf(card.fic) ? html`<div className="rc-line">by ${authorsOf(card.fic)}</div>` : null}
-      ${big(fmtWords(card.fic.words), 72)}<div className="rc-unit">words</div>`; break;
-    case 'author': body = html`<div className="rc-kicker">Your most-read author</div><div className="rc-title serif">${authorOf(card.author)}</div>
-      <div className="rc-split"><div><b className="serif">${card.fics}</b><span>fics</span></div><div><b className="serif">${fmtWords(card.words)}</b><span>words</span></div></div>`; break;
-    case 'month': body = html`<div className="rc-kicker">Your biggest month</div><div className="rc-title serif" style=${{ fontSize: 50 }}>${R.MONTHS[+card.month.slice(5) - 1]}</div>
-      <div className="rc-split"><div><b className="serif">${fmtWords(card.words)}</b><span>words</span></div><div><b className="serif">${card.finished}</b><span>finished</span></div></div>`; break;
+    case 'longest': body = html`<div className="rc-kicker">Your longest fic</div><div className="rc-title">${hl(titleOf(card.fic))}</div>
+      ${rows([['Words', fmtWords(card.fic.words)], authorsOf(card.fic) ? ['Author', authorsOf(card.fic)] : null])}`; break;
+    case 'author': body = html`<div className="rc-kicker">Your most-read author</div><div className="rc-title">${hl(authorOf(card.author))}</div>
+      ${rows([['Fics', card.fics], ['Words', fmtWords(card.words)]])}`; break;
+    case 'month': body = html`<div className="rc-kicker">Your biggest month</div><div className="rc-title" style=${{ fontSize: 44 }}>${hl(R.MONTHS[+card.month.slice(5) - 1])}</div>
+      ${rows([['Words', fmtWords(card.words)], ['Finished', card.finished]])}`; break;
     case 'weekday': { const max = Math.max(...card.counts);
-      body = html`<div className="rc-kicker">You finish the most on</div><div className="rc-title serif" style=${{ fontSize: 50 }}>${card.day}s</div><div className="rc-line">${card.count} of ${card.total} finished fics</div>
-        <div className="rc-bars">${card.counts.map((c, i) => html`<div key=${i}><i style=${{ height: Math.max(4, c / max * 90) + 'px', opacity: c === max ? 1 : 0.45 }}></i><span>${R.WEEKDAYS[i][0]}</span></div>`)}</div>`; break; }
-    case 'completion': body = html`<div className="rc-kicker">Completion rate</div>${big(Math.round(card.rate * 100) + '%')}<div className="rc-line">You finished ${card.finished} of the ${card.closed} fics you started.</div>`; break;
-    case 'riser': body = html`<div className="rc-kicker">A new obsession</div><div className="rc-title serif">${tagHidden(card.tag) ? 'A tag kept private' : card.tag}</div>
-      <div className="rc-split"><div><b className="serif">${Math.round(card.then * 100)}%</b><span>of your words before</span></div><div><b className="serif">${Math.round(card.now * 100)}%</b><span>now</span></div></div>`; break;
-    case 'rated': body = html`<div className="rc-kicker">Your highest-rated</div><div className="rc-stars">${'★'.repeat(card.score)}</div>
-      <ol className="rc-list plain">${card.fics.map(f => html`<li key=${f.key}><span>${titleOf(f.fic)}</span>${authorsOf(f.fic) ? html`<em>${authorsOf(f.fic)}</em>` : null}</li>`)}</ol>`; break;
-    case 'persona': body = html`<div className="rc-kicker">Your reading persona</div><div className="rc-title serif" style=${{ fontSize: 46 }}>${card.name}</div><div className="rc-line">Because ${card.rule}.</div>`; break;
-    case 'ago': body = html`<div className="rc-kicker">One year ago you were reading…</div><div className="rc-small" style=${{ marginBottom: 10 }}>${R.monthName(card.month)}</div>
-      <ol className="rc-list plain">${card.fics.map(f => html`<li key=${f.key}><span>${titleOf(f.fic)}</span><em>${f.kind === 'DNF' ? 'DNF' : fmtWords(f.fic.words) + ' words'}</em></li>`)}</ol>`; break;
-    case 'summary': body = html`<div className="rc-kicker">${rc.label}</div><div className="rc-title serif" style=${{ fontSize: 40 }}>That’s a wrap</div>
-      <div className="rc-grid"><div><b className="serif">${fmtWords(card.words)}</b><span>words</span></div><div><b className="serif">${card.finished}</b><span>finished</span></div>
-        <div><b className="serif">${card.dnfs}</b><span>DNFs</span></div><div><b className="serif" style=${{ fontSize: 20 }}>${card.persona || '—'}</b><span>persona</span></div></div>
-      ${card.fandom ? html`<div className="rc-line">Mostly ${R.shortFandom(card.fandom)}.</div>` : null}`; break;
+      body = html`<div className="rc-kicker">You finish the most on</div><div className="rc-title" style=${{ fontSize: 44 }}>${hl(card.day + 's')}</div><div className="rc-line">${card.count} of ${card.total} finished fics</div>
+        <div className="rc-bars">${card.counts.map((c, i) => html`<div key=${i}><i className=${c === max ? 'top' : ''} style=${{ height: Math.max(4, c / max * 90) + 'px' }}></i><span>${R.WEEKDAYS[i][0]}</span></div>`)}</div>`; break; }
+    case 'completion': body = html`<div className="rc-kicker">Completion rate</div>${big(Math.round(card.rate * 100) + '%')}
+      ${rows([['Finished', card.finished], ['Started', card.closed]])}`; break;
+    case 'riser': body = html`<div className="rc-kicker">A new obsession</div><div className="rc-title">${hl(tagHidden(card.tag) ? 'A tag kept private' : card.tag)}</div>
+      ${rows([['Share of your words before', Math.round(card.then * 100) + '%'], ['Share now', Math.round(card.now * 100) + '%']])}`; break;
+    case 'rated': body = html`<div className="rc-kicker">Your highest-rated</div><div className="rc-stars" aria-label=${`${card.score} out of 5`}>${'★'.repeat(card.score)}</div>
+      ${rows(card.fics.map(f => [titleOf(f.fic), authorsOf(f.fic) || `${card.score}/5`]))}`; break;
+    case 'persona': body = html`<div className="rc-kicker">Your reading persona</div><div className="rc-title" style=${{ fontSize: 40 }}>${hl(card.name)}</div><div className="rc-line">Because ${card.rule}.</div>`; break;
+    case 'ago': body = html`<div className="rc-kicker">One year ago you were reading…</div><div className="rc-title" style=${{ fontSize: 26 }}>${hl(R.monthName(card.month))}</div>
+      ${rows(card.fics.map(f => [titleOf(f.fic), f.kind === 'DNF' ? 'DNF' : fmtWords(f.fic.words)]))}`; break;
+    case 'summary': body = html`<div className="rc-kicker">${rc.label}</div><div className="rc-title" style=${{ fontSize: 40 }}>${hl('That’s a wrap')}</div>
+      ${rows([['Words', fmtWords(card.words)], ['Finished', card.finished], ['DNFs', card.dnfs], card.persona ? ['Persona', card.persona] : null, card.fandom ? ['Mostly', R.shortFandom(card.fandom)] : null])}`; break;
     default: body = null;
   }
-  return html`<div className="rc-card" style=${{ background: cardColor(card, rc, model) }}>
+  return html`<div className="rc-card">
+    <div className="rc-seg" aria-hidden="true">${Array.from({ length: total }, (_, k) => html`<i key=${k} className=${k <= index ? 'on' : ''}></i>`)}</div>
     <div className="rc-top"><span>Shelf Life</span><span>${rc.label}</span></div>
     <div className="rc-body">${body}</div>
     <div className="rc-foot"><span>${rc.est ? 'est. dates included' : ''}</span><span>${index + 1} / ${total}</span></div>
@@ -3383,20 +3465,22 @@ function RecapStory({ model, scope, today, onClose }) {
     } catch (e) { setBusy('Couldn’t save the images: ' + (e && e.message || e)); }
     finally { setStageAll(false); }
   };
-  if (!cards.length) return html`<div className="rc-overlay"><div className="rc-empty"><p>Not enough dated reads for this recap yet.</p><button className="pill-btn" onClick=${onClose}>Close</button></div></div>`;
+  if (!cards.length) return html`<div className="rc-overlay"><div className="rc-empty"><p>Not enough dated reads for this recap yet.</p><button className="rc-next" style=${{ minHeight: 48, padding: '0 24px', borderRadius: 999 }} onClick=${onClose}>Close</button></div></div>`;
   const card = cards[i];
   return html`<div className="rc-overlay" role="dialog" aria-modal="true" aria-label=${`Year in Reading: ${rc.label}`}>
-    <div className="rc-progress">${cards.map((_, k) => html`<i key=${k} className=${k < i ? 'done' : k === i ? 'on' : ''}></i>`)}</div>
     <div className="rc-bar">
-      <span className="rc-label">${rc.label}</span>
-      <button className="rc-btn" onClick=${() => { setPanel(true); setBusy(''); }} aria-label="Save images">Save</button>
-      <button className="rc-btn" onClick=${onClose} aria-label="Close recap"><${Icon} name="close" size=${18} /></button>
+      <span className="rc-label">Year in Reading · ${rc.label}</span>
+      <button className="rc-close" onClick=${onClose} aria-label="Close recap"><${Icon} name="close" size=${18} /></button>
     </div>
     <div className="rc-stage" ref=${viewRef} onPointerDown=${onDown} onPointerUp=${onUp}>
       <div className="rc-fit" style=${{ width: fit.w, height: fit.h }}><div className="rc-scale" style=${{ transform: `scale(${fit.k})` }}><${RecapCard} card=${card} rc=${rc} redact=${redact} model=${model} ctx=${ctx} total=${cards.length} index=${i} /></div></div>
     </div>
+    <div className="rc-actions">
+      <button className="rc-save" onClick=${() => { setPanel(true); setBusy(''); }} aria-label="Save images">Save image</button>
+      <button className="rc-next" onClick=${() => (i < cards.length - 1 ? next() : onClose())}>${i < cards.length - 1 ? 'Next' : 'Done'}</button>
+    </div>
     ${panel ? html`<div className="rc-panel-back" onClick=${() => setPanel(false)}><div className="rc-panel" onClick=${e => e.stopPropagation()}>
-      <div className="serif" style=${{ fontSize: 20, fontWeight: 600 }}>Save as images</div>
+      <div className="rc-panel-title">Save as images</div>
       <div className="small muted" style=${{ margin: '4px 0 12px' }}>1080 × 1920 PNG. Choose what to hide first.</div>
       ${[['hideE', 'Hide E-rated fic titles'], ['hideSex', 'Hide sex-related tags'], ['hideAuthors', 'Hide author names']].map(([k, l]) => html`<label key=${k} className="switch-row" style=${{ padding: '9px 0' }}><span>${l}</span><input type="checkbox" role="switch" className="switch" checked=${redact[k]} onChange=${e => setRedact(r => ({ ...r, [k]: e.target.checked }))} /></label>`)}
       ${rc.est ? html`<div className="tiny faint" style=${{ marginTop: 4 }}>Images include an “est. dates included” note, because ${rc.est} of ${rc.readings} reads have estimated dates.</div>` : null}
@@ -3420,11 +3504,11 @@ function RecapTeaser({ model, today, openRecap }) {
   const rc = useMemo(() => year ? R.recap(model, { type: 'year', year }, today, ctx.isVisible) : null, [model, year, today, ctx.isVisible]);
   if (!rc || !rc.cards.length) return null;
   const w = rc.cards.find(c => c.type === 'words'), n = rc.cards.find(c => c.type === 'counts'), per = rc.cards.find(c => c.type === 'persona');
-  return html`<button className="recap-teaser" onClick=${() => openRecap({ type: 'year', year })} style=${{ background: cardColor(rc.cards[0], rc, model) }}>
-    <span className="tiny" style=${{ opacity: 0.85, letterSpacing: '.08em', textTransform: 'uppercase', fontWeight: 700 }}>Year in Reading</span>
-    <span className="serif" style=${{ fontSize: 24, fontWeight: 600, lineHeight: 1.15 }}>Your ${rc.label}</span>
-    <span className="small" style=${{ opacity: 0.9 }}>${w ? fmtWords(w.words) + ' words' : ''}${n ? ` · ${n.finished} finished` : ''}${per ? ` · ${per.name}` : ''}</span>
-    <span className="small" style=${{ fontWeight: 700, marginTop: 4 }}>Watch your recap →</span>
+  return html`<button className="recap-teaser" onClick=${() => openRecap({ type: 'year', year })}>
+    <span className="tiny" style=${{ letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 800 }}>Year in Reading</span>
+    <span style=${{ fontSize: 23, fontWeight: 800, letterSpacing: '-0.4px', lineHeight: 1.2 }}>Your ${rc.label}</span>
+    <span className="small" style=${{ fontWeight: 600 }}>${w ? fmtWords(w.words) + ' words' : ''}${n ? ` · ${n.finished} finished` : ''}${per ? ` · ${per.name}` : ''}</span>
+    <span className="go">Watch your recap →</span>
   </button>`;
 }
 
@@ -3442,13 +3526,13 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
     download(`shelf-life-${today}.json`, JSON.stringify(out, null, 2), 'application/json');
   };
   return html`<div>
-    <h1 className="headline serif" style=${{ marginTop: 10 }}>Export</h1>
+    <h1 className="page-title">Export</h1>
     <div className="card" style=${{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div className="row" style=${{ justifyContent: 'space-between' }}>
         <span><b className="num" style=${{ fontSize: 20 }}>${fmtInt(readings.length)}</b> <span className="muted">reads</span></span>
         <button className="link-btn" onClick=${goFilters}>${n ? `${n} filter${n === 1 ? '' : 's'} applied · edit` : 'No filters · add some'}</button>
       </div>
-      <label className="check"><input type="checkbox" checked=${excludeE} onChange=${e => setExcludeE(e.target.checked)} /> Leave out E-rated fics</label>
+      <label className="switch-row"><span>Leave out E-rated fics</span><input type="checkbox" role="switch" className="switch" checked=${excludeE} onChange=${e => setExcludeE(e.target.checked)} /></label>
       <div className="row" style=${{ flexWrap: 'nowrap' }}>
         <button className="big-btn" onClick=${csv} disabled=${!readings.length}><${Icon} name="export" size=${17} /> CSV diary</button>
         <button className="big-btn ghost" onClick=${json} disabled=${!readings.length}>JSON</button>
@@ -3491,7 +3575,7 @@ function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setVie
   for (const i of model.tagInfo.values()) { const c = effectiveClass(i, ctx.overrides); if (n[c] !== undefined) n[c]++; }
   const nOver = Object.keys(ctx.overrides).length;
   return html`<div>
-    <h1 className="headline serif" style=${{ marginTop: 10 }}>Settings</h1>
+    <h1 className="page-title">Settings</h1>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Tags</h2></div>
       <div className="card">
@@ -3501,7 +3585,7 @@ function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setVie
         </div>
         <button className="set-row" onClick=${() => { setView('tags'); window.scrollTo(0, 0); }}>
           <span><b style=${{ fontWeight: 600 }}>Tag review</b><div className="tiny faint">${fmtInt(n.sexual)} sexual · ${fmtInt(n.unsure)} unsure${nOver ? ` · ${nOver} changed by you` : ''}</div></span>
-          <span className="faint" style=${{ transform: 'scaleX(-1)', display: 'inline-grid' }}><${Icon} name="back" size=${18} /></span>
+          <span className="faint" style=${{ display: 'inline-grid' }}><${Icon} name="chevron" size=${18} /></span>
         </button>
         <div className="set-row" style=${{ display: 'block' }}><${OverrideFileButtons} /></div>
       </div>
@@ -3584,7 +3668,7 @@ function TagReview({ model, onBack }) {
   return html`<div>
     <div className="row" style=${{ marginTop: 10, gap: 10, flexWrap: 'nowrap' }}>
       <button className="icon-btn" onClick=${onBack} aria-label="Back to Settings"><${Icon} name="back" size=${18} /></button>
-      <h1 className="headline serif" style=${{ margin: 0 }}>Tag review</h1>
+      <h1 className="page-title" style=${{ margin: 0 }}>Tag review</h1>
     </div>
     <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Your choice beats the rules. Unsure tags count as general until you decide. Saved on this device; use Export / Import to copy them to another.</div>
     <div className="search-wrap"><${Icon} name="search" size=${17} /><input className="text-input" value=${q} onChange=${e => setQ(e.target.value)} placeholder="Search tags" aria-label="Search tags" /></div>
@@ -3596,7 +3680,7 @@ function TagReview({ model, onBack }) {
         const eff = effectiveClass(i, ctx.overrides), changed = !!ctx.overrides[i.tag.toLowerCase()];
         return html`<div className="tr-row" key=${i.tag}>
           <div className="tr-tag">${i.tag}</div>
-          <div className="tiny faint">${fmtInt(i.count)} fic${i.count === 1 ? '' : 's'} · ${i.rule || 'no rule matched'}${changed ? html` · <span style=${{ color: 'var(--accent)', fontWeight: 700 }}>changed (rule says ${LABEL[i.cls].toLowerCase()})</span>` : ''}</div>
+          <div className="tiny faint">${fmtInt(i.count)} fic${i.count === 1 ? '' : 's'} · ${i.rule || 'no rule matched'}${changed ? html` · <span style=${{ color: 'var(--blue)', fontWeight: 700 }}>changed (rule says ${LABEL[i.cls].toLowerCase()})</span>` : ''}</div>
           <div className="row" style=${{ gap: 10 }}>
             <div className="seg sm" role="radiogroup" aria-label=${`Class for ${i.tag}`}>
               ${['sexual', 'unsure', 'general'].map(c => html`<button key=${c} role="radio" aria-checked=${eff === c} className=${(eff === c ? 'on ' : '') + 'cls-' + c} onClick=${() => setClass(i, c)}>${LABEL[c]}</button>`)}
@@ -3614,10 +3698,10 @@ function TagReview({ model, onBack }) {
 function SignInScreen({ onSignIn, ready, error, busy }) {
   return html`<div className="center-screen">
     <div style=${{ maxWidth: 360 }}>
-      <div className="wordmark serif" style=${{ justifyContent: 'center', fontSize: 34 }}><${Mark} size=${34} />Shelf Life</div>
+      <div className="wordmark" style=${{ justifyContent: 'center', fontSize: 34, letterSpacing: '-0.8px' }}><${Mark} size=${34} />Shelf Life</div>
       <p className="muted" style=${{ margin: '14px 0 22px' }}>Your fic reading history across ${[...new Set(SOURCES.map(s => R.shortFandom(s.fandom)))].join(', ').replace(/, ([^,]*)$/, ' and $1')}. Shelf Life only reads your Sheets; it never changes them.</p>
       <button className="big-btn" onClick=${onSignIn} disabled=${!ready || busy}>${busy ? 'Loading your reading…' : ready ? 'Sign in with Google' : 'Loading…'}</button>
-      ${error ? html`<p className="small" style=${{ color: 'var(--neg)', marginTop: 12 }}>${error}</p>` : null}
+      ${error ? html`<p className="banner err" style=${{ marginTop: 12 }}>${error}</p>` : null}
       <p className="tiny faint" style=${{ marginTop: 16 }}>You may see an "unverified app" warning — that's expected for a personal project. Tap Advanced → Go to (unsafe) to continue.</p>
     </div>
   </div>`;
@@ -3761,7 +3845,7 @@ function App() {
   const themeIcon = theme.mode === 'system' ? 'auto' : theme.mode === 'light' ? 'sun' : 'moon';
   return html`<${TagCtx.Provider} value=${tagCtx}><div>
     <header className="topbar"><div className="topbar-inner">
-      <div className="wordmark serif"><${Mark} />Shelf Life</div>
+      <div className="wordmark"><${Mark} />Shelf Life</div>
       <div className="sync">
         <span className="num">${syncing ? 'Syncing…' : `Synced ${ago(data.syncedAt, now)}`}</span>
         <button className="icon-btn" onClick=${() => doSync(true)} disabled=${syncing} aria-label="Sync now" title="Sync now">
@@ -3785,7 +3869,7 @@ function App() {
     </main>
 
     <nav className="nav"><div className="nav-inner">
-      ${[['home', 'home', 'Dashboard'], ['diary', 'diary', 'Diary'], ['trends', 'trends', 'Trends'], ['export', 'export', 'Export'], ['settings', 'settings', 'Settings']].map(([k, ic, label]) => html`<button key=${k} className=${tab === k ? 'on' : ''} onClick=${() => switchTab(k)} aria-current=${tab === k ? 'page' : null}><${Icon} name=${ic} size=${21} />${label}</button>`)}
+      ${[['home', 'home', 'Dashboard'], ['diary', 'diary', 'Diary'], ['trends', 'trends', 'Trends'], ['export', 'export', 'Export'], ['settings', 'settings', 'Settings']].map(([k, ic, label]) => html`<button key=${k} className=${tab === k ? 'on' : ''} onClick=${() => switchTab(k)} aria-current=${tab === k ? 'page' : null}><span className="nav-ic"><${Icon} name=${ic} size=${20} /></span>${label}</button>`)}
     </div></nav>
 
     ${detail ? html`<${FicDetail} ficKey=${detail} model=${model} onClose=${() => setDetail(null)} loadSummary=${loadSummary} onAuthor=${openAuthor} today=${today} />` : null}
@@ -3794,7 +3878,8 @@ function App() {
 }
 
 if (window.Chart) {
-  Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
+  Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+  Chart.defaults.font.weight = '600';
   Chart.defaults.font.size = 12;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);

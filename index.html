@@ -826,7 +826,38 @@ const ShelfRules = (() => {
     if (p.unit === 'month') return MONTHS[p.m - 1] + (p.y !== cy ? ' ' + p.y : '');
     if (p.unit === 'quarter') return `Q${Math.floor((p.m - 1) / 3) + 1} ${p.y}`;
     if (p.unit === 'year') return String(p.y);
+    if (p.type === 'likeForLike') return rangeLabel(p.start, p.end, today);
     return `${fmtDay(p.start, today)} – ${fmtDay(p.end, today)}`;
+  }
+
+  // Compact date range: "1–11 Sep", "1 Jul – 11 Sep", "1 Jan – 11 Oct 2025", "28 Dec 2025 – 3 Jan".
+  // The year is shown only when it isn't the current year.
+  function rangeLabel(start, end, today) {
+    if (!isIso(start) || !isIso(end)) return '';
+    const [y1, m1, d1] = start.split('-').map(Number), [y2, m2, d2] = end.split('-').map(Number);
+    const yr = (y) => (today && String(y) === today.slice(0, 4) ? '' : ' ' + y);
+    if (start === end) return `${d1} ${MON[m1 - 1]}${yr(y1)}`;
+    if (y1 === y2 && m1 === m2) return `${d1}–${d2} ${MON[m1 - 1]}${yr(y1)}`;
+    if (y1 === y2) return `${d1} ${MON[m1 - 1]} – ${d2} ${MON[m2 - 1]}${yr(y1)}`;
+    return `${fmtDay(start, today)} – ${fmtDay(end, today)}`;
+  }
+
+  // LIKE-FOR-LIKE COMPARISON for a period still in progress (This month / quarter / year).
+  // Compares the days elapsed so far with the SAME NUMBER OF DAYS from the start of the comparison
+  // period (previous period, or the same period last year), capped at that period's end.
+  //   1–11 Oct vs previous period -> 1–11 Sep; vs same time last year -> 1–11 Oct 2025;
+  //   31 Oct vs September -> capped at 30 Sep.
+  // Completed periods, Custom ranges and All time are returned unchanged (no trimming).
+  // Only the dashboard's comparison (tile deltas, headline, "compared with" line) uses this;
+  // sparklines and charts keep using full periods.
+  function likeForLike(p, cp, today) {
+    if (!p || !cp || !p.partial || p.unit === 'all' || p.unit === 'days' || !isIso(today)) return cp;
+    const upTo = today < p.end ? today : p.end;
+    if (upTo < p.start) return cp;
+    const days = Math.round((isoToUTC(upTo) - isoToUTC(p.start)) / 86400000) + 1;
+    let end = addDays(cp.start, days - 1);
+    if (end > cp.end) end = cp.end;
+    return { ...cp, unit: 'days', type: 'likeForLike', start: cp.start, end, partial: false, days, full: cp };
   }
 
   // ------------------------------------------------------------------------------------------
@@ -1114,7 +1145,7 @@ const ShelfRules = (() => {
     pairingKey, pairingFor, assignGroups, shortFandom, sourceLabel,
     num, splitList, normIsoDate, cellDate, serialToIso, serialToStamp, parseFicDate, workIdFromLink, realAuthors, parseChapters,
     ficFromRow, parseLogRows, buildReadings, makeReading,
-    melbourneToday, makePeriod, shiftPeriod, sameLastYear, inPeriod, periodName, fmtDay, addDays, monthShift, isIso,
+    melbourneToday, makePeriod, shiftPeriod, sameLastYear, likeForLike, rangeLabel, inPeriod, periodName, fmtDay, addDays, monthShift, isIso,
     median, authorFirstDates, periodStats, monthKeys, monthlySeries, monthLabel, topTags, authorRanking,
     emptyFilters, filterCount, filterReadings, sortDiary, exportRow, toCSV, buildModel, REQUIRED_COLS,
   };
@@ -1562,7 +1593,7 @@ function headline(cur, prev, p, cp, today, level, model) {
     if (prev.words > 0) {
       const d = (cur.words - prev.words) / prev.words, pct = Math.round(Math.abs(d) * 100);
       s += pct === 0 ? `, about the same as ${cname}` : `, ${pct}% ${d > 0 ? 'more' : 'fewer'} than ${cname}`;
-    } else if (cur.words > 0) s += `, up from none in ${cname}`;
+    } else if (cur.words > 0) s += cp.type === 'likeForLike' ? `, up from none over ${cname}` : `, up from none in ${cname}`;
   }
   // "mostly …" names the biggest fandom (or pairing, when the breakdown is set to Pairing).
   const byPairing = level === 'pairing';
@@ -1774,7 +1805,13 @@ function RecentlyFinished({ stats, onOpen, today }) {
 function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy }) {
   const { period, custom, compare } = dash;
   const p = useMemo(() => R.makePeriod(period, today, custom), [period, today, custom.start, custom.end]);
-  const cp = useMemo(() => p.unit === 'all' ? null : compare === 'year' ? R.sameLastYear(p) : R.shiftPeriod(p, -1), [p, compare]);
+  // Comparison period: previous period or same time last year, trimmed to the same number of days
+  // while the selected period is still in progress (R.likeForLike). Sparklines below use full periods.
+  const cp = useMemo(() => {
+    if (p.unit === 'all') return null;
+    const full = compare === 'year' ? R.sameLastYear(p) : R.shiftPeriod(p, -1);
+    return R.likeForLike(p, full, today);
+  }, [p, compare, today]);
   const cur = useMemo(() => R.periodStats(model.readings, p, model.authorFirst), [model, p]);
   const prev = useMemo(() => cp ? R.periodStats(model.readings, cp, model.authorFirst) : null, [model, cp]);
   // Sparklines: the 12 periods ending with this one (months for All time).
@@ -1789,7 +1826,8 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
   const set = (patch) => setDash(d => ({ ...d, ...patch }));
   return html`<div>
     <h1 className="headline serif">${headline(cur, prev, p, cp, today, groupBy, model)}</h1>
-    <div className="small faint" style=${{ margin: '0 2px 14px' }}>${p.unit === 'all' ? 'Everything you’ve read, including undated reads.' : `${R.fmtDay(p.start, today)} – ${R.fmtDay(p.end, today)}${cp ? ` · compared with ${cmpLabel}` : ''}`}</div>
+    <div className="small faint" style=${{ margin: '0 2px 14px' }}>${p.unit === 'all' ? 'Everything you’ve read, including undated reads.'
+      : `${p.partial ? R.rangeLabel(p.start, today < p.end ? today : p.end, today) + ' so far' : R.rangeLabel(p.start, p.end, today)}${cp ? ` · compared with ${cmpLabel}` : ''}`}</div>
     <${PeriodPicker} period=${period} setPeriod=${v => set({ period: v })} custom=${custom} setCustom=${fn => setDash(d => ({ ...d, custom: fn(d.custom) }))} compare=${compare} setCompare=${v => set({ compare: v })} today=${today} />
 
     <div className="tiles" style=${{ marginTop: 16 }}>

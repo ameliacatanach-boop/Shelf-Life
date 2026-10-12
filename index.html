@@ -350,6 +350,44 @@
   .rc-export { position: fixed; left: -10000px; top: 0; width: 360px; pointer-events: none; }
   .rc-export > div { margin-bottom: 10px; }
   .rc-empty { margin: auto; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+
+  /* ---------- Phase 3: goals, badges, notes, diversity ---------- */
+  .store-note { display: flex; flex-direction: column; align-items: flex-start; }
+  .store-note.warn { background: var(--lime); color: var(--on-bright); box-shadow: none; }
+  .store-note.warn .pill-btn { background: #FFFFFF; color: #111111; }
+  .ring { position: relative; flex-shrink: 0; display: grid; place-items: center; }
+  .ring svg { position: absolute; inset: 0; }
+  .ring-in { position: relative; font-size: 13px; font-weight: 800; letter-spacing: -0.2px; }
+  .goal-strip { padding-top: 2px; }
+  .goal-mini { flex: 0 0 auto; width: 260px; scroll-snap-align: start; background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; text-align: left; display: flex; align-items: center; gap: 12px; color: var(--ink); }
+  .goal-name { font-weight: 700; font-size: 14px; line-height: 1.3; }
+  .goal-pace { color: var(--ink-2); margin-top: 3px; line-height: 1.35; }
+  .goal-pace.behind { color: var(--ink); }
+  .goal-list { display: flex; flex-direction: column; gap: 12px; }
+  .goal-card { display: flex; gap: 14px; align-items: flex-start; }
+  .goal-form { display: flex; flex-direction: column; gap: 12px; }
+  .goal-form .date-input { background: var(--surface-2); box-shadow: none; }
+  .badge-chip { display: inline-flex; align-items: center; border-radius: 999px; margin-right: 8px; vertical-align: 1px; background: var(--surface); box-shadow: var(--shadow-chip); color: var(--ink); padding: 4px 10px; font: inherit; font-size: 12px; font-weight: 800; }
+  .badge-chip.new { background: var(--pink); color: var(--on-bright); }
+  .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .badge-card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .badge-card.locked { background: transparent; box-shadow: inset 0 0 0 2px var(--surface-2); }
+  .badge-lock-title { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; color: var(--ink-2); }
+  .reflect { background: var(--pink); color: var(--on-bright); margin-top: 16px; box-shadow: 0 8px 20px rgba(255, 168, 216, .25); }
+  .reflect .link-btn { color: var(--on-bright) !important; text-decoration: underline; }
+  .reflect .big-btn { background: #111111; color: #FFFFFF; }
+  .reflect .big-btn.ghost { background: #FFFFFF; color: #111111; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .reflect { box-shadow: none; } }
+  :root[data-theme="dark"] .reflect { box-shadow: none; }
+  .note-quote { font-size: 15px; font-weight: 600; line-height: 1.5; margin-top: 10px; }
+  .note-editor { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .note-input { width: 100%; resize: vertical; min-height: 96px; background: var(--surface); color: var(--ink); border: 0; border-radius: 20px; padding: 12px 14px; font: inherit; font-size: 14px; font-weight: 500; line-height: 1.5; box-shadow: var(--shadow-chip); }
+  .reflect .note-input { background: #FFFFFF; color: #111111; box-shadow: none; }
+  .rc-panel .note-input { background: var(--surface); }
+  .note-input:disabled { opacity: .6; }
+  .div-tile { text-align: left; font: inherit; color: inherit; cursor: pointer; }
+  .div-tile.picked { box-shadow: 0 0 0 3px var(--solid) !important; }
+  .rc-quote { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.35; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -1836,7 +1874,341 @@ const ShelfRules = (() => {
     const total = model.fics.length, closed = model.fics.filter(f => f.status === 'Read' || f.status === 'DNF').length;
     return total ? `${closed.toLocaleString('en-AU')} of your ${total.toLocaleString('en-AU')} listed fics (${pct(closed / total)}%) are Read or DNF.` : 'No fics loaded yet.';
   }
-  const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 2).replace(/\.?0+$/, '') + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n));
+  const fmtK = (n) => (n >= 1e6 ? String(n >= 1e7 ? Math.round(n / 1e6) : parseFloat((n / 1e6).toFixed(2))) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n));
+
+  // ==========================================================================================
+  // 9. PHASE 3: DIVERSITY, GOALS, BADGES, SESSIONS, REFLECTIONS
+  // ==========================================================================================
+
+  // ---- DIVERSITY ----------------------------------------------------------------------------
+  // Diversity score (0–100) = normalised Shannon entropy of words read across the categories of
+  // one dimension:
+  //     score = 100 × ( −Σ p·ln p ) ÷ ln k
+  // where p is each category's share of words and k is the number of categories read (with words).
+  // k = 1 (or no words) scores 0, because ln 1 = 0. A dimension is scored in a year only with
+  // >= MIN_DIVERSITY readings dated in that year. Words follow section 2 (DNFs without Chapters
+  // Read add none). Dimensions:
+  //   fandom   r.fandom                 pairing  r.pairingKey (pairing within its fandom)
+  //   author   words split equally between a fic's real authors (anonymous/orphan excluded)
+  //   tag      each visible freeform tag gets the reading's words; p = tag words ÷ all tag words
+  //   length   LENGTH_BANDS by the fic's Words          rating   Rating (S), blank = "Not rated"
+  const MIN_DIVERSITY = 10;
+  const DIVERSITY_DIMS = [
+    { key: 'fandom', label: 'Fandom' }, { key: 'pairing', label: 'Pairing' }, { key: 'author', label: 'Author' },
+    { key: 'tag', label: 'Freeform tag' }, { key: 'length', label: 'Length' }, { key: 'rating', label: 'Rating' },
+  ];
+  function categoryWords(rs, dim, isVisible, model) {
+    const m = new Map();
+    const add = (k, w) => { if (w > 0) m.set(k, (m.get(k) || 0) + w); };
+    for (const r of rs) {
+      const w = r.words || 0;
+      if (!w) continue;
+      if (dim === 'fandom') add(r.fandom, w);
+      else if (dim === 'pairing') add(r.pairingKey, w);
+      else if (dim === 'author') { const as = realAuthors(r.fic.authors); as.forEach(a => add(a, w / as.length)); }
+      else if (dim === 'tag') { for (const t of new Set(r.fic.tags)) if (!isVisible || isVisible(t)) add(t, w); }
+      else if (dim === 'length') add(lengthBand(r.fic.words).label, w);
+      else if (dim === 'rating') add(r.fic.rating || 'Not rated', w);
+    }
+    return m;
+  }
+  function entropyScore(map) {
+    const vals = [...map.values()].filter(v => v > 0), total = vals.reduce((a, b) => a + b, 0), k = vals.length;
+    if (!total || k <= 1) return { score: 0, k };
+    const h = -vals.reduce((s, v) => { const p = v / total; return s + p * Math.log(p); }, 0);
+    return { score: Math.round(100 * h / Math.log(k)), k };
+  }
+  function diversityBreakdown(dim, map, model) {
+    const total = [...map.values()].reduce((a, b) => a + b, 0);
+    if (!total) return 'No words read.';
+    const sorted = [...map].sort((a, b) => b[1] - a[1]);
+    const share = (n) => Math.round(sorted.slice(0, n).reduce((t, [, v]) => t + v, 0) / total * 100);
+    const name = (k) => dim === 'pairing' ? ((model && model.pairingByKey.get(k)) || {}).name || k : dim === 'fandom' ? shortFandom(k) : k;
+    if (dim === 'author') return `Top 5 authors = ${share(5)}% of words (${map.size} authors).`;
+    if (dim === 'tag') return `Top 10 tags = ${share(10)}% of tag words (${map.size} tags).`;
+    return `${name(sorted[0][0])} = ${share(1)}% of words${sorted.length > 1 ? ` (${sorted.length} ${dim === 'length' ? 'bands' : dim === 'rating' ? 'ratings' : dim + 's'})` : ''}.`;
+  }
+  function diversityYear(readings, isVisible, year, model) {
+    const rs = readings.filter(r => r.date && r.date.startsWith(year + '-'));
+    const enough = rs.length >= MIN_DIVERSITY;
+    const dims = DIVERSITY_DIMS.map(d => {
+      const map = categoryWords(rs, d.key, isVisible, model);
+      const e = entropyScore(map);
+      const top = [...map].sort((a, b) => b[1] - a[1])[0];
+      const total = [...map.values()].reduce((a, b) => a + b, 0);
+      const nameOf = (k) => d.key === 'pairing' ? ((model && model.pairingByKey.get(k)) || {}).name || k : d.key === 'fandom' ? shortFandom(k) : k;
+      const rows = [...map].sort((x, y) => y[1] - x[1]).slice(0, 8).map(([k, v]) => ({ key: k, name: nameOf(k), words: v, share: total ? v / total : 0 }));
+      return { ...d, score: enough ? e.score : null, k: e.k, breakdown: diversityBreakdown(d.key, map, model), top: top ? top[0] : null, topName: top ? nameOf(top[0]) : null, topShare: top && total ? top[1] / total : 0, rows };
+    });
+    return { year, readings: rs.length, enough, dims };
+  }
+  function diversityByYear(readings, isVisible, model) {
+    return yearsWithReads(readings).map(y => diversityYear(readings, isVisible, y, model));
+  }
+  // Finding: the biggest rise and the biggest fall vs the previous year among scored dimensions.
+  function diversityFinding(cur, prev, model) {
+    if (!cur || !cur.enough) return `Not enough reads in ${cur ? cur.year : 'this year'} to score variety (needs ${MIN_DIVERSITY}).`;
+    if (!prev || !prev.enough) return `Your most varied dimension in ${cur.year} is ${[...cur.dims].sort((a, b) => b.score - a.score)[0].label.toLowerCase()} (${[...cur.dims].sort((a, b) => b.score - a.score)[0].score}); there's no scored year before it to compare with.`;
+    const ch = cur.dims.map((d, i) => ({ d, p: prev.dims[i], delta: d.score - prev.dims[i].score }));
+    const up = ch.filter(x => x.delta > 0).sort((a, b) => b.delta - a.delta)[0];
+    const down = ch.filter(x => x.delta < 0).sort((a, b) => a.delta - b.delta)[0];
+    const nm = (x) => x.d.label.toLowerCase();
+    const why = (x) => x.d.top && x.d.topShare > x.p.topShare ? ` as ${x.d.key === 'pairing' ? ((model.pairingByKey.get(x.d.top) || {}).name || x.d.top) : x.d.key === 'fandom' ? shortFandom(x.d.top) : x.d.top} took over` : '';
+    const parts = [];
+    if (up) parts.push(`Your ${nm(up)} variety rose from ${up.p.score} to ${up.d.score} this year`);
+    if (down) parts.push(`${parts.length ? 'your' : 'Your'} ${nm(down)} variety fell from ${down.p.score} to ${down.d.score}${why(down)}`);
+    return parts.length ? parts.join('; ') + '.' : `Your variety in ${cur.year} matches ${prev.year} across every dimension.`;
+  }
+
+  // ---- GOALS --------------------------------------------------------------------------------
+  // A goal row: { id, type, scope, target, start, end, created, archived }. Progress uses the same
+  // definitions as the stat tiles (periodStats over the goal's dates, Melbourne calendar days):
+  //   words        words read                     finished   fics finished (Read readings)
+  //   newAuthors   authors whose first dated read falls in the period (as the tile)
+  //   scoped       fics finished in a fandom ("f:<fandom>") or pairing ("p:<pairing key>")
+  //   long         finished fics of 100k+ words
+  //   completion   completion rate (finished ÷ closed) at or above target %
+  //   weeks        different Monday–Sunday weeks with a reading day (as in streaks)
+  // Pace: expected = target × share of the period gone by (days elapsed incl. today ÷ days in
+  // period). On pace when value >= expected. Needed per week = what's left ÷ weeks remaining.
+  // Completion goals are "on pace" while the rate is at or above target.
+  const GOAL_TYPES = [
+    { key: 'words', label: 'Words read', unit: 'words' }, { key: 'finished', label: 'Fics finished', unit: 'fics' },
+    { key: 'newAuthors', label: 'New authors', unit: 'authors' }, { key: 'scoped', label: 'Fics finished in a fandom or pairing', unit: 'fics' },
+    { key: 'long', label: 'Finish fics of 100k+ words', unit: 'fics' }, { key: 'completion', label: 'Keep completion rate at or above', unit: '%' },
+    { key: 'weeks', label: 'Read in different weeks', unit: 'weeks' },
+  ];
+  function goalPeriod(kind, today, custom) {
+    const map = { month: 'thisMonth', quarter: 'thisQuarter', year: 'thisYear' };
+    const p = kind === 'custom' ? makePeriod('custom', today, custom) : makePeriod(map[kind] || kind, today);
+    return { start: p.start, end: p.end };
+  }
+  function goalProgress(goal, model, today) {
+    const start = goal.start, end = goal.end, target = Number(goal.target) || 0;
+    const p = { unit: 'days', type: 'custom', start, end };
+    const rs = model.readings.filter(r => inRange(r.date, start, end));
+    let value = 0, rate = null, closed = 0;
+    if (goal.type === 'words' || goal.type === 'finished' || goal.type === 'newAuthors' || goal.type === 'completion') {
+      const st = periodStats(model.readings, p, model.authorFirst);
+      value = goal.type === 'words' ? st.words : goal.type === 'finished' ? st.finished : goal.type === 'newAuthors' ? st.newAuthors : Math.round((st.completion || 0) * 100);
+      rate = st.completion; closed = st.finished + st.dnfs;
+    } else if (goal.type === 'scoped') {
+      const sc = String(goal.scope || '');
+      value = rs.filter(r => r.kind === 'Read' && (sc.startsWith('p:') ? r.pairingKey === sc.slice(2) : r.fandom === sc.slice(2))).length;
+    } else if (goal.type === 'long') value = rs.filter(r => r.kind === 'Read' && r.fic.words >= 100000).length;
+    else if (goal.type === 'weeks') value = new Set([...readingDays(model, today).keys()].filter(d => d >= start && d <= end).map(weekStart)).size;
+    const totalDays = dayDiff(start, end) + 1;
+    const upTo = today < end ? today : end;
+    const elapsed = today < start ? 0 : Math.min(totalDays, dayDiff(start, upTo) + 1);
+    const share = totalDays ? elapsed / totalDays : 1;
+    const ended = today > end, notStarted = today < start;
+    const daysLeft = ended ? 0 : totalDays - elapsed;
+    let onPace, needed = null, met;
+    if (goal.type === 'completion') {
+      met = rate !== null && closed >= 1 && value >= target;
+      onPace = met;
+    } else {
+      met = value >= target;
+      const expected = target * share;
+      onPace = value >= expected;
+      const weeksLeft = Math.max(1, daysLeft) / 7;
+      needed = met || ended ? 0 : Math.ceil((target - value) / weeksLeft);
+    }
+    const pctDone = goal.type === 'completion' ? (target ? Math.min(1, value / target) : 0) : (target ? Math.min(1, value / target) : 0);
+    const status = ended ? (met ? 'met' : 'missed') : notStarted ? 'upcoming' : met ? 'done' : onPace ? 'on pace' : 'behind pace';
+    return { value, target, pct: pctDone, share, elapsed, totalDays, daysLeft, onPace, needed, met, ended, status, closed, rate };
+  }
+  function describeGoal(goal, model) {
+    const t = GOAL_TYPES.find(x => x.key === goal.type) || { label: goal.type, unit: '' };
+    const n = Number(goal.target) || 0;
+    const scopeName = () => { const sc = String(goal.scope || ''); return sc.startsWith('p:') ? ((model.pairingByKey.get(sc.slice(2)) || {}).name || sc.slice(2)) : shortFandom(sc.slice(2)); };
+    if (goal.type === 'words') return `Read ${fmtK(n)} words`;
+    if (goal.type === 'finished') return `Finish ${n} fic${n === 1 ? '' : 's'}`;
+    if (goal.type === 'newAuthors') return `Read ${n} new author${n === 1 ? '' : 's'}`;
+    if (goal.type === 'scoped') return `Finish ${n} ${scopeName()} fic${n === 1 ? '' : 's'}`;
+    if (goal.type === 'long') return `Finish ${n} fic${n === 1 ? '' : 's'} of 100k+ words`;
+    if (goal.type === 'completion') return `Keep completion at ${n}%+`;
+    if (goal.type === 'weeks') return `Read in ${n} different week${n === 1 ? '' : 's'}`;
+    return `${t.label} ${n}`;
+  }
+
+  // ---- BADGES -------------------------------------------------------------------------------
+  // Badges are computed, never stored. Progress counts ALL readings (matching All-time totals).
+  // The earned date is found by walking DATED readings in date order: the date the running total
+  // first crosses the threshold; est. when that crossing reading is est. A badge whose total is
+  // crossed only with undated readings is earned with dateUnknown.
+  function badges(model, today) {
+    const all = model.readings;
+    const dated = all.filter(r => r.date).slice().sort((a, b) => a.date.localeCompare(b.date) || a.readNumber - b.readNumber);
+    const out = [];
+    const walkCross = (thresholds, inc) => {   // inc(r, state) -> running value after r
+      const res = {}; const state = {};
+      let i = 0;
+      for (const r of dated) {
+        const v = inc(r, state);
+        while (i < thresholds.length && v >= thresholds[i]) { res[thresholds[i]] = { date: r.date, est: !!r.est, ficKey: r.ficKey }; i++; }
+        if (i >= thresholds.length) break;
+      }
+      return res;
+    };
+    const ladder = (group, key, label, unitFn, thresholds, total, inc, fmtVal) => {
+      const cross = walkCross(thresholds, inc);
+      thresholds.forEach(t => {
+        const earned = total >= t, c = cross[t];
+        out.push({ group, key: `${key}-${t}`, title: label(t), rule: unitFn(t), threshold: t, value: total, earned,
+          date: earned && c ? c.date : null, est: !!(earned && c && c.est), dateUnknown: earned && !c, progressText: `${fmtVal(Math.min(total, t))} of ${fmtVal(t)}` });
+      });
+    };
+    const fin = all.filter(r => r.kind === 'Read');
+    const fmtInt = (n) => Math.round(n).toLocaleString('en-AU');
+    ladder('Words', 'words', t => `${fmtK(t)} words`, t => `Read ${fmtK(t)} words`, [100000, 500000, 1000000, 5000000, 10000000, 25000000],
+      sumWords(all), (r, s) => (s.v = (s.v || 0) + (r.words || 0)), fmtK);
+    ladder('Fics finished', 'finished', t => `${t} fics`, t => `Finish ${t} fics`, [10, 50, 100, 250, 500, 1000],
+      fin.length, (r, s) => (s.v = (s.v || 0) + (r.kind === 'Read' ? 1 : 0)), fmtInt);
+    const authorsAll = new Set(all.flatMap(r => realAuthors(r.fic.authors)));
+    ladder('Authors', 'authors', t => `${t} authors`, t => `Read ${t} different authors`, [50, 100, 250, 500],
+      authorsAll.size, (r, s) => { s.set = s.set || new Set(); realAuthors(r.fic.authors).forEach(a => s.set.add(a)); return s.set.size; }, fmtInt);
+    const fandomsAll = new Set(all.map(r => r.fandom));
+    ladder('Range', 'fandoms', () => 'Three fandoms', () => 'Read in 3 fandoms', [3],
+      fandomsAll.size, (r, s) => { s.set = s.set || new Set(); s.set.add(r.fandom); return s.set.size; }, fmtInt);
+    [[200000, 'Epic'], [500000, 'Saga']].forEach(([w, nm]) => {
+      const longest = Math.max(0, ...fin.map(r => r.fic.words));
+      ladder('Range', `long${w}`, () => `${nm}: ${fmtK(w)}+`, () => `Finish a ${fmtK(w)}+ word fic`, [1],
+        fin.filter(r => r.fic.words >= w).length, (r, s) => (s.v = (s.v || 0) + (r.kind === 'Read' && r.fic.words >= w ? 1 : 0)), () => '');
+      const b = out[out.length - 1]; b.progressText = `Longest so far: ${fmtK(longest)} words`;
+    });
+    // Weekly streaks: the date of the first reading day in the Nth week of the first run that long.
+    const days = readingDays(model, today);
+    const weeks = [...new Set([...days.keys()].sort().map(weekStart))].sort();
+    const runs = runsOf(weeks, w => addDays(w, 7));
+    const longestRun = Math.max(0, ...runs.map(r => r.len));
+    [10, 20].forEach(n => {
+      const run = runs.find(r => r.len >= n);
+      let date = null, est = false;
+      if (run) {
+        const wk = run.keys[n - 1];
+        const d = Array.from({ length: 7 }, (_, i) => addDays(wk, i)).find(x => days.has(x));
+        date = d; est = !days.get(d).logged;
+      }
+      out.push({ group: 'Streaks', key: `streak-${n}`, title: `${n}-week streak`, rule: `Read in ${n} weeks in a row`, threshold: n, value: longestRun, earned: !!run,
+        date, est, dateUnknown: false, progressText: `Longest streak: ${longestRun} of ${n} weeks` });
+    });
+    // First re-read.
+    const rr = dated.find(r => r.readNumber > 1);
+    const rrFallback = !rr ? dated.find(r => r.fic.timesRead > 1) : null;
+    out.push({ group: 'Habits', key: 'reread', title: 'First re-read', rule: 'Re-read a fic', threshold: 1, value: rr || rrFallback ? 1 : 0, earned: !!(rr || rrFallback || all.some(r => r.fic.timesRead > 1)),
+      date: rr ? rr.date : rrFallback ? rrFallback.date : null, est: rr ? !!rr.est : !!rrFallback, dateUnknown: !rr && !rrFallback && all.some(r => r.fic.timesRead > 1), progressText: 'No re-reads yet' });
+    // Logged reads.
+    const loggedAll = all.filter(r => isLogged(r)).length;
+    ladder('Habits', 'logged', t => t === 1 ? 'First logged read' : `${t} logged reads`, t => t === 1 ? 'Log a read with a start date in a fandom app' : `Log ${t} reads with a start date`, [1, 25],
+      loggedAll, (r, s) => (s.v = (s.v || 0) + (isLogged(r) ? 1 : 0)), fmtInt);
+    // A month with 80%+ completion and at least 10 closed reads (judged on the whole month; dated to the read that met it).
+    const byMonth = new Map();
+    for (const r of dated) { const k = r.date.slice(0, 7); if (!byMonth.has(k)) byMonth.set(k, []); byMonth.get(k).push(r); }
+    let monthBadge = null, bestMonth = null;
+    for (const [k, rs] of [...byMonth].sort()) {
+      const f = rs.filter(r => r.kind === 'Read').length, rate = f / rs.length;
+      if (rs.length >= 10 && (!bestMonth || rate > bestMonth.rate)) bestMonth = { k, rate, closed: rs.length };
+      if (!monthBadge && rs.length >= 10 && rate >= 0.8) {
+        let ff = 0, met = null;
+        rs.forEach((r, i) => { if (r.kind === 'Read') ff++; if (!met && i + 1 >= 10 && ff / (i + 1) >= 0.8) met = r; });
+        met = met || rs[rs.length - 1];
+        monthBadge = { k, date: met.date, est: !!met.est };
+      }
+    }
+    out.push({ group: 'Habits', key: 'month80', title: 'Finisher month', rule: 'A month with 80%+ completion and 10+ closed reads', threshold: 1, value: monthBadge ? 1 : 0, earned: !!monthBadge,
+      date: monthBadge && monthBadge.date, est: !!(monthBadge && monthBadge.est), dateUnknown: false,
+      progressText: bestMonth ? `Best month so far: ${Math.round(bestMonth.rate * 100)}% in ${monthName(bestMonth.k)} (${bestMonth.closed} closed)` : 'No month with 10+ closed reads yet' });
+    // Read in all 12 months of a calendar year.
+    let allYear = null, bestYear = null;
+    for (const y of yearsWithReads(dated)) {
+      const seen = new Set(); let hit = null;
+      for (const r of dated) { if (!r.date.startsWith(y + '-')) continue; const m = r.date.slice(5, 7); if (!seen.has(m)) { seen.add(m); if (seen.size === 12) { hit = r; break; } } }
+      if (!bestYear || seen.size > bestYear.n) bestYear = { y, n: seen.size };
+      if (hit && !allYear) allYear = { date: hit.date, est: !!hit.est };
+    }
+    out.push({ group: 'Habits', key: 'allyear', title: 'Every month', rule: 'Read in all 12 months of a calendar year', threshold: 12, value: bestYear ? bestYear.n : 0, earned: !!allYear,
+      date: allYear && allYear.date, est: !!(allYear && allYear.est), dateUnknown: false, progressText: bestYear ? `${bestYear.n} of 12 months in ${bestYear.y}` : '0 of 12 months' });
+    // Rated 10 fics 5/5 (dated by each fic's finish date; Enjoyment has no date of its own).
+    const fivesAll = new Set(fin.filter(r => r.fic.enjoyment === 5).map(r => r.ficKey));
+    ladder('Habits', 'fives', () => 'Ten 5/5s', () => 'Rate 10 finished fics 5/5', [10],
+      fivesAll.size, (r, s) => { s.set = s.set || new Set(); if (r.kind === 'Read' && r.fic.enjoyment === 5) s.set.add(r.ficKey); return s.set.size; }, fmtInt);
+    const recent = out.filter(b => b.earned && b.date && b.date >= addDays(today, -6) && b.date <= today);
+    return { list: out, recent };
+  }
+
+  // ---- SESSIONS -----------------------------------------------------------------------------
+  // From "Session started" / "Session ended" Reading Log events (timestamps with a time of day).
+  // A session runs from a start to the next end for the same fic, on the same day, lasting at
+  // most 6 hours; a second start before an end replaces the first (unmatched starts are ignored).
+  //   minutes  = end − start
+  //   words    = fic Words × chapters progressed ÷ chapters (progressed = end − start Chapters Read, min 0)
+  //   words per minute = median over sessions of 5+ minutes that moved forward at least a chapter (overall and per length band, bands need MIN_RANK)
+  const MIN_SESSIONS = 5;
+  const tsMinutes = (ts) => { const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})/.exec(ts || ''); return m ? { date: m[1], min: +m[2] * 60 + +m[3] } : null; };
+  function sessions(model) {
+    const out = [];
+    for (const [key, list] of model.eventsByKey) {
+      const fic = model.ficByKey.get(key); if (!fic) continue;
+      let open = null;
+      for (const e of list) {
+        if (e.event === 'Session started') { const t = tsMinutes(e.ts); open = t ? { e, t } : null; }
+        else if (e.event === 'Session ended' && open) {
+          const t = tsMinutes(e.ts);
+          if (t && t.date === open.t.date && t.min >= open.t.min && t.min - open.t.min <= 360) {
+            const progressed = Math.max(0, (e.chaptersRead || 0) - (open.e.chaptersRead || 0));
+            out.push({ ficKey: key, fic, date: t.date, startMin: open.t.min, minutes: t.min - open.t.min, progressed,
+              words: fic.chapters ? Math.round(fic.words * progressed / fic.chapters) : 0 });
+          }
+          open = null;
+        }
+      }
+    }
+    return out.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+  }
+  function sessionStats(ss) {
+    const total = ss.reduce((t, s) => t + s.minutes, 0);
+    const timed = ss.filter(s => s.minutes >= 5 && s.words > 0);   // speed needs time and progress
+    const wpm = (list) => list.length ? Math.round(median(list.map(s => Math.round(s.words / s.minutes * 10))) / 10) : null;
+    const bands = LENGTH_BANDS.map(b => { const l = timed.filter(s => s.fic.words >= b.min && s.fic.words < b.max); return { ...b, n: l.length, wpm: l.length >= MIN_RANK ? wpm(l) : null }; });
+    const grid = Array.from({ length: 7 }, () => Array(24).fill(0));
+    for (const s of ss) { let m = s.startMin, left = s.minutes; const d = weekdayOf(s.date); while (left > 0 && m < 1440) { const h = Math.floor(m / 60), take = Math.min(left, 60 - (m % 60)); grid[d][h] += take; m += take; left -= take; } }
+    const enough = ss.length >= MIN_SESSIONS;
+    let peak = null; grid.forEach((row, d) => row.forEach((v, h) => { if (v && (!peak || v > peak.v)) peak = { d, h, v }; }));
+    const finding = !enough ? '' : `You've read for ${Math.round(total / 60 * 10) / 10} hours across ${ss.length} sessions, at about ${wpm(timed) ?? '—'} words a minute.`;
+    return { count: ss.length, totalMinutes: total, avgMinutes: ss.length ? Math.round(total / ss.length) : 0, wpm: wpm(timed), timedCount: timed.length, bands, grid, peak, enough, finding };
+  }
+
+  // ---- REFLECTIONS --------------------------------------------------------------------------
+  // The monthly reflection card shows from the last 3 days of a month until the 7th of the next.
+  function reflectionWindow(today) {
+    const [y, m, d] = today.split('-').map(Number);
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    if (d >= last - 2) return `${y}-${String(m).padStart(2, '0')}`;
+    if (d <= 7) { const [py, pm] = monthShift(y, m, -1); return `${py}-${String(pm).padStart(2, '0')}`; }
+    return null;
+  }
+  // Headline stat + prompt for a month: a bigger month than the one before asks what made it big.
+  function reflectionFor(model, month) {
+    const [y, m] = month.split('-').map(Number);
+    const p = { unit: 'days', start: `${month}-01`, end: `${month}-${new Date(Date.UTC(y, m, 0)).getUTCDate()}` };
+    const [py, pm] = monthShift(y, m, -1);
+    const prevKey = `${py}-${String(pm).padStart(2, '0')}`;
+    const pp = { unit: 'days', start: `${prevKey}-01`, end: `${prevKey}-${new Date(Date.UTC(py, pm, 0)).getUTCDate()}` };
+    const cur = periodStats(model.readings, p, model.authorFirst), prev = periodStats(model.readings, pp, model.authorFirst);
+    const mn = MONTHS[m - 1];
+    const stat = cur.finished || cur.dnfs ? `You read ${fmtK(cur.words)} words and finished ${cur.finished} fic${cur.finished === 1 ? '' : 's'} in ${mn}.` : `No finished reads in ${mn}.`;
+    const prompt = cur.words > 0 && cur.words >= prev.words ? `What made ${mn} a big month?` : 'Anything you want more of next month?';
+    return { period: month, stat, prompt };
+  }
+  const yearPrompt = (year) => `Looking back on ${year}, what stood out?`;
+  // A short excerpt of a note: the first sentences up to ~180 characters.
+  function noteExcerpt(text, max = 180) {
+    const t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (t.length <= max) return t;
+    const cut = t.slice(0, max), dot = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+    return (dot > 60 ? cut.slice(0, dot + 1) : cut.replace(/\s+\S*$/, '') + '…');
+  }
 
   return {
     TZ, MONTHS, MON, KNOWN_STATUSES, NO_PAIRING,
@@ -1851,6 +2223,10 @@ const ShelfRules = (() => {
     monthName, yearsWithReads, tagTotals, tagBump, tagDrift, completionByBand, dnfReasonOf, dnfReasonsByQuarter, dnfPredictorTags, abandonPoints,
     goToAuthors, loyaltyByYear, rereadList, weekdayCounts, readingClock, readingDays, streaks, calendarYear, paceByBand, monthTotals,
     personalBests, persona, availableRecaps, recap, yardstick, volumeFindings, completionMonthFinding, statusFinding, fmtK,
+    // Phase 3
+    MIN_DIVERSITY, DIVERSITY_DIMS, categoryWords, entropyScore, diversityYear, diversityByYear, diversityFinding,
+    GOAL_TYPES, goalPeriod, goalProgress, describeGoal, badges, MIN_SESSIONS, sessions, sessionStats,
+    reflectionWindow, reflectionFor, yearPrompt, noteExcerpt,
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = ShelfRules;
@@ -1860,8 +2236,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShelfRules
 <script>
 // ============================================================================================
 // SHEETS (READ-ONLY) + CACHE
-// Every request to Google Sheets goes through readOnlyGet(), which only ever sends GET.
-// The OAuth scope is spreadsheets.readonly, so Google would refuse a write even if one were tried.
+// Every request that READS goes through readOnlyGet(), which only ever sends GET. The fandom
+// Sheets are only ever read: the Sheets scope is spreadsheets.readonly, so Google refuses any write
+// to them. Shelf Life's own goals/notes Sheet is written only by writeShelfData() (next script).
 // ============================================================================================
 const CLIENT_ID = '765897251156-e328g6jmu2obg8l0855km0iqsps062n5.apps.googleusercontent.com';
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
@@ -1995,6 +2372,169 @@ const idb = (() => {
     },
   };
 })();
+</script>
+
+<script>
+// ============================================================================================
+// SHELF LIFE DATA: goals, notes and settings (the ONLY place Shelf Life writes)
+// --------------------------------------------------------------------------------------------
+// The fandom Sheets stay read-only. Shelf Life's own data lives in one spreadsheet it creates,
+// "Shelf Life Data", tagged with a hidden Drive marker (appProperties shelfLife=data-v1).
+//   * Permissions: spreadsheets.readonly (as before) + drive.file, which only reaches files this
+//     app created. drive.file is asked for the first time goals or notes are used.
+//   * include_granted_scopes is false, so a sign-in never picks up the write access the fandom
+//     apps hold on the same OAuth client. Google itself then refuses any fandom-Sheet write.
+//   * Reads go through readOnlyGet() (GET only).
+//   * Writes go through writeShelfData() and nothing else. It refuses:
+//       - any spreadsheet ID listed in SOURCES;
+//       - any write before a Shelf Life Data ID has been confirmed (found by its marker, or just
+//         created by this app);
+//       - any spreadsheet ID other than that confirmed one.
+//   * The one other non-GET request is createShelfDataFile(): a Drive "create file" call whose
+//     body is fixed here. It makes a new empty spreadsheet and cannot touch an existing file.
+// ============================================================================================
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
+const SHELF_DATA_NAME = 'Shelf Life Data';
+const SHELF_MARKER = { key: 'shelfLife', value: 'data-v1' };
+const STORAGE_FLAG_KEY = 'shelflife-storage-on';   // localStorage: '1' once goals/notes were switched on
+const SHELF_ID_KEY = 'shelflife-data-id';          // localStorage: the Shelf Life Data ID on this device
+const SHELF_CACHE_KEY = 'shelfData';               // IndexedDB: offline copy of goals, notes, settings
+const SHELF_TABS = {
+  Goals: ['id', 'type', 'scope', 'target', 'start', 'end', 'created', 'archived', 'updated'],
+  Notes: ['period', 'kind', 'text', 'created', 'updated'],
+  Settings: ['key', 'value', 'updated'],
+};
+const FANDOM_SHEET_IDS = new Set(SOURCES.map(s => s.sheetId));
+
+// The confirmed Shelf Life Data ID lives in this closure. Only confirmShelfDataId() sets it, and
+// only with a file that carries the marker (or that this app just created).
+const shelfIdGuard = (() => {
+  let confirmed = null;
+  return {
+    get: () => confirmed,
+    set: (id, file) => {
+      if (!id || FANDOM_SHEET_IDS.has(id)) throw new Error('Refused: that is a fandom Sheet, not Shelf Life Data.');
+      const ap = (file && file.appProperties) || {};
+      if (ap[SHELF_MARKER.key] !== SHELF_MARKER.value) throw new Error('Refused: that file is not marked as Shelf Life Data.');
+      confirmed = id;
+      try { localStorage.setItem(SHELF_ID_KEY, id); } catch (e) {}
+    },
+    clear: () => { confirmed = null; },
+  };
+})();
+
+function assertShelfWritable(spreadsheetId) {
+  if (typeof spreadsheetId !== 'string' || !spreadsheetId) throw new Error('Refused: no spreadsheet ID.');
+  if (FANDOM_SHEET_IDS.has(spreadsheetId)) throw new Error('Refused: Shelf Life never writes to a fandom Sheet.');
+  const confirmed = shelfIdGuard.get();
+  if (!confirmed) throw new Error('Refused: Shelf Life Data has not been confirmed yet.');
+  if (spreadsheetId !== confirmed) throw new Error('Refused: writes only go to the Shelf Life Data sheet.');
+}
+
+// THE write path. op is one of:
+//   { type: 'setup' }                      rename the first tab to Goals, add Notes and Settings, write headers
+//   { type: 'replaceTab', tab, rows }      clear a tab and write its header plus rows
+async function writeShelfData(token, spreadsheetId, op) {
+  assertShelfWritable(spreadsheetId);
+  if (!op || !['setup', 'replaceTab'].includes(op.type)) throw new Error('Refused: unknown write.');
+  const base = SHEETS_API + encodeURIComponent(spreadsheetId);
+  const send = async (url, method, body) => {
+    assertShelfWritable(spreadsheetId);                  // checked again right before every request
+    if (!url.startsWith(base)) throw new Error('Refused: request is not for Shelf Life Data.');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    let res;
+    try {
+      res = await fetch(url, { method, headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal });
+    } catch (e) { throw new Error(e.name === 'AbortError' ? 'Timed out saving.' : 'Network error while saving.'); }
+    finally { clearTimeout(timer); }
+    if (!res.ok) { const t = await res.text(); const err = new Error(`HTTP ${res.status}: ${t.slice(0, 200)}`); err.status = res.status; if (res.status === 401) err.isAuthError = true; throw err; }
+    return res.json();
+  };
+  if (op.type === 'setup') {
+    const meta = await readOnlyGet(`${base}?fields=sheets.properties`, token, 20000);
+    const sheets = (meta.sheets || []).map(s => s.properties);
+    const have = new Set(sheets.map(p => p.title));
+    const requests = [];
+    const tabs = Object.keys(SHELF_TABS);
+    if (!have.has('Goals') && sheets[0] && !tabs.includes(sheets[0].title)) { requests.push({ updateSheetProperties: { properties: { sheetId: sheets[0].sheetId, title: 'Goals' }, fields: 'title' } }); have.add('Goals'); }
+    tabs.forEach(t => { if (!have.has(t)) requests.push({ addSheet: { properties: { title: t } } }); });
+    if (requests.length) await send(`${base}:batchUpdate`, 'POST', { requests });
+    await send(`${base}/values:batchUpdate`, 'POST', { valueInputOption: 'RAW', data: tabs.map(t => ({ range: `'${t}'!A1`, values: [SHELF_TABS[t]] })) });
+    return { ok: true };
+  }
+  const head = SHELF_TABS[op.tab];
+  if (!head) throw new Error('Refused: unknown tab.');
+  const rows = (op.rows || []).map(r => head.map(h => r[h] === undefined || r[h] === null ? '' : String(r[h])));
+  await send(`${base}/values/${encodeURIComponent(`'${op.tab}'!A:Z`)}:clear`, 'POST', {});
+  await send(`${base}/values/${encodeURIComponent(`'${op.tab}'!A1`)}?valueInputOption=RAW`, 'PUT', { range: `'${op.tab}'!A1`, majorDimension: 'ROWS', values: [head, ...rows] });
+  return { ok: true };
+}
+
+// Drive look-ups (GET). The query matches the name AND the hidden marker; drive.file means only
+// files this app created can come back anyway.
+async function findShelfDataFile(token) {
+  const q = `name = '${SHELF_DATA_NAME}' and appProperties has { key='${SHELF_MARKER.key}' and value='${SHELF_MARKER.value}' } and trashed = false`;
+  const res = await readOnlyGet(`${DRIVE_API}?q=${encodeURIComponent(q)}&orderBy=createdTime&fields=${encodeURIComponent('files(id,name,appProperties,createdTime)')}&spaces=drive`, token, 20000);
+  return (res.files || []).find(f => f.appProperties && f.appProperties[SHELF_MARKER.key] === SHELF_MARKER.value) || null;
+}
+async function getShelfDataFile(token, id) {
+  try { const f = await readOnlyGet(`${DRIVE_API}/${encodeURIComponent(id)}?fields=${encodeURIComponent('id,name,appProperties,trashed')}`, token, 20000); return f && !f.trashed ? f : null; }
+  catch (e) { if (e.isAuthError) throw e; return null; }
+}
+// The one-time creation: a new, empty, marked spreadsheet. Fixed body; it can't target an existing file.
+async function createShelfDataFile(token) {
+  const res = await fetch(`${DRIVE_API}?fields=${encodeURIComponent('id,name,appProperties')}`, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: SHELF_DATA_NAME, mimeType: 'application/vnd.google-apps.spreadsheet', appProperties: { [SHELF_MARKER.key]: SHELF_MARKER.value } }),
+  });
+  if (!res.ok) { const t = await res.text(); const err = new Error(`HTTP ${res.status}: ${t.slice(0, 200)}`); err.status = res.status; if (res.status === 401) err.isAuthError = true; throw err; }
+  return res.json();
+}
+
+// Find (or create) Shelf Life Data and confirm its ID for writes. Returns the ID.
+async function connectShelfData(token) {
+  let cachedId = null;
+  try { cachedId = localStorage.getItem(SHELF_ID_KEY); } catch (e) {}
+  let file = cachedId && !FANDOM_SHEET_IDS.has(cachedId) ? await getShelfDataFile(token, cachedId) : null;
+  if (file && !(file.appProperties && file.appProperties[SHELF_MARKER.key] === SHELF_MARKER.value)) file = null;
+  if (!file) file = await findShelfDataFile(token);
+  if (file) { shelfIdGuard.set(file.id, file); return { id: file.id, created: false }; }
+  const made = await createShelfDataFile(token);
+  shelfIdGuard.set(made.id, made);
+  await writeShelfData(token, made.id, { type: 'setup' });
+  return { id: made.id, created: true };
+}
+
+// Read every tab of Shelf Life Data (GET). Rows come back as objects keyed by header.
+async function readShelfData(token, id) {
+  const tabs = Object.keys(SHELF_TABS);
+  const res = await readOnlyGet(`${SHEETS_API}${encodeURIComponent(id)}/values:batchGet?majorDimension=ROWS&` + tabs.map(t => 'ranges=' + encodeURIComponent(`'${t}'!A:I`)).join('&'), token, 20000);
+  const out = {};
+  tabs.forEach((t, i) => {
+    const vr = (res.valueRanges || [])[i] || {};
+    const rows = vr.values || [];
+    const head = (rows[0] || SHELF_TABS[t]).map(h => String(h).trim());
+    out[t] = rows.slice(1).filter(r => r.some(c => String(c).trim() !== '')).map(r => Object.fromEntries(head.map((h, j) => [h, r[j] === undefined ? '' : String(r[j])])));
+  });
+  return out;
+}
+
+// Row shapes used by the app.
+const goalFromRow = (r) => ({ id: r.id, type: r.type, scope: r.scope || '', target: Number(r.target) || 0, start: r.start, end: r.end, created: r.created || '', archived: r.archived === 'TRUE' || r.archived === 'true' || r.archived === '1', updated: r.updated || '' });
+const goalToRow = (g) => ({ ...g, archived: g.archived ? 'TRUE' : '' });
+const noteFromRow = (r) => ({ period: r.period, kind: r.kind || (String(r.period).length === 4 ? 'year' : 'month'), text: r.text || '', created: r.created || '', updated: r.updated || '' });
+function parseShelfData(raw) {
+  const settings = Object.fromEntries((raw.Settings || []).map(r => [r.key, r.value]));
+  let overrides = {};
+  try { overrides = settings.tagOverrides ? JSON.parse(settings.tagOverrides) : {}; } catch (e) { overrides = {}; }
+  return {
+    goals: (raw.Goals || []).filter(r => r.id).map(goalFromRow),
+    notes: (raw.Notes || []).filter(r => r.period).map(noteFromRow),
+    settingsRows: raw.Settings || [], overrides: overrides && typeof overrides === 'object' ? overrides : {},
+  };
+}
 </script>
 
 <script>
@@ -2258,9 +2798,12 @@ function useAuth() {
       clientRef.current = window.google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPE,
+        // Never fold in permissions granted to this client elsewhere (the fandom apps share it and
+        // hold write access to their Sheets). Shelf Life only ever gets the scopes it asks for.
+        include_granted_scopes: false,
         callback: (resp) => {
           if (resp.error) { setError(resp.error_description || resp.error); settle(w => w.reject(new Error(resp.error))); return; }
-          const t = { token: resp.access_token, expiresAt: Date.now() + (Number(resp.expires_in) || 3600) * 1000 - 60000 };
+          const t = { token: resp.access_token, scope: resp.scope || '', expiresAt: Date.now() + (Number(resp.expires_in) || 3600) * 1000 - 60000 };
           try { localStorage.setItem(TOKEN_KEY, JSON.stringify(t)); } catch (e) {}
           setError(''); tokRef.current = t; setTok(t);
           settle(w => w.resolve(t.token));
@@ -2272,18 +2815,22 @@ function useAuth() {
     return () => { cancelled = true; };
   }, []);
   const getToken = useCallback(() => { const t = tokRef.current; return t && Date.now() < t.expiresAt ? t.token : null; }, []);
-  const signIn = useCallback(() => new Promise((resolve, reject) => {
+  // withDrive (or goals/notes already switched on): also ask for drive.file, for Shelf Life Data.
+  const signIn = useCallback((opts) => new Promise((resolve, reject) => {
     if (!clientRef.current) { reject(new Error('Google sign-in is still loading.')); return; }
+    let on = false; try { on = localStorage.getItem(STORAGE_FLAG_KEY) === '1'; } catch (e) {}
+    const scope = (opts && opts.withDrive) || on ? `${SCOPE} ${DRIVE_SCOPE}` : SCOPE;
     waiters.current.push({ resolve, reject });
-    clientRef.current.requestAccessToken();
+    clientRef.current.requestAccessToken({ scope, include_granted_scopes: false });
   }), []);
+  const hasDrive = useCallback(() => { const t = tokRef.current; return !!(t && Date.now() < t.expiresAt && String(t.scope || '').split(/\s+/).includes(DRIVE_SCOPE)); }, []);
   const expire = useCallback(() => { try { localStorage.removeItem(TOKEN_KEY); } catch (e) {} tokRef.current = null; setTok(null); }, []);
   const signOut = useCallback(() => {
     const t = getToken();
     if (t && window.google && window.google.accounts) window.google.accounts.oauth2.revoke(t, () => {});
     expire();
   }, [getToken, expire]);
-  return { signedIn: !!(tok && Date.now() < tok.expiresAt), ready, error, getToken, signIn, signOut, expire };
+  return { signedIn: !!(tok && Date.now() < tok.expiresAt), ready, error, getToken, signIn, signOut, expire, hasDrive, tok };
 }
 
 // ---------- theme ----------
@@ -2541,8 +3088,10 @@ function RecentlyFinished({ stats, onOpen, today }) {
   </div>`;
 }
 
-function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy, openRecap }) {
+function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy, openRecap, store, openGoals, openBadges }) {
   const streak = useMemo(() => R.streaks(model, today), [model, today]);
+  const bdg = useMemo(() => R.badges(model, today), [model, today]);
+  const nEarned = bdg.list.filter(b => b.earned).length;
   const { period, custom, compare } = dash;
   const p = useMemo(() => R.makePeriod(period, today, custom), [period, today, custom.start, custom.end]);
   // Comparison period: previous period or same time last year, trimmed to the same number of days
@@ -2566,7 +3115,7 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
   const set = (patch) => setDash(d => ({ ...d, ...patch }));
   return html`<div>
     <h1 className="headline">${headline(cur, prev, p, cp, today, groupBy, model)}</h1>
-    <div className="small faint" style=${{ margin: '0 2px 14px' }}>${streak.currentWeekly.len ? html`<span className="streak-chip" title=${`Weeks in a row with a reading day${streak.currentWeekly.est ? ' (includes estimated dates)' : ''}`}><${Icon} name="flame" size=${12} fill sw=${0} />${streak.currentWeekly.len}-week streak</span>` : null}${p.unit === 'all' ? 'Everything you’ve read, including undated reads.'
+    <div className="small faint" style=${{ margin: '0 2px 14px' }}>${streak.currentWeekly.len ? html`<span className="streak-chip" title=${`Weeks in a row with a reading day${streak.currentWeekly.est ? ' (includes estimated dates)' : ''}`}><${Icon} name="flame" size=${12} fill sw=${0} />${streak.currentWeekly.len}-week streak</span>` : null}<button className=${'badge-chip' + (bdg.recent.length ? ' new' : '')} onClick=${openBadges} title="Badges">${bdg.recent.length ? `New badge: ${bdg.recent[bdg.recent.length - 1].title}` : `${nEarned} badge${nEarned === 1 ? '' : 's'}`}</button>${p.unit === 'all' ? 'Everything you’ve read, including undated reads.'
       : `${p.partial ? R.rangeLabel(p.start, today < p.end ? today : p.end, today) + ' so far' : R.rangeLabel(p.start, p.end, today)}${cp ? ` · compared with ${cmpLabel}` : ''}`}</div>
     <${PeriodPicker} period=${period} setPeriod=${v => set({ period: v })} custom=${custom} setCustom=${fn => setDash(d => ({ ...d, custom: fn(d.custom) }))} compare=${compare} setCompare=${v => set({ compare: v })} today=${today} />
 
@@ -2581,6 +3130,9 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
       <${StatTile} label="Median fic length" value=${cur.median === null ? '—' : fmtWords(cur.median)} d=${prev && cur.median !== null && prev.median !== null ? delta(cur.median, prev.median) : null} good=${null} spark=${sp(s => s.median)} cmpLabel=${cmpLabel}
         note="Words, finished fics" />
     </div>
+
+    <${ReflectionCard} model=${model} today=${today} store=${store} />
+    <${GoalRings} model=${model} today=${today} store=${store} openGoals=${openGoals} />
 
     <${RecapTeaser} model=${model} today=${today} openRecap=${openRecap} />
 
@@ -2933,7 +3485,7 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
 // TRENDS (Phase 2): tabbed. Every number here comes from ShelfRules; every chart/table has a
 // one-sentence finding above it.
 // ============================================================================================
-const TREND_TABS = [['volume', 'Volume'], ['tastes', 'Tastes'], ['completion', 'Completion'], ['loyalty', 'Loyalty'], ['habits', 'Habits'], ['bests', 'Bests']];
+const TREND_TABS = [['volume', 'Volume'], ['tastes', 'Tastes'], ['diversity', 'Diversity'], ['completion', 'Completion'], ['loyalty', 'Loyalty'], ['habits', 'Habits'], ['bests', 'Bests']];
 // Chart series that aren't fandoms use the brand colours in a fixed order; series 6–10 reuse them
 // with a dashed line, and every series is also named in its legend.
 const CAT_VARS = ['--blue', '--coral', '--lime', '--pink', '--ink'];
@@ -3269,6 +3821,8 @@ function HabitsTab({ model, today, themeTick }) {
   const st = useMemo(() => R.streaks(model, today), [model, today]);
   const wd = useMemo(() => R.weekdayCounts(model.readings), [model]);
   const clock = useMemo(() => R.readingClock(model), [model]);
+  const ss = useMemo(() => R.sessions(model), [model]);
+  const sst = useMemo(() => R.sessionStats(ss), [ss]);
   const pace = useMemo(() => R.paceByBand(model.readings), [model]);
   const years = R.yearsWithReads(model.readings);
   const [year, setYear] = useState(+today.slice(0, 4));
@@ -3278,7 +3832,11 @@ function HabitsTab({ model, today, themeTick }) {
     return { type: 'bar', data: { labels: wd.labels, datasets: [{ label: 'Finished', data: wd.counts, backgroundColor: t.accent, borderRadius: 8, borderSkipped: false, maxBarThickness: 34 }] },
       options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tooltip(t, c => ` ${c.parsed.y} finished`) }, scales: sc } };
   }, [wd, themeTick]);
-  const clockMax = Math.max(1, ...clock.grid.flat());
+  // Once there are MIN_SESSIONS timed sessions, the clock shows session minutes instead of events.
+  const bySessions = sst.enough;
+  const clockGrid = bySessions ? sst.grid : clock.grid;
+  const clockMax = Math.max(1, ...clockGrid.flat());
+  const clockFinding = bySessions && sst.peak ? `You read most on ${R.WEEKDAYS[sst.peak.d]}s around ${sst.peak.h % 12 || 12}${sst.peak.h < 12 ? 'am' : 'pm'} (${fmtMins(sst.peak.v)} of sessions).` : clock.finding;
   return html`<div>
     <${TSection} title="Streaks" finding=${st.finding}>
       <div className="tiles">
@@ -3292,12 +3850,13 @@ function HabitsTab({ model, today, themeTick }) {
     <${TSection} title="Finished by weekday" finding=${wd.finding}>
       <div className="card"><${ChartBox} config=${wdCfg} height=${170} /><${EstNote} est=${wd.est} total=${wd.total} what="finish dates" /></div>
     </${TSection}>
-    <${TSection} title="Reading clock" finding=${clock.finding}>
-      ${clock.enough ? html`<div className="card"><div className="clock-grid">
+    <${TSection} title="Reading clock" finding=${clockFinding}>
+      ${bySessions || clock.enough ? html`<div className="card"><div className="clock-grid">
           <span></span>${Array.from({ length: 24 }, (_, h) => html`<span key=${'h' + h} className="tiny faint" style=${{ textAlign: 'center' }}>${h % 6 === 0 ? h : ''}</span>`)}
-          ${clock.grid.map((row, d) => html`<${React.Fragment} key=${d}><span className="tiny faint">${R.WEEKDAYS[d].slice(0, 3)}</span>${row.map((c, h) => html`<i key=${h} title=${`${R.WEEKDAYS[d]} ${h}:00 — ${c} event${c === 1 ? '' : 's'}`} style=${{ background: heat(c ? Math.max(1, Math.ceil(c / clockMax * 4)) : 0) }}></i>`)}</${React.Fragment}>`)}
-        </div><${LoggedNote} n=${clock.loggedReads} /></div>` : html`<${LoggedEmpty} n=${clock.loggedReads} what="The reading clock" />`}
+          ${clockGrid.map((row, d) => html`<${React.Fragment} key=${d}><span className="tiny faint">${R.WEEKDAYS[d].slice(0, 3)}</span>${row.map((c, h) => html`<i key=${h} title=${`${R.WEEKDAYS[d]} ${h}:00 — ${bySessions ? fmtMins(c) + ' of sessions' : `${c} event${c === 1 ? '' : 's'}`}`} style=${{ background: heat(c ? Math.max(1, Math.ceil(c / clockMax * 4)) : 0) }}></i>`)}</${React.Fragment}>`)}
+        </div>${bySessions ? html`<div className="tiny faint" style=${{ marginTop: 8 }}>Session minutes · based on ${sst.count} sessions</div>` : html`<${LoggedNote} n=${clock.loggedReads} />`}</div>` : html`<${LoggedEmpty} n=${clock.loggedReads} what="The reading clock" />`}
     </${TSection}>
+    <${SessionsSection} ss=${ss} st=${sst} />
     <${TSection} title=${`Calendar ${year}`} finding=${cal.finding}>
       ${years.length > 1 ? html`<div style=${{ marginBottom: 8 }}><${YearChips} years=${years} value=${year} onChange=${setYear} /></div>` : null}
       <${CalendarHeat} cal=${cal} year=${year} today=${today} />
@@ -3342,6 +3901,7 @@ function TrendsScreen({ model, today, themeTick, onAuthor, onTag, onOpen, onRang
     </div>
     ${tab === 'volume' ? html`<${VolumeTab} ...${props} />` : null}
     ${tab === 'tastes' ? html`<${TastesTab} ...${props} />` : null}
+    ${tab === 'diversity' ? html`<${DiversityTab} ...${props} />` : null}
     ${tab === 'completion' ? html`<${CompletionTab} ...${props} />` : null}
     ${tab === 'loyalty' ? html`<${LoyaltyTab} ...${props} />` : null}
     ${tab === 'habits' ? html`<${HabitsTab} ...${props} />` : null}
@@ -3393,6 +3953,7 @@ function RecapCard({ card, rc, redact, model, ctx, total, index }) {
     case 'persona': body = html`<div className="rc-kicker">Your reading persona</div><div className="rc-title" style=${{ fontSize: 40 }}>${hl(card.name)}</div><div className="rc-line">Because ${card.rule}.</div>`; break;
     case 'ago': body = html`<div className="rc-kicker">One year ago you were reading…</div><div className="rc-title" style=${{ fontSize: 26 }}>${hl(R.monthName(card.month))}</div>
       ${rows(card.fics.map(f => [titleOf(f.fic), f.kind === 'DNF' ? 'DNF' : fmtWords(f.fic.words)]))}`; break;
+    case 'note': body = html`<div className="rc-kicker">In your words</div>${redact.hideNotes ? html`<div className="rc-title">${hl('Kept private.')}</div>` : html`<div className="rc-quote">“${card.text}”</div>`}`; break;
     case 'summary': body = html`<div className="rc-kicker">${rc.label}</div><div className="rc-title" style=${{ fontSize: 40 }}>${hl('That’s a wrap')}</div>
       ${rows([['Words', fmtWords(card.words)], ['Finished', card.finished], ['DNFs', card.dnfs], card.persona ? ['Persona', card.persona] : null, card.fandom ? ['Mostly', R.shortFandom(card.fandom)] : null])}`; break;
     default: body = null;
@@ -3410,13 +3971,23 @@ async function cardToPng(node) {
   catch (e) { return await htmlToImage.toPng(node, { ...opts, skipFonts: true }); }
 }
 const dataUrlToFile = async (url, name) => new File([await (await fetch(url)).blob()], name, { type: 'image/png' });
-function RecapStory({ model, scope, today, onClose }) {
+function RecapStory({ model, scope, today, onClose, store }) {
   const ctx = useContext(TagCtx);
   const rc = useMemo(() => R.recap(model, scope, today, ctx.isVisible), [model, scope, today, ctx.isVisible]);
-  const cards = rc.cards;
+  // "In your words": your note for this year/month, as a card just before the summary. It adds a
+  // card only; every recap number is unchanged.
+  const period = scope.type === 'year' ? String(scope.year) : scope.month;
+  const note = store ? store.notes.find(n => n.period === period) : null;
+  const cards = useMemo(() => {
+    if (!note || !rc.cards.length) return rc.cards;
+    const at = rc.cards.findIndex(c => c.type === 'summary');
+    const nc = { n: 14, type: 'note', text: R.noteExcerpt(note.text, 280) };
+    return at < 0 ? [...rc.cards, nc] : [...rc.cards.slice(0, at), nc, ...rc.cards.slice(at)];
+  }, [rc, note && note.text]);
   const [i, setI] = useState(0);
   const [panel, setPanel] = useState(false);
-  const [redact, setRedact] = useState({ hideE: false, hideSex: !ctx.include, hideAuthors: false });
+  const [ask, setAsk] = useState(() => scope.type === 'year' && !!store && store.status === 'ready' && !note && rc.cards.length > 0);
+  const [redact, setRedact] = useState({ hideE: false, hideSex: !ctx.include, hideAuthors: false, hideNotes: false });
   const [busy, setBusy] = useState('');
   const [stageAll, setStageAll] = useState(false);
   const stageRef = useRef(null);
@@ -3434,10 +4005,10 @@ function RecapStory({ model, scope, today, onClose }) {
   const next = useCallback(() => setI(x => Math.min(cards.length - 1, x + 1)), [cards.length]);
   const prev = useCallback(() => setI(x => Math.max(0, x - 1)), []);
   useEffect(() => {
-    const onKey = (e) => { if (panel) return; if (e.key === 'ArrowRight' || e.key === ' ') next(); else if (e.key === 'ArrowLeft') prev(); else if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => { if (panel || ask) return; if (e.key === 'ArrowRight' || e.key === ' ') next(); else if (e.key === 'ArrowLeft') prev(); else if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey); document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
-  }, [next, prev, panel]);
+  }, [next, prev, panel, ask]);
   const onDown = (e) => { down.current = { x: e.clientX, y: e.clientY }; };
   const onUp = (e) => {
     const d = down.current; down.current = null; if (!d) return;
@@ -3482,13 +4053,18 @@ function RecapStory({ model, scope, today, onClose }) {
     ${panel ? html`<div className="rc-panel-back" onClick=${() => setPanel(false)}><div className="rc-panel" onClick=${e => e.stopPropagation()}>
       <div className="rc-panel-title">Save as images</div>
       <div className="small muted" style=${{ margin: '4px 0 12px' }}>1080 × 1920 PNG. Choose what to hide first.</div>
-      ${[['hideE', 'Hide E-rated fic titles'], ['hideSex', 'Hide sex-related tags'], ['hideAuthors', 'Hide author names']].map(([k, l]) => html`<label key=${k} className="switch-row" style=${{ padding: '9px 0' }}><span>${l}</span><input type="checkbox" role="switch" className="switch" checked=${redact[k]} onChange=${e => setRedact(r => ({ ...r, [k]: e.target.checked }))} /></label>`)}
+      ${[['hideE', 'Hide E-rated fic titles'], ['hideSex', 'Hide sex-related tags'], ['hideAuthors', 'Hide author names'], ...(note ? [['hideNotes', 'Hide my notes']] : [])].map(([k, l]) => html`<label key=${k} className="switch-row" style=${{ padding: '9px 0' }}><span>${l}</span><input type="checkbox" role="switch" className="switch" checked=${redact[k]} onChange=${e => setRedact(r => ({ ...r, [k]: e.target.checked }))} /></label>`)}
       ${rc.est ? html`<div className="tiny faint" style=${{ marginTop: 4 }}>Images include an “est. dates included” note, because ${rc.est} of ${rc.readings} reads have estimated dates.</div>` : null}
       <div className="row" style=${{ marginTop: 14, flexWrap: 'nowrap' }}>
         <button className="big-btn" onClick=${saveOne} disabled=${!!busy && busy.endsWith('…')}>Save this card</button>
         <button className="big-btn ghost" onClick=${saveAll} disabled=${!!busy && busy.endsWith('…')}>Save all ${cards.length}</button>
       </div>
       ${busy ? html`<div className="small muted" style=${{ marginTop: 10 }}>${busy}</div>` : null}
+    </div></div>` : null}
+    ${ask ? html`<div className="rc-panel-back" onClick=${() => setAsk(false)}><div className="rc-panel" onClick=${e => e.stopPropagation()}>
+      <div className="rc-panel-title">${R.yearPrompt(scope.year)}</div>
+      <div className="small muted" style=${{ margin: '4px 0 12px' }}>A few words for your ${scope.year} recap. It’s saved to Shelf Life Data and shows as an “In your words” card. You can skip this.</div>
+      <${NoteEditor} store=${store} period=${period} prompt=${R.yearPrompt(scope.year)} onDone=${() => setAsk(false)} autoFocus=${true} cancelLabel="Skip" />
     </div></div>` : null}
     <div className="rc-export" ref=${stageRef} aria-hidden="true">
       ${(stageAll ? cards : [card]).map((c) => { const k = stageAll ? cards.indexOf(c) : i;
@@ -3510,6 +4086,308 @@ function RecapTeaser({ model, today, openRecap }) {
     <span className="small" style=${{ fontWeight: 600 }}>${w ? fmtWords(w.words) + ' words' : ''}${n ? ` · ${n.finished} finished` : ''}${per ? ` · ${per.name}` : ''}</span>
     <span className="go">Watch your recap →</span>
   </button>`;
+}
+
+// ============================================================================================
+// PHASE 3: DIVERSITY, GOALS, BADGES, NOTES, SESSIONS
+// Every number comes from ShelfRules. Goals and notes are saved through useShelfStore (and so
+// only ever through writeShelfData()); when storage can't be reached they show the copy saved
+// on this device and can't be edited.
+// ============================================================================================
+const BackHead = ({ title, onBack, label }) => html`<div className="row" style=${{ marginTop: 10, gap: 10, flexWrap: 'nowrap' }}>
+  <button className="icon-btn" onClick=${onBack} aria-label=${label || 'Back'}><${Icon} name="back" size=${18} /></button>
+  <h1 className="page-title" style=${{ margin: 0 }}>${title}</h1>
+</div>`;
+
+// ---------- storage status (shared by Goals, Notes and the dashboard) ----------
+function StorageNotice({ store, compact }) {
+  if (store.status === 'ready') return null;
+  if (store.status === 'connecting') return html`<div className="card store-note"><span className="spin small" style=${{ fontWeight: 700 }}>Connecting to Shelf Life Data…</span></div>`;
+  if (store.status === 'off') return html`<div className="card store-note">
+    <div className="title" style=${{ fontWeight: 800, fontSize: 15 }}>Goals and notes</div>
+    <div className="small muted" style=${{ marginTop: 4 }}>Shelf Life saves goals and notes to a Google Sheet it creates for you, called “Shelf Life Data”. Google will ask once to let Shelf Life use files it creates. Your fandom Sheets stay read-only.</div>
+    <button className="pill-btn primary" style=${{ marginTop: 10 }} onClick=${() => store.connect(true)}>Turn on goals and notes</button>
+  </div>`;
+  return html`<div className="card store-note warn">
+    <div className="small" style=${{ fontWeight: 700 }}>${store.message || 'Goals and notes are unavailable right now.'}</div>
+    ${!compact && (store.goals.length || store.notes.length) ? html`<div className="tiny" style=${{ marginTop: 4, opacity: .8 }}>Showing the copy saved on this device${store.cachedAt ? ` (${ago(store.cachedAt, Date.now())})` : ''}. Editing is off until it reconnects.</div>` : null}
+    <button className="pill-btn" style=${{ marginTop: 10 }} onClick=${() => store.connect(true)}>Try again</button>
+  </div>`;
+}
+
+// ---------- Goals ----------
+function Ring({ pct, color, size = 64, stroke = 7, children, faded }) {
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, pct || 0));
+  return html`<div className="ring" style=${{ width: size, height: size, opacity: faded ? .55 : 1 }}>
+    <svg width=${size} height=${size} viewBox=${`0 0 ${size} ${size}`} aria-hidden="true">
+      <circle cx=${size / 2} cy=${size / 2} r=${r} fill="none" stroke="var(--surface-2)" stroke-width=${stroke} />
+      <circle cx=${size / 2} cy=${size / 2} r=${r} fill="none" stroke=${color} stroke-width=${stroke} stroke-linecap="round"
+        stroke-dasharray=${`${c * p} ${c}`} transform=${`rotate(-90 ${size / 2} ${size / 2})`} />
+    </svg>
+    <div className="ring-in">${children}</div>
+  </div>`;
+}
+const goalColor = (goal, model) => {
+  const sc = String(goal.scope || '');
+  if (goal.type === 'scoped' && sc.startsWith('f:')) return fandomColor(sc.slice(2)) || 'var(--blue)';
+  if (goal.type === 'scoped' && sc.startsWith('p:')) return pairingColor(model, sc.slice(2)) || 'var(--blue)';
+  return 'var(--blue)';
+};
+const goalVal = (goal, v) => goal.type === 'words' ? fmtWords(v) : goal.type === 'completion' ? `${v}%` : fmtInt(v);
+const GOAL_UNIT = { words: 'words', finished: 'fics', newAuthors: 'new authors', scoped: 'fics', long: 'long fics', completion: '%', weeks: 'weeks' };
+function goalPace(goal, pr, today) {
+  const of = `${goalVal(goal, pr.value)} of ${goalVal(goal, pr.target)}`;
+  if (pr.status === 'upcoming') return `Starts ${R.fmtDay(goal.start, today)}`;
+  if (pr.status === 'met') return `Met · ${of}`;
+  if (pr.status === 'missed') return `Missed · ${of}`;
+  if (goal.type === 'completion') return `${pr.rate === null ? 'No closed reads yet' : `${pr.value}% now`} · aiming for ${pr.target}%+ · ${pr.daysLeft} day${pr.daysLeft === 1 ? '' : 's'} left`;
+  if (pr.status === 'done') return `Done · ${of}`;
+  const left = `${pr.daysLeft} day${pr.daysLeft === 1 ? '' : 's'} left`;
+  if (pr.onPace) return `On pace · ${of} · ${left}`;
+  const need = goal.type === 'words' ? fmtWords(pr.needed) : fmtInt(pr.needed);
+  return `Behind pace · ${of} · about ${need} ${GOAL_UNIT[goal.type]} a week to make it`;
+}
+const goalPeriodLabel = (goal, today) => R.rangeLabel(goal.start, goal.end, today);
+const ringInner = (goal, pr) => goal.type === 'completion' ? `${pr.value}%` : `${Math.round(pr.pct * 100)}%`;
+
+function GoalRings({ model, today, store, openGoals }) {
+  const live = useMemo(() => store.goals.filter(g => !g.archived && g.end >= today && g.start <= today)
+    .map(g => ({ g, pr: R.goalProgress(g, model, today) })), [store.goals, model, today]);
+  return html`<div className="section">
+    <div className="section-head"><h2 className="section-title">Goals</h2><button className="link-btn" onClick=${openGoals}>${store.status === 'off' ? 'Set one' : live.length ? 'All goals' : 'Add a goal'}</button></div>
+    ${store.status !== 'ready' ? html`<${StorageNotice} store=${store} compact=${true} />` : null}
+    ${live.length ? html`<div className="hscroll goal-strip">${live.map(({ g, pr }) => html`<button key=${g.id} className="goal-mini" onClick=${openGoals}>
+        <${Ring} pct=${pr.pct} color=${goalColor(g, model)} size=${58}><span className="num">${ringInner(g, pr)}</span></${Ring}>
+        <div style=${{ minWidth: 0 }}><div className="goal-name">${R.describeGoal(g, model)}</div>
+          <div className=${'tiny goal-pace ' + (pr.status === 'behind pace' ? 'behind' : '')}>${goalPace(g, pr, today)}</div></div>
+      </button>`)}</div>`
+      : store.status === 'ready' ? html`<div className="card small muted">No goal running right now. ${html`<button className="link-btn" style=${{ minHeight: 0 }} onClick=${openGoals}>Add one</button>`}</div>` : null}
+  </div>`;
+}
+
+function GoalForm({ model, today, initial, onSave, onCancel, busy }) {
+  const editing = !!(initial && initial.id);
+  const [type, setType] = useState(initial ? initial.type : 'finished');
+  const [scope, setScope] = useState(initial ? initial.scope : '');
+  const [target, setTarget] = useState(initial ? String(initial.target) : '');
+  const [kind, setKind] = useState(editing ? 'custom' : 'month');
+  const [custom, setCustom] = useState({ start: initial ? initial.start : today, end: initial ? initial.end : today });
+  const scopes = useMemo(() => model.fandomList.flatMap(f => [{ key: 'f:' + f.name, label: f.short + ' (all pairings)' }, ...f.pairings.filter(p => p.readings).map(p => ({ key: 'p:' + p.key, label: `${f.short} › ${p.name}` }))]), [model]);
+  const per = kind === 'custom' ? { start: custom.start, end: custom.end } : R.goalPeriod(kind, today);
+  const n = Number(target);
+  const valid = n > 0 && (type !== 'completion' || n <= 100) && (type !== 'scoped' || scope) && per.start && per.end && per.start <= per.end;
+  const save = () => valid && onSave({ ...(initial || {}), type, scope: type === 'scoped' ? scope : '', target: n, start: per.start, end: per.end });
+  return html`<div className="card goal-form">
+    <div className="flabel">${editing ? 'Edit goal' : 'New goal'}</div>
+    ${editing ? html`<div className="small muted">${(R.GOAL_TYPES.find(t => t.key === type) || {}).label}</div>` : html`<select className="plain-input" value=${type} onChange=${e => setType(e.target.value)} aria-label="Goal type">
+      ${R.GOAL_TYPES.map(t => html`<option key=${t.key} value=${t.key}>${t.label}</option>`)}</select>`}
+    ${type === 'scoped' && !editing ? html`<select className="plain-input" value=${scope} onChange=${e => setScope(e.target.value)} aria-label="Fandom or pairing">
+      <option value="">Choose a fandom or pairing…</option>${scopes.map(s => html`<option key=${s.key} value=${s.key}>${s.label}</option>`)}</select>` : null}
+    <label className="small" style=${{ fontWeight: 700 }}>Target ${type === 'completion' ? '(%)' : `(${GOAL_UNIT[type]})`}
+      <input className="plain-input" style=${{ marginTop: 6 }} type="number" inputMode="numeric" min="1" max=${type === 'completion' ? 100 : null} value=${target} onChange=${e => setTarget(e.target.value)} placeholder=${type === 'words' ? 'e.g. 1000000' : type === 'completion' ? 'e.g. 70' : 'e.g. 40'} aria-label="Target" />
+      ${type === 'words' && n > 0 ? html`<span className="tiny faint">${fmtWords(n)} words</span>` : null}</label>
+    ${editing ? null : html`<div className="seg full" role="group" aria-label="Period">${[['month', 'This month'], ['quarter', 'This quarter'], ['year', 'This year'], ['custom', 'Dates']].map(([k, l]) => html`<button key=${k} className=${kind === k ? 'on' : ''} onClick=${() => setKind(k)}>${l}</button>`)}</div>`}
+    ${kind === 'custom' ? html`<div className="row" style=${{ flexWrap: 'nowrap' }}>
+      <input type="date" className="date-input" style=${{ flex: 1, minWidth: 0 }} value=${custom.start} onChange=${e => setCustom(c => ({ ...c, start: e.target.value }))} aria-label="Start date" />
+      <input type="date" className="date-input" style=${{ flex: 1, minWidth: 0 }} value=${custom.end} onChange=${e => setCustom(c => ({ ...c, end: e.target.value }))} aria-label="End date" />
+    </div>` : html`<div className="tiny faint">${per.start ? R.rangeLabel(per.start, per.end, today) : ''}</div>`}
+    <div className="row" style=${{ flexWrap: 'nowrap' }}>
+      <button className="big-btn" disabled=${!valid || busy} onClick=${save}>${busy ? 'Saving…' : editing ? 'Save changes' : 'Add goal'}</button>
+      <button className="big-btn ghost" onClick=${onCancel}>Cancel</button>
+    </div>
+  </div>`;
+}
+
+function GoalCard({ g, model, today, store, onEdit, past }) {
+  const pr = R.goalProgress(g, model, today);
+  const tone = pr.status === 'met' || pr.status === 'done' ? 'lime' : pr.status === 'missed' ? 'coral' : pr.status === 'behind pace' ? 'pink' : null;
+  return html`<div className="card goal-card">
+    <${Ring} pct=${pr.pct} color=${goalColor(g, model)} size=${70} faded=${past && !pr.met}><span className="num">${ringInner(g, pr)}</span></${Ring}>
+    <div style=${{ minWidth: 0, flex: 1 }}>
+      <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+        <div className="goal-name" style=${{ fontSize: 15 }}>${R.describeGoal(g, model)}</div>
+        ${tone ? html`<span className="badge" style=${{ background: `var(--${tone})`, color: 'var(--on-bright)' }}>${pr.status}</span>` : html`<span className="badge plain">${pr.status}</span>`}
+      </div>
+      <div className="tiny faint" style=${{ marginTop: 2 }}>${goalPeriodLabel(g, today)}${g.archived ? ' · archived' : ''}</div>
+      <div className="small" style=${{ marginTop: 6, fontWeight: 600 }}>${goalPace(g, pr, today)}</div>
+      ${store.editable ? html`<div className="row" style=${{ marginTop: 4 }}>
+        ${!past ? html`<button className="link-btn" onClick=${() => onEdit(g)}>Edit</button>` : null}
+        <button className="link-btn" onClick=${() => store.archiveGoal(g.id, !g.archived)}>${g.archived ? 'Restore' : 'Archive'}</button>
+        ${past ? html`<button className="link-btn" onClick=${() => store.deleteGoal(g.id)}>Delete</button>` : null}
+      </div>` : null}
+    </div>
+  </div>`;
+}
+
+function GoalsScreen({ model, today, store, onBack }) {
+  const [form, setForm] = useState(null);   // null | {} (new) | goal (edit)
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const current = store.goals.filter(g => !g.archived && g.end >= today).sort((a, b) => a.end.localeCompare(b.end));
+  const past = store.goals.filter(g => g.archived || g.end < today).sort((a, b) => b.end.localeCompare(a.end));
+  const save = async (g) => { setBusy(true); setErr(''); try { await store.saveGoal(g); setForm(null); } catch (e) { setErr('Couldn’t save: ' + (e.message || e)); } finally { setBusy(false); } };
+  return html`<div>
+    <${BackHead} title="Goals" onBack=${onBack} label="Back to Dashboard" />
+    <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Progress uses the same numbers as the dashboard. Each goal has fixed dates. Pace compares your progress with how much of the period has gone.</div>
+    <${StorageNotice} store=${store} />
+    ${err ? html`<div className="banner err">${err}</div>` : null}
+    ${form ? html`<div style=${{ marginTop: 12 }}><${GoalForm} model=${model} today=${today} initial=${form.id ? form : null} onSave=${save} onCancel=${() => setForm(null)} busy=${busy} /></div>`
+      : store.editable ? html`<button className="big-btn" style=${{ marginTop: 12 }} onClick=${() => setForm({})}><span aria-hidden="true">+</span> Add a goal</button>` : null}
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Current</h2><span className="small faint">${current.length}</span></div>
+      ${current.length ? html`<div className="goal-list">${current.map(g => html`<${GoalCard} key=${g.id} g=${g} model=${model} today=${today} store=${store} onEdit=${setForm} />`)}</div>` : html`<div className="card empty">No current goals.</div>`}
+    </div>
+    ${past.length ? html`<div className="section">
+      <div className="section-head"><h2 className="section-title">Past and archived</h2><span className="small faint">${past.length}</span></div>
+      <div className="goal-list">${past.map(g => html`<${GoalCard} key=${g.id} g=${g} model=${model} today=${today} store=${store} past=${true} />`)}</div>
+    </div>` : null}
+  </div>`;
+}
+
+// ---------- Badges ----------
+function BadgesScreen({ model, today, onBack }) {
+  const b = useMemo(() => R.badges(model, today), [model, today]);
+  const groups = [];
+  b.list.forEach(x => { let g = groups.find(y => y.name === x.group); if (!g) groups.push(g = { name: x.group, items: [] }); g.items.push(x); });
+  const earned = b.list.filter(x => x.earned).length;
+  const TONE = ['lime', 'pink', 'coral', 'blue'];
+  return html`<div>
+    <${BackHead} title="Badges" onBack=${onBack} label="Back to Dashboard" />
+    <${Finding} text=${`You’ve earned ${earned} of ${b.list.length} badges.${b.recent.length ? ` New this week: ${b.recent.map(x => x.title).join(', ')}.` : ''}`} />
+    <div className="tiny faint" style=${{ margin: '-4px 2px 4px' }}>Progress counts every read, like All time. The date is when you crossed the line, from your dated reads; est. means that read’s date was backfilled.</div>
+    ${groups.map((g, gi) => html`<div key=${g.name} className="section">
+      <div className="section-head"><h2 className="section-title">${g.name}</h2><span className="small faint">${g.items.filter(x => x.earned).length} of ${g.items.length}</span></div>
+      <div className="badge-grid">${g.items.map((x, i) => x.earned
+        ? html`<div key=${x.key} className="badge-card">
+            <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><span className=${'value-chip' + (TONE[(gi + i) % 4] === 'blue' ? ' blue' : '')} style=${{ background: `var(--${TONE[(gi + i) % 4]})` }}>${x.title}</span>${x.est ? html`<${EstBadge} />` : null}</div>
+            <div className="small muted">${x.rule}</div>
+            <div className="tiny faint">${x.dateUnknown ? 'Date unknown (undated reads)' : x.date ? 'Earned ' + R.fmtDay(x.date, today) : ''}</div>
+          </div>`
+        : html`<div key=${x.key} className="badge-card locked">
+            <div className="badge-lock-title">${x.title}</div>
+            <div className="small muted">${x.rule}</div>
+            ${x.threshold > 1 && x.value !== undefined && x.group !== 'Range' && x.key !== 'allyear' && !String(x.key).startsWith('streak') && !String(x.key).startsWith('month80') ? html`<div className="bar-track" style=${{ marginTop: 2 }}><div className="bar-fill" style=${{ width: Math.min(100, x.value / x.threshold * 100) + '%', background: 'var(--ink-2)' }}></div></div>` : null}
+            <div className="tiny faint">${x.progressText}</div>
+          </div>`)}</div>
+    </div>`)}
+  </div>`;
+}
+
+// ---------- Notes: monthly reflection card + editor ----------
+function NoteEditor({ store, period, prompt, onDone, autoFocus, cancelLabel }) {
+  const existing = store.notes.find(n => n.period === period);
+  const [text, setText] = useState(existing ? existing.text : '');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const save = async () => { setBusy(true); setErr(''); try { await store.saveNote(period, text); onDone && onDone(); } catch (e) { setErr('Couldn’t save: ' + (e.message || e)); } finally { setBusy(false); } };
+  return html`<div className="note-editor">
+    <textarea className="note-input" rows="4" value=${text} onChange=${e => setText(e.target.value)} placeholder=${prompt} aria-label=${prompt} autoFocus=${autoFocus} disabled=${!store.editable && !busy}></textarea>
+    <div className="row" style=${{ flexWrap: 'nowrap' }}>
+      <button className="big-btn" disabled=${busy || !store.editable || (!text.trim() && !existing)} onClick=${save}>${busy ? 'Saving…' : !text.trim() && existing ? 'Delete note' : 'Save note'}</button>
+      ${onDone ? html`<button className="big-btn ghost" onClick=${onDone}>${cancelLabel || 'Cancel'}</button>` : null}
+    </div>
+    ${err ? html`<div className="tiny" style=${{ color: 'var(--dnf-strike)' }}>${err}</div>` : null}
+  </div>`;
+}
+function ReflectionCard({ model, today, store }) {
+  const month = R.reflectionWindow(today);
+  const info = useMemo(() => month ? R.reflectionFor(model, month) : null, [model, month]);
+  const [editing, setEditing] = useState(false);
+  if (!month || !info) return null;
+  const note = store.notes.find(n => n.period === month);
+  return html`<div className="card reflect">
+    <div className="tiny" style=${{ letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 800 }}>Reflect on ${R.monthName(month)}</div>
+    <div className="small" style=${{ fontWeight: 700, marginTop: 6 }}>${info.stat}</div>
+    <div style=${{ fontSize: 19, fontWeight: 800, letterSpacing: '-0.3px', marginTop: 4 }}>${info.prompt}</div>
+    ${note && !editing ? html`<div className="note-quote">“${R.noteExcerpt(note.text)}”</div>
+        ${store.editable ? html`<button className="link-btn" onClick=${() => setEditing(true)}>Edit note</button>` : null}`
+      : store.status === 'ready' ? html`<div style=${{ marginTop: 10 }}><${NoteEditor} store=${store} period=${month} prompt=${info.prompt} onDone=${note ? () => setEditing(false) : null} /></div>`
+      : html`<div style=${{ marginTop: 10 }}><${StorageNotice} store=${store} compact=${true} /></div>`}
+  </div>`;
+}
+function NotesList({ store, today }) {
+  const [edit, setEdit] = useState(null);
+  const notes = store.notes.slice().sort((a, b) => String(b.period).localeCompare(String(a.period)));
+  const label = (p) => String(p).length === 4 ? `${p} (year)` : R.monthName(p);
+  return html`<div className="card">
+    ${notes.length ? notes.map(n => html`<div key=${n.period} className="set-row" style=${{ display: 'block' }}>
+      <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><b style=${{ fontWeight: 700 }}>${label(n.period)}</b>
+        ${store.editable && edit !== n.period ? html`<button className="link-btn" onClick=${() => setEdit(n.period)}>Edit</button>` : null}</div>
+      ${edit === n.period ? html`<${NoteEditor} store=${store} period=${n.period} prompt=${String(n.period).length === 4 ? R.yearPrompt(n.period) : 'Your note'} onDone=${() => setEdit(null)} />`
+        : html`<div className="small muted" style=${{ marginTop: 2 }}>${R.noteExcerpt(n.text)}</div>`}
+    </div>`) : html`<div className="small muted">No notes yet. The dashboard asks for one at the end of each month, and a year’s recap asks for one too.</div>`}
+  </div>`;
+}
+
+// ---------- Diversity (Trends tab) ----------
+function DiversityTab({ model, today, themeTick }) {
+  const ctx = useContext(TagCtx);
+  const all = useMemo(() => R.diversityByYear(model.readings, ctx.isVisible, model), [model, ctx.isVisible]);
+  const years = all.map(d => d.year);
+  const [year, setYear] = useState(() => years.includes(+today.slice(0, 4)) ? +today.slice(0, 4) : years[years.length - 1]);
+  const [dim, setDim] = useState('author');
+  const cur = all.find(d => d.year === year);
+  const finding = cur ? R.diversityFinding(cur, all.find(d => d.year === year - 1) || null, model) : 'No dated reads yet.';
+  const scored = all.filter(d => d.enough);
+  const cfg = useMemo(() => {
+    if (scored.length < 2) return null;
+    const t = chartTheme(); const sc = baseScales(t); sc.x.stacked = false; sc.y.stacked = false; sc.y.min = 0; sc.y.max = 100;
+    return { type: 'line', data: { labels: scored.map(d => String(d.year)), datasets: R.DIVERSITY_DIMS.map((dd, i) => ({ label: dd.label, data: scored.map(d => d.dims[i].score), borderColor: CAT(i), backgroundColor: CAT(i), borderDash: i >= 5 ? [5, 4] : undefined, pointStyle: i >= 5 ? 'rectRot' : 'circle', tension: .3, pointRadius: i >= 5 ? 4 : 3 })) },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, color: t.ink2 } }, tooltip: tooltip(t, c => ` ${c.dataset.label}: ${c.parsed.y}`) }, scales: sc } };
+  }, [all, themeTick]);
+  if (!cur) return html`<div className="card empty">Variety scores appear once you have dated reads.</div>`;
+  const d = cur.dims.find(x => x.key === dim);
+  const prevDim = (k) => { const p = all.find(x => x.year === year - 1); return p && p.enough ? p.dims.find(x => x.key === k) : null; };
+  const tones = ['c-blue', 'c-lime', 'c-coral', 'c-pink', '', ''];
+  return html`<div>
+    <${TSection} title="Variety" right=${html`<span className="small faint">0 = all one thing · 100 = evenly spread</span>`} finding=${finding}>
+      ${years.length > 1 ? html`<div style=${{ marginBottom: 8 }}><${YearChips} years=${years} value=${year} onChange=${setYear} /></div>` : null}
+      ${!cur.enough ? html`<div className="card logged-empty"><div className="title">Not enough reads in ${year} to score</div>
+          <div className="small muted" style=${{ marginTop: 6 }}>Variety needs ${R.MIN_DIVERSITY} dated reads in a year.</div>
+          <div className="tiny faint" style=${{ marginTop: 8 }}>Based on ${cur.readings} dated read${cur.readings === 1 ? '' : 's'} in ${year}</div></div>`
+      : html`<div className="tiles">${cur.dims.map((x, i) => { const p = prevDim(x.key); const dd = p ? x.score - p.score : null;
+          return html`<button key=${x.key} className=${'tile div-tile ' + tones[i] + (dim === x.key ? ' picked' : '')} onClick=${() => setDim(x.key)} aria-pressed=${dim === x.key}>
+            <div className="tile-label">${x.label}</div>
+            <div className="tile-value num">${x.score}<span className="small" style=${{ fontWeight: 700, letterSpacing: 0, opacity: .75 }}> /100</span></div>
+            <div className="tile-foot"><span className="tile-note">${x.k <= 1 ? `Only one ${x.label.toLowerCase()}` : `${fmtInt(x.k)} ${x.key === 'length' ? 'bands' : x.key === 'tag' ? 'tags' : x.label.toLowerCase() + 's'}`}</span>
+              ${dd !== null ? html`<span className="delta">${dd > 0 ? '▲ ' + dd : dd < 0 ? '▼ ' + Math.abs(dd) : '='}</span>` : null}</div>
+          </button>`; })}</div>
+        <div className="tiny faint" style=${{ marginTop: 8 }}>Scores weigh each ${'category'} by words read (normalised Shannon entropy). Based on ${cur.readings} dated reads in ${year}${prevDim('author') ? `; arrows compare with ${year - 1}` : ''}.${ctx.include ? '' : ' Sex-related tags are left out of the tag score.'}</div>`}
+    </${TSection}>
+    ${cur.enough ? html`<${TSection} title=${`${d.label} breakdown, ${year}`} finding=${d.breakdown}>
+      <div className="card">${d.rows.map(r => html`<div key=${r.key} className="hbar-row">
+        <span className="hbar-label">${r.name}</span><span className="hbar-val num">${Math.round(r.share * 100)}% · ${fmtWords(Math.round(r.words))}</span>
+        <div className="hbar-track"><div style=${{ width: Math.max(2, r.share / (d.rows[0].share || 1) * 100) + '%', background: 'var(--blue)', borderRadius: 99 }}></div></div>
+      </div>`)}
+      ${d.k > d.rows.length ? html`<div className="tiny faint" style=${{ marginTop: 6 }}>Top ${d.rows.length} of ${fmtInt(d.k)}</div>` : null}</div>
+    </${TSection}>` : null}
+    <${TSection} title="Variety by year" finding=${cfg ? '' : 'The year-by-year chart appears once two years each have ' + R.MIN_DIVERSITY + '+ dated reads.'}>
+      ${cfg ? html`<div className="card"><${ChartBox} config=${cfg} height=${240} /></div>` : null}
+    </${TSection}>
+  </div>`;
+}
+
+// ---------- Sessions (Habits tab) ----------
+const fmtMins = (m) => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ' ' + (m % 60) + 'm' : ''}` : `${m}m`;
+function SessionsSection({ ss, st }) {
+  return html`<${TSection} title="Sessions and speed" finding=${st.finding}>
+    ${!st.enough ? html`<div className="card logged-empty">
+        <div className="title">This fills in as you time reading sessions in the fandom apps</div>
+        <div className="small muted" style=${{ marginTop: 6 }}>Needs “Session started” and “Session ended” events in the Reading Log.</div>
+        <div className="tiny faint" style=${{ marginTop: 8 }}>Based on ${st.count} session${st.count === 1 ? '' : 's'} so far · shows from ${R.MIN_SESSIONS}</div>
+      </div>`
+    : html`<div className="tiles">
+        <div className="tile c-blue"><div className="tile-label">Time reading</div><div className="tile-value num">${fmtMins(st.totalMinutes)}</div><div className="tile-note">${st.count} sessions</div></div>
+        <div className="tile c-lime"><div className="tile-label">Average session</div><div className="tile-value num">${fmtMins(st.avgMinutes)}</div></div>
+        <div className="tile"><div className="tile-label">Words a minute</div><div className="tile-value num">${st.wpm === null ? '—' : fmtInt(st.wpm)}</div><div className="tile-note">Median of ${st.timedCount} session${st.timedCount === 1 ? '' : 's'} of 5+ minutes that moved forward</div></div>
+      </div>
+      <div className="card" style=${{ marginTop: 12 }}>
+        <div className="flabel">Words a minute by length</div>
+        ${st.bands.filter(b => b.n).map(b => html`<div key=${b.key} className="row" style=${{ justifyContent: 'space-between', padding: '7px 0', borderTop: '1px solid var(--line)' }}>
+          <b style=${{ fontWeight: 600 }}>${b.label}</b><span className="small muted num">${b.wpm === null ? `${b.n} session${b.n === 1 ? '' : 's'} · not enough` : `${fmtInt(b.wpm)} wpm · ${b.n} sessions`}</span></div>`)}
+        <div className="tiny faint" style=${{ marginTop: 8 }}>Based on ${st.count} sessions</div>
+      </div>`}
+  </${TSection}>`;
 }
 
 // ============================================================================================
@@ -3568,7 +4446,7 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
 // ============================================================================================
 // SETTINGS + TAG REVIEW
 // ============================================================================================
-function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setView }) {
+function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setView, store, today }) {
   const ctx = useContext(TagCtx);
   if (view === 'tags') return html`<${TagReview} model=${model} onBack=${() => { setView('main'); window.scrollTo(0, 0); }} />`;
   const n = { sexual: 0, unsure: 0 };
@@ -3591,14 +4469,26 @@ function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setVie
       </div>
     </div>
     <div className="section">
+      <div className="section-head"><h2 className="section-title">Goals and notes storage</h2></div>
+      ${store.status === 'ready' ? html`<div className="card" style=${{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="small"><b style=${{ fontWeight: 700 }}>Connected to “Shelf Life Data”.</b> <span className="muted">${store.goals.length} goal${store.goals.length === 1 ? '' : 's'}, ${store.notes.length} note${store.notes.length === 1 ? '' : 's'} and your tag overrides are saved there.${store.saving ? ' Saving…' : ''}</span></div>
+          <div className="tiny faint">This is the only Sheet Shelf Life writes to. Google only lets it reach files it created, and your fandom Sheets stay read-only.</div>
+          <a className="link-btn" style=${{ display: 'inline-flex', alignItems: 'center', gap: 6 }} href=${store.sheetUrl} target="_blank" rel="noopener">Open Shelf Life Data <${Icon} name="ext" size=${14} /></a>
+        </div>` : html`<${StorageNotice} store=${store} />`}
+    </div>
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Notes</h2><span className="small faint">${store.notes.length}</span></div>
+      <${NotesList} store=${store} today=${today} />
+    </div>
+    <div className="section">
       <div className="section-head"><h2 className="section-title">Account</h2></div>
       <div className="card" style=${{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div className="small muted">Shelf Life only reads your Sheets (read-only Google access). Logging stays in the fandom apps. Last synced ${ago(syncedAt, Date.now())}.</div>
+        <div className="small muted">Shelf Life only reads your fandom Sheets (read-only Google access). Logging stays in the fandom apps. Last synced ${ago(syncedAt, Date.now())}.</div>
         <div className="row">
           ${auth.signedIn ? html`<button className="pill-btn" onClick=${auth.signOut}>Sign out</button>` : html`<button className="pill-btn primary" onClick=${onSignIn}>Sign in to sync</button>`}
           <button className="pill-btn" onClick=${onReset}>Clear cached data</button>
         </div>
-        <div className="tiny faint">Clearing cached data keeps your tag overrides.</div>
+        <div className="tiny faint">Clearing cached data keeps your tag overrides and the offline copy of your goals and notes.</div>
       </div>
     </div>
   </div>`;
@@ -3670,7 +4560,7 @@ function TagReview({ model, onBack }) {
       <button className="icon-btn" onClick=${onBack} aria-label="Back to Settings"><${Icon} name="back" size=${18} /></button>
       <h1 className="page-title" style=${{ margin: 0 }}>Tag review</h1>
     </div>
-    <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Your choice beats the rules. Unsure tags count as general until you decide. Saved on this device; use Export / Import to copy them to another.</div>
+    <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Your choice beats the rules. Unsure tags count as general until you decide. ${ctx.synced ? 'Synced to Shelf Life Data, so every device gets them. Export / Import still work as a backup.' : 'Saved on this device; turn on goals and notes to sync them, or use Export / Import to copy them.'}</div>
     <div className="search-wrap"><${Icon} name="search" size=${17} /><input className="text-input" value=${q} onChange=${e => setQ(e.target.value)} placeholder="Search tags" aria-label="Search tags" /></div>
     <div className="chips" style=${{ marginTop: 10 }}>
       ${[['all', 'All'], ['sexual', 'Sexual'], ['unsure', 'Unsure'], ['general', 'General'], ['changed', 'Changed by you']].map(([k, l]) => html`<button key=${k} className=${'chip sm' + (show === k ? ' on' : '')} onClick=${() => setShow(k)}>${l}</button>`)}
@@ -3717,6 +4607,134 @@ function Mark({ size }) {
 // ============================================================================================
 // ROOT
 // ============================================================================================
+// ---------- Shelf Life Data (goals, notes, synced tag overrides) ----------
+// status: 'off' (never switched on here) | 'connecting' | 'ready' | 'unavailable' (switched on,
+// but storage can't be reached: goals and notes show the copy on this device, read-only).
+const MERGED_LOCAL_KEY = 'shelflife-overrides-merged';
+const nowStamp = () => new Date().toISOString();
+const newId = () => 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function useShelfStore(auth, localOverrides) {
+  const [st, setSt] = useState(() => {
+    let on = false; try { on = localStorage.getItem(STORAGE_FLAG_KEY) === '1'; } catch (e) {}
+    return { status: on ? 'unavailable' : 'off', message: on ? 'Connecting to Shelf Life Data…' : '', id: null, goals: [], notes: [], overrides: null, saving: false, cachedAt: null, created: false };
+  });
+  const stRef = useRef(st); useEffect(() => { stRef.current = st; }, [st]);
+  const localRef = useRef(localOverrides); useEffect(() => { localRef.current = localOverrides; }, [localOverrides]);
+  const queue = useRef(Promise.resolve());
+  const busy = useRef(false);
+
+  const cache = (d) => idb.put(SHELF_CACHE_KEY, { goals: d.goals, notes: d.notes, overrides: d.overrides, at: Date.now(), id: d.id });
+  useEffect(() => { idb.get(SHELF_CACHE_KEY).then(c => { if (c && stRef.current.status !== 'ready') setSt(s => ({ ...s, goals: c.goals || [], notes: c.notes || [], cachedAt: c.at || null })); }); }, []);
+
+  const fail = (e) => {
+    if (e && e.isAuthError) { auth.expire(); setSt(s => ({ ...s, status: 'unavailable', saving: false, message: 'Your Google sign-in expired. Sign in again to use goals and notes.' })); return; }
+    setSt(s => ({ ...s, status: 'unavailable', saving: false, message: 'Goals and notes are unavailable right now (' + ((e && e.message) || 'storage could not be reached') + '). Everything else still works.' }));
+  };
+
+  const connect = useCallback(async (interactive) => {
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      let tok = auth.hasDrive() ? auth.getToken() : null;
+      if (!tok) {
+        if (!interactive) { if (stRef.current.status !== 'off') setSt(s => ({ ...s, status: 'unavailable', message: 'Sign in to use goals and notes.' })); return; }
+        try { localStorage.setItem(STORAGE_FLAG_KEY, '1'); } catch (e) {}
+        setSt(s => ({ ...s, status: 'connecting', message: '' }));
+        try { await auth.signIn({ withDrive: true }); } catch (e) { setSt(s => ({ ...s, status: 'unavailable', message: 'Sign-in didn’t finish, so goals and notes are off for now.' })); return; }
+        if (!auth.hasDrive()) { setSt(s => ({ ...s, status: 'unavailable', message: 'Google didn’t grant access to Shelf Life’s own files, so goals and notes are off. Try again and tick that permission.' })); return; }
+        tok = auth.getToken();
+      }
+      setSt(s => ({ ...s, status: 'connecting', message: '' }));
+      const { id, created } = await connectShelfData(tok);
+      let d = parseShelfData(await readShelfData(tok, id));
+      // First connect on this device: fold in the overrides saved here (only tags the Sheet lacks).
+      let merged = false; try { merged = localStorage.getItem(MERGED_LOCAL_KEY) === id; } catch (e) {}
+      if (!merged) {
+        const local = localRef.current || {};
+        const add = Object.keys(local).filter(k => !(k in d.overrides));
+        if (add.length) {
+          const next = { ...d.overrides }; add.forEach(k => { next[k] = local[k]; });
+          await writeSettings(tok, id, d.settingsRows, { tagOverrides: JSON.stringify(next) });
+          d = { ...d, overrides: next };
+        }
+        try { localStorage.setItem(MERGED_LOCAL_KEY, id); } catch (e) {}
+      }
+      const next = { status: 'ready', message: '', id, goals: d.goals, notes: d.notes, overrides: d.overrides, saving: false, cachedAt: Date.now(), created };
+      setSt(next); cache(next);
+    } catch (e) { fail(e); }
+    finally { busy.current = false; }
+  }, [auth.hasDrive, auth.getToken, auth.signIn, auth.expire]);
+
+  // Reconnect quietly whenever a sign-in with drive.file is available.
+  const tokKey = auth.tok && auth.tok.token;
+  useEffect(() => { if (stRef.current.status !== 'off' && stRef.current.status !== 'ready' && auth.hasDrive()) connect(false); }, [tokKey]);
+
+  // Each save re-reads the tab, applies the change to the fresh rows (merge by row), then writes.
+  const mutate = useCallback((fn) => {
+    const run = async () => {
+      const s0 = stRef.current;
+      if (s0.status !== 'ready' || !s0.id) throw new Error('Goals and notes are unavailable right now.');
+      const tok = auth.hasDrive() ? auth.getToken() : null;
+      if (!tok) { const e = new Error('expired'); e.isAuthError = true; throw e; }
+      setSt(s => ({ ...s, saving: true }));
+      const fresh = parseShelfData(await readShelfData(tok, s0.id));
+      const res = await fn(tok, s0.id, fresh);
+      const next = { ...stRef.current, ...res, saving: false, status: 'ready', cachedAt: Date.now() };
+      setSt(next); cache(next);
+    };
+    const p = queue.current.then(run, run);
+    queue.current = p.catch(() => {});
+    return p.catch(e => { fail(e); throw e; });
+  }, [auth.hasDrive, auth.getToken]);
+
+  const saveGoal = useCallback((goal) => mutate(async (tok, id, fresh) => {
+    const g = { ...goal, id: goal.id || newId(), created: goal.created || nowStamp(), updated: nowStamp() };
+    const goals = fresh.goals.some(x => x.id === g.id) ? fresh.goals.map(x => x.id === g.id ? g : x) : [...fresh.goals, g];
+    await writeShelfData(tok, id, { type: 'replaceTab', tab: 'Goals', rows: goals.map(goalToRow) });
+    return { goals, notes: fresh.notes, overrides: fresh.overrides };
+  }), [mutate]);
+  const archiveGoal = useCallback((gid, archived) => mutate(async (tok, id, fresh) => {
+    const goals = fresh.goals.map(x => x.id === gid ? { ...x, archived, updated: nowStamp() } : x);
+    await writeShelfData(tok, id, { type: 'replaceTab', tab: 'Goals', rows: goals.map(goalToRow) });
+    return { goals, notes: fresh.notes, overrides: fresh.overrides };
+  }), [mutate]);
+  const deleteGoal = useCallback((gid) => mutate(async (tok, id, fresh) => {
+    const goals = fresh.goals.filter(x => x.id !== gid);
+    await writeShelfData(tok, id, { type: 'replaceTab', tab: 'Goals', rows: goals.map(goalToRow) });
+    return { goals, notes: fresh.notes, overrides: fresh.overrides };
+  }), [mutate]);
+  // A note per period ('2026-09' or '2026'). Saving empty text deletes it.
+  const saveNote = useCallback((period, text) => mutate(async (tok, id, fresh) => {
+    const t = String(text || '').trim();
+    const old = fresh.notes.find(n => n.period === period);
+    const notes = !t ? fresh.notes.filter(n => n.period !== period)
+      : old ? fresh.notes.map(n => n.period === period ? { ...n, text: t, updated: nowStamp() } : n)
+      : [...fresh.notes, { period, kind: String(period).length === 4 ? 'year' : 'month', text: t, created: nowStamp(), updated: nowStamp() }];
+    notes.sort((a, b) => String(a.period).localeCompare(String(b.period)));
+    await writeShelfData(tok, id, { type: 'replaceTab', tab: 'Notes', rows: notes });
+    return { goals: fresh.goals, notes, overrides: fresh.overrides };
+  }), [mutate]);
+  // Tag overrides: apply just what changed (by tag) on top of the Sheet's current copy.
+  const saveOverridesRemote = useCallback((prev, nextLocal) => mutate(async (tok, id, fresh) => {
+    const out = { ...fresh.overrides };
+    new Set([...Object.keys(prev || {}), ...Object.keys(nextLocal || {})]).forEach(k => {
+      if ((prev || {})[k] === (nextLocal || {})[k]) return;
+      if (nextLocal && k in nextLocal) out[k] = nextLocal[k]; else delete out[k];
+    });
+    await writeSettings(tok, id, fresh.settingsRows, { tagOverrides: JSON.stringify(out) });
+    return { goals: fresh.goals, notes: fresh.notes, overrides: out };
+  }), [mutate]);
+
+  const sheetUrl = st.id ? `https://docs.google.com/spreadsheets/d/${st.id}/edit` : null;
+  return { ...st, sheetUrl, connect, saveGoal, archiveGoal, deleteGoal, saveNote, saveOverridesRemote, editable: st.status === 'ready' && !st.saving };
+}
+// Settings rows are key/value; replace the given keys, keep the rest.
+async function writeSettings(tok, id, rows, changes) {
+  const map = new Map((rows || []).map(r => [r.key, r]));
+  Object.entries(changes).forEach(([k, v]) => map.set(k, { key: k, value: v, updated: nowStamp() }));
+  return writeShelfData(tok, id, { type: 'replaceTab', tab: 'Settings', rows: [...map.values()] });
+}
+
 function App() {
   const auth = useAuth();
   const theme = useTheme();
@@ -3736,7 +4754,16 @@ function App() {
   const setIncludeSex = useCallback((v) => { setIncludeSexState(!!v); try { localStorage.setItem(SEXTAG_KEY, v ? '1' : '0'); } catch (e) {} }, []);
   const [overrides, setOverrides] = useState({});
   useEffect(() => { idb.get(OVERRIDES_KEY).then(o => { if (o && typeof o === 'object') setOverrides(o); }); }, []);
-  const saveOverrides = useCallback((next) => { setOverrides(next); idb.put(OVERRIDES_KEY, next); }, []);
+  const overridesRef = useRef(overrides); useEffect(() => { overridesRef.current = overrides; }, [overrides]);
+  const store = useShelfStore(auth, overrides);
+  const storeRef = useRef(store); storeRef.current = store;
+  // Once Shelf Life Data is connected, its tag overrides are the shared copy; this device keeps an offline copy.
+  useEffect(() => { if (store.status === 'ready' && store.overrides) { setOverrides(store.overrides); idb.put(OVERRIDES_KEY, store.overrides); } }, [store.overrides, store.status]);
+  const saveOverrides = useCallback((next) => {
+    const prev = overridesRef.current;
+    setOverrides(next); idb.put(OVERRIDES_KEY, next);
+    if (storeRef.current.status === 'ready') storeRef.current.saveOverridesRemote(prev, next).catch(() => {});
+  }, []);
   const [dash, setDash] = useState({ period: 'thisMonth', compare: 'prev', custom: { start: '', end: '' } });
   const [now, setNow] = useState(Date.now());
   const dataRef = useRef(null);
@@ -3812,8 +4839,8 @@ function App() {
   }, [model, overrides]);
   const tagCtx = useMemo(() => ({
     include: includeSex, setInclude: setIncludeSex, hidden: hiddenTags,
-    isVisible: (t) => includeSex || !hiddenTags.has(t), overrides, saveOverrides,
-  }), [includeSex, setIncludeSex, hiddenTags, overrides, saveOverrides]);
+    isVisible: (t) => includeSex || !hiddenTags.has(t), overrides, saveOverrides, synced: store.status === 'ready',
+  }), [includeSex, setIncludeSex, hiddenTags, overrides, saveOverrides, store.status]);
 
   const loadSummary = useCallback(async (fic) => {
     const ck = 'summary:' + fic.key;
@@ -3835,7 +4862,7 @@ function App() {
   const openAuthor = (a) => { setDetail(null); setFilters({ ...R.emptyFilters(), author: a }); setUi(u => ({ ...u, sub: 'library', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
   const openRange = (start, end) => { setDetail(null); setFilters({ ...R.emptyFilters(), from: start, to: end }); setUi(u => ({ ...u, sub: 'diary', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
   const openTag = (t) => { setFilters({ ...R.emptyFilters(), tagsInc: [t] }); setUi(u => ({ ...u, sub: 'diary', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
-  const reset = async () => { await idb.clearExcept([OVERRIDES_KEY]); dataRef.current = null; setData(null); setSync({ state: auth.signedIn ? 'idle' : 'needsAuth' }); if (auth.getToken()) doSync(false); };
+  const reset = async () => { await idb.clearExcept([OVERRIDES_KEY, SHELF_CACHE_KEY]); dataRef.current = null; setData(null); setSync({ state: auth.signedIn ? 'idle' : 'needsAuth' }); if (auth.getToken()) doSync(false); };
   const switchTab = (t) => { setTab(t); if (t !== 'settings') setSettingsView('main'); window.scrollTo(0, 0); };
 
   if (!booted) return html`<div className="center-screen faint">Opening your shelf…</div>`;
@@ -3860,12 +4887,14 @@ function App() {
         <span>${sync.message || 'Showing your saved copy.'}</span><button className="pill-btn" onClick=${() => doSync(true)}>Sign in to sync</button></div>` : null}
       ${sync.state === 'error' || sync.state === 'partial' ? html`<div className="banner err">Sync ${sync.state === 'partial' ? 'partly ' : ''}failed — showing the last copy. ${sync.message}</div>` : null}
 
-      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} openRecap=${setRecapScope} />` : null}
+      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} openRecap=${setRecapScope} store=${store} openGoals=${() => switchTab('goals')} openBadges=${() => switchTab('badges')} />` : null}
+      ${tab === 'goals' ? html`<${GoalsScreen} model=${model} today=${today} store=${store} onBack=${() => switchTab('home')} />` : null}
+      ${tab === 'badges' ? html`<${BadgesScreen} model=${model} today=${today} onBack=${() => switchTab('home')} />` : null}
       ${tab === 'diary' ? html`<${DiaryScreen} model=${model} filters=${filters} setFilters=${setFilters} onOpen=${setDetail} today=${today} ui=${ui} setUi=${setUi} />` : null}
       ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} onTag=${openTag} onOpen=${setDetail} onRange=${openRange} groupBy=${groupBy} setGroupBy=${setGroupBy} tab=${trendsTab} setTab=${setTrendsTab} openRecap=${setRecapScope} />` : null}
       ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today}
         goFilters=${() => { setUi(u => ({ ...u, filtersOpen: true })); switchTab('diary'); }} />` : null}
-      ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} />` : null}
+      ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} store=${store} today=${today} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} />` : null}
     </main>
 
     <nav className="nav"><div className="nav-inner">
@@ -3873,7 +4902,7 @@ function App() {
     </div></nav>
 
     ${detail ? html`<${FicDetail} ficKey=${detail} model=${model} onClose=${() => setDetail(null)} loadSummary=${loadSummary} onAuthor=${openAuthor} today=${today} />` : null}
-    ${recapScope ? html`<${RecapStory} model=${model} scope=${recapScope} today=${today} onClose=${() => setRecapScope(null)} />` : null}
+    ${recapScope ? html`<${RecapStory} model=${model} scope=${recapScope} today=${today} store=${store} onClose=${() => setRecapScope(null)} />` : null}
   </div></${TagCtx.Provider}>`;
 }
 

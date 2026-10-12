@@ -388,6 +388,43 @@
   .div-tile { text-align: left; font: inherit; color: inherit; cursor: pointer; }
   .div-tile.picked { box-shadow: 0 0 0 3px var(--solid) !important; }
   .rc-quote { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.35; overflow-wrap: anywhere; }
+
+  /* ---------- Phase 4: up next, nudges, more ---------- */
+  .nudge-list { display: flex; flex-direction: column; gap: 10px; }
+  .nudge { background: var(--surface); border-radius: var(--r-row); box-shadow: var(--shadow-card); padding: 14px; display: flex; flex-direction: column; gap: 8px; border-left: 0; position: relative; overflow: hidden; }
+  .nudge::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--blue); }
+  .nudge.t-streak-risk::before, .nudge.t-goal-pace::before { background: var(--coral); }
+  .nudge.t-badge-close::before, .nudge.t-go-to-author::before { background: var(--lime); }
+  .nudge.t-long-fic::before, .nudge.t-dnf-tag::before { background: var(--pink); }
+  .nudge.compact { box-shadow: none; background: var(--surface-2); padding: 10px 12px 8px 16px; gap: 4px; }
+  .nudge-text { font-size: 14px; font-weight: 700; line-height: 1.4; padding-left: 4px; }
+  .nudge.compact .nudge-text { font-size: 13px; }
+  .nudge-nums { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 4px; }
+  .nudge-nums span { font-size: 11.5px; font-weight: 600; background: var(--surface-2); border-radius: 999px; padding: 3px 9px; color: var(--ink); }
+  .nudge.compact .nudge-nums span { background: var(--surface); }
+  .nudge-nums b { font-weight: 800; color: var(--ink-2); margin-right: 3px; }
+  .nudge-actions { gap: 4px 14px; padding-left: 4px; }
+  .nudge.compact .nudge-actions .link-btn { min-height: 32px; font-size: 12px; }
+  .nudge-why { color: var(--ink-2); padding-left: 4px; line-height: 1.45; }
+  .nudge-pick { text-align: left; background: var(--surface-2); border-radius: 16px; padding: 10px 12px; font-weight: 700; font-size: 13px; color: var(--ink); display: flex; flex-direction: column; gap: 2px; margin-left: 4px; }
+  .up-list { display: flex; flex-direction: column; gap: 12px; }
+  .up-card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .up-main { background: none; text-align: left; padding: 0; color: var(--ink); display: block; width: 100%; }
+  .up-rank { display: inline-block; min-width: 22px; margin-right: 6px; color: var(--ink-2); font-weight: 800; }
+  .up-score { flex-shrink: 0; min-width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--blue); color: var(--on-blue); font-weight: 800; font-size: 16px; }
+  .why-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .why { font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 4px 10px; background: var(--surface-2); color: var(--ink); line-height: 1.3; }
+  .why.why-top { background: var(--blue); color: var(--on-blue); }
+  .why.why-rec, .why.why-goto { background: var(--lime); color: var(--on-bright); }
+  .why.why-rotation { background: var(--pink); color: var(--on-bright); }
+  .up-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .up-actions .pill-btn { text-decoration: none; background: var(--surface-2); box-shadow: none; }
+  .up-mini { width: 270px; }
+  .up-how p { margin: 8px 0 0; line-height: 1.5; font-weight: 600; }
+  .attn-dot, .nav-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--coral); }
+  .attn-dot { margin-left: 8px; vertical-align: 2px; }
+  .nav button .nav-ic { position: relative; }
+  .nav-dot { position: absolute; top: 3px; right: 7px; box-shadow: 0 0 0 2px var(--surface); }
 </style>
 </head>
 <body>
@@ -406,6 +443,9 @@
 //               or { light: '#RRGGBB', dark: '#RRGGBB' }. Pairings use shades of it. When two
 //               Sheets share a fandom, the first one's colour is used.
 //   initials    optional: the short label on the fandom's coloured square (display only).
+//   appUrl      the fandom app's GitHub Pages address ("Open in app" links and nudges).
+//   App scores: each Sheet's score is computed by APP_SCORES[id] (in ShelfRules), a port of
+//               that fandom app's own scoring. A new Sheet needs its scorer added there too.
 // ============================================================================================
 const SOURCES = [
   {
@@ -416,6 +456,7 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#2D5BFF', dark: '#2D5BFF' },
     initials: 'GC',
+    appUrl: 'https://ameliacatanach-boop.github.io/Hollanov-Fics-List/',
   },
   {
     id: 'asoiaf',
@@ -425,6 +466,7 @@ const SOURCES = [
     pairingMode: 'perFic',
     color: { light: '#FF6B4A', dark: '#FF6B4A' },
     initials: 'ASOIAF',
+    appUrl: 'https://ameliacatanach-boop.github.io/ASOIAF-Fics-List/',
   },
   {
     id: 'drarry',
@@ -434,6 +476,7 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#D4F55B', dark: '#D4F55B' },
     initials: 'HP',
+    appUrl: 'https://ameliacatanach-boop.github.io/Drarry-Fics-List/',
   },
 ];
 </script>
@@ -778,6 +821,17 @@ const ShelfRules = (() => {
       chaptersRead: num(get('Chapters Read')),   // blank and 0 both read as 0, as in the apps
       timesRead: num(get('Times Read')),
       badDates,
+      recommended: get('Recommended').trim().toUpperCase() === 'Y',
+      recSource: get('Rec Source').trim(),
+      // Exactly what the fandom apps' scoring reads, parsed the way the apps parse it (raw tags
+      // with AO3 warnings and duplicates kept, chapters by parseInt). Used only by APP_SCORES.
+      app: {
+        tags: splitList(get('Tags')), ships: splitList(get('Relationships')),
+        dnrTags: splitList(get('DNR Tags')), dnrShips: splitList(get('DNR Ships')),
+        dnrCategory: get('DNR Category').trim().toUpperCase() === 'Y',
+        category: get('Category').trim() || 'Uncategorized',
+        chapters: num(get('Chapters')) || 1,
+      },
     };
   }
 
@@ -2210,7 +2264,381 @@ const ShelfRules = (() => {
     return (dot > 60 ? cut.slice(0, dot + 1) : cut.replace(/\s+\S*$/, '') + '…');
   }
 
+  // ==========================================================================================
+  // 10. APP_SCORES: the fandom apps' own recommendation score, ported (not reinvented)
+  // ------------------------------------------------------------------------------------------
+  // Each scorer takes ALL of one Sheet's fics (as Shelf Life parsed them) and returns a Map of
+  // fic key -> { score, qScore } that matches what that app shows (the app shows score rounded).
+  // Inputs are the raw Data List fields the apps read, kept on fic.app (raw tags with AO3
+  // warnings and duplicates, raw DNR fields, chapters by parseInt) plus Kudos, Hits, Bookmarks,
+  // Comments, Status, DNR Reason, K, B, Enjoyment and Author.
+  //
+  // The algorithm (identical in all three apps except where noted):
+  //   qScore   popularity: percentile ranks (ties share the average rank, scaled 0-100) across
+  //            EVERY titled row in the Sheet, of kudos/(hits+1) x1, kudos per chapter x1,
+  //            bookmarks x1.5 and comments x1; weighted mean (÷ 4.5).
+  //   evidence per tag / ship / category / author, from Read, DNF and Not Interested rows:
+  //            Read adds readW = 1 + 0.5·K + 1·B (author readW also × ENJOYMENT_MULTIPLIER);
+  //            DNF adds 1 to dnf; Not Interested adds 1 to notInt. Which tags/ships/category a
+  //            DNF or Not Interested penalises depends on DNR Reason (contentTargets below);
+  //            the author is penalised unless the reason is a Content one.
+  //   affinity (readW − dnf·dnfWeight − notInt) ÷ total, × confidence total ÷ (total + 3).
+  //            dnfWeight 0.5 (ships: 0.15).
+  //   per fic  each dimension = Σ a·|a| ÷ Σ |a| over its rated items (strength-weighted mean).
+  //            Category and author are floored at 0 (boost only); tags and ships can be negative.
+  //   blend    weighted mean of the dimensions that have data: tags 0.6, ships 0.6 (ASOIAF),
+  //            category 0.3, author 0.9.   score = qScore × (1 + blend).
+  // ==========================================================================================
+  const APP_STATUS = { '': 0, 'Read': 1, 'DNF': 2, 'Skipped': 3, 'Not Interested': 4, 'Currently Reading': 5, 'TBR': 6, 'Paused': 7 };
+  const APP_ENJOYMENT_MULTIPLIER = { 0: 1, 1: 0.25, 2: 0.6, 3: 1, 4: 1.5, 5: 2 };
+  const APP_ANON = new Set(['anonymous', 'orphan_account', 'orphan account']);
+  const appRealAuthors = (f) => f.authors.filter(a => !APP_ANON.has(a.trim().toLowerCase()));
+  function appPercentileRanks(values) {
+    const n = values.length;
+    const sorted = values.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]);
+    const ranks = new Array(n);
+    let i = 0;
+    while (i < n) {
+      let j = i;
+      while (j + 1 < n && sorted[j + 1][0] === sorted[i][0]) j++;
+      const avg = (i + j) / 2;
+      for (let k = i; k <= j; k++) ranks[sorted[k][1]] = avg;
+      i = j + 1;
+    }
+    const denom = n > 1 ? n - 1 : 1;
+    return ranks.map(r => (r / denom) * 100);
+  }
+  // opts.ships: false (Hollanov, Drarry) | true (ASOIAF). dnrCodes: the app's DNR_CODE_MAP.
+  function appScoreCore(fics, opts) {
+    const n = fics.length, out = new Map();
+    if (!n) return out;
+    const DNR = opts.dnrCodes;
+    const status = fics.map(f => APP_STATUS[String(f.status || '').trim()] ?? 0);
+    const dnr = fics.map(f => DNR[String(f.dnrReason || '').trim()] ?? 0);
+    const pKH = appPercentileRanks(fics.map(f => f.kudos / (f.hits + 1)));
+    const pKC = appPercentileRanks(fics.map(f => f.kudos / Math.max(1, f.app.chapters)));
+    const pBM = appPercentileRanks(fics.map(f => f.bookmarks));
+    const pCO = appPercentileRanks(fics.map(f => f.comments));
+    const q = fics.map((_, i) => (pKH[i] * 1 + pKC[i] * 1 + pBM[i] * 1.5 + pCO[i] * 1) / 4.5);
+    const tagS = new Map(), shipS = new Map(), catS = new Map(), auS = new Map();
+    const bump = (m, k, field, amt) => { if (!m.has(k)) m.set(k, { readW: 0, dnf: 0, notInt: 0 }); m.get(k)[field] += amt; };
+    // DNR Reason codes: 1 Writing/Pacing, 2 Content, 3 Other, 10 Content/Tags, 11 Content/Ships (ASOIAF), 12 Content/Category.
+    const contentTargets = (f, d) => {
+      if (d === 2) return { tags: f.app.dnrTags.length ? f.app.dnrTags : [], ships: opts.ships && f.app.dnrShips.length ? f.app.dnrShips : [], category: !!f.app.dnrCategory };
+      if (d === 10) return { tags: f.app.tags, ships: [], category: false };
+      if (opts.ships && d === 11) return { tags: [], ships: f.app.ships, category: false };
+      if (d === 12) return { tags: [], ships: [], category: true };
+      if (d === 3) return { tags: f.app.tags, ships: opts.ships ? f.app.ships : [], category: true };
+      return { tags: [], ships: [], category: false };
+    };
+    const authorExcluded = (d) => d === 2 || d === 10 || d === 12 || (opts.ships && d === 11);
+    for (let i = 0; i < n; i++) {
+      const f = fics[i], s = status[i], d = dnr[i];
+      if (s === 1) {
+        const w = 1 + 0.5 * (f.kg ? 1 : 0) + 1 * (f.bk ? 1 : 0);
+        for (const t of f.app.tags) bump(tagS, t, 'readW', w);
+        if (opts.ships) for (const sh of f.app.ships) bump(shipS, sh, 'readW', w);
+        bump(catS, f.app.category, 'readW', w);
+        const aw = w * (APP_ENJOYMENT_MULTIPLIER[f.enjoyment] ?? 1);
+        for (const a of appRealAuthors(f)) bump(auS, a, 'readW', aw);
+      } else if (s === 2 || s === 4) {
+        const field = s === 2 ? 'dnf' : 'notInt', tg = contentTargets(f, d);
+        for (const t of tg.tags) bump(tagS, t, field, 1);
+        for (const sh of tg.ships) bump(shipS, sh, field, 1);
+        if (tg.category) bump(catS, f.app.category, field, 1);
+        if (!authorExcluded(d)) for (const a of appRealAuthors(f)) bump(auS, a, field, 1);
+      }
+    }
+    const affinityOf = (m, k, dnfW) => {
+      const s = m.get(k); if (!s) return { affinity: 0, total: 0 };
+      const total = s.readW + s.dnf + s.notInt;
+      const raw = total === 0 ? 0 : (s.readW - s.dnf * dnfW - s.notInt) / total;
+      return { affinity: raw * (total / (total + 3)), total };
+    };
+    const dim = (m, keys, dnfW) => {
+      let sum = 0, wt = 0, cnt = 0;
+      for (const k of keys) { const { affinity, total } = affinityOf(m, k, dnfW); if (total > 0) { cnt++; sum += affinity * Math.abs(affinity); wt += Math.abs(affinity); } }
+      return { has: cnt > 0, v: wt > 0 ? sum / wt : 0 };
+    };
+    for (let i = 0; i < n; i++) {
+      const f = fics[i];
+      const t = dim(tagS, f.app.tags, 0.5);
+      const sh = opts.ships ? dim(shipS, f.app.ships, 0.15) : { has: false, v: 0 };
+      const c = affinityOf(catS, f.app.category, 0.5);
+      const au = dim(auS, appRealAuthors(f), 0.5);
+      let ws = 0, as = 0;
+      if (t.has) { ws += 0.6; as += 0.6 * t.v; }
+      if (sh.has) { ws += 0.6; as += 0.6 * sh.v; }
+      if (c.total > 0) { ws += 0.3; as += 0.3 * Math.max(0, c.affinity); }
+      if (au.has) { ws += 0.9; as += 0.9 * Math.max(0, au.v); }
+      const adj = ws > 0 ? as / ws : 0;
+      out.set(f.key, { score: q[i] * (1 + adj), qScore: q[i] });
+    }
+    return out;
+  }
+  const APP_DNR_CODES = { '': 0, 'Writing/Pacing': 1, 'Content': 2, 'Other': 3, 'Content/Tags': 10, 'Content/Category': 12 };
+  const APP_DNR_CODES_SHIPS = { ...APP_DNR_CODES, 'Content/Ships': 11 };
+  const APP_SCORES = {
+    // last synced with the Hollanov app (hollanov-fics-list-sync.html, useComputedScores) on 2026-10-12
+    hollanov: (fics) => appScoreCore(fics, { ships: false, dnrCodes: APP_DNR_CODES }),
+    // last synced with the ASOIAF app (asoiaf-fics-list-sync.html, useComputedScores) on 2026-10-12
+    // Differs from the others: ships (Relationships) as a 4th dimension, weight 0.6, DNF weight 0.15,
+    // DNR Ships for Content reasons, and the legacy "Content/Ships" reason.
+    asoiaf: (fics) => appScoreCore(fics, { ships: true, dnrCodes: APP_DNR_CODES_SHIPS }),
+    // last synced with the Drarry app (drarry-fics-list-sync.html, useComputedScores) on 2026-10-12
+    drarry: (fics) => appScoreCore(fics, { ships: false, dnrCodes: APP_DNR_CODES }),
+  };
+  // All sources: Map fic key -> { score, qScore }. A Sheet with no scorer gets none.
+  function appScores(model) {
+    const all = new Map();
+    for (const src of new Set(model.fics.map(f => f.source))) {
+      const scorer = APP_SCORES[src]; if (!scorer) continue;
+      for (const [k, v] of scorer(model.fics.filter(f => f.source === src))) all.set(k, v);
+    }
+    return all;
+  }
+
+  // ==========================================================================================
+  // 11. UP NEXT: a cross-fandom "what to read next" ranking
+  // ------------------------------------------------------------------------------------------
+  // Candidates: Status blank or TBR (Recommended is a column, so a recommended fic is a candidate
+  // when its Status is blank or TBR). Everything else is left out: Read, DNF, Skipped, Not
+  // Interested, Currently Reading, Paused and any status the apps don't know. Snoozed fics
+  // (snoozes[fic key] >= today) are left out of the list but still count for percentiles.
+  //
+  //   appPercentile = percentile of the fic's APP_SCORES score among the candidates in ITS OWN
+  //                   Sheet (0-100, ties share a rank), so the three Sheets are comparable even
+  //                   if their raw scores run on different scales. "Top N%" = 100 − percentile.
+  //   overall       = your all-time completion rate: finished readings ÷ closed readings.
+  //   lengthFit     = your completion rate in the fic's length band (Phase 2 bands), shrunk
+  //                   towards overall when the band has few closed reads:
+  //                   (finished in band + 5 × overall) ÷ (closed in band + 5).
+  //   base          = appPercentile × (0.6 + 0.4 × lengthFit ÷ overall), capped to 0–100.
+  //   boosts        = +5 if Recommended in its app; +5 if its fandom's last read was 21+ days ago
+  //                   (fandom rotation; a fandom with no dated read gets no boost).
+  //                   No author boost: Author Affinity is already in the app score.
+  //   upNextScore   = base + boosts (so up to 110). Ties: the uncapped base, then the app score.
+  // Every pick carries `reasons` (the "why" chips, most useful first).
+  // ==========================================================================================
+  const UP_NEXT_STATUSES = ['', 'TBR'];
+  const LENGTH_FILTERS = { short: { label: 'Short tonight', min: 0, max: 20000 }, medium: { label: 'Medium', min: 20000, max: 100000 }, long: { label: 'Long haul', min: 100000, max: Infinity } };
+  function lengthStats(readings) {
+    const closed = readings.filter(r => r.kind === 'Read' || r.kind === 'DNF');
+    const fin = closed.filter(r => r.kind === 'Read').length;
+    const overall = closed.length ? fin / closed.length : 0;
+    const bands = LENGTH_BANDS.map(b => {
+      const rs = closed.filter(r => r.fic.words >= b.min && r.fic.words < b.max);
+      const f = rs.filter(r => r.kind === 'Read').length;
+      return { ...b, closed: rs.length, finished: f, rate: rs.length ? f / rs.length : null, fit: (f + 5 * overall) / (rs.length + 5) };
+    });
+    return { overall, closedTotal: closed.length, bands, bandOf: (w) => bands.find(b => w >= b.min && w < b.max) || bands[0] };
+  }
+  function fandomLastRead(model) {
+    const last = new Map();
+    for (const r of model.readings) if (r.date && (!last.has(r.fandom) || r.date > last.get(r.fandom))) last.set(r.fandom, r.date);
+    return last;
+  }
+  // Authors with 3+ finished fics (distinct fics), for the go-to-author chip and nudge.
+  function goToAuthorCounts(model) {
+    const m = new Map();
+    for (const r of model.readings) if (r.kind === 'Read') for (const a of realAuthors(r.fic.authors)) { if (!m.has(a)) m.set(a, new Set()); m.get(a).add(r.ficKey); }
+    return new Map([...m].filter(([, s]) => s.size >= 3).map(([a, s]) => [a, s.size]));
+  }
+  // opts: { scores (from appScores), snoozes, today }
+  function upNextRank(model, opts) {
+    const today = opts.today, snoozes = opts.snoozes || {};
+    const scores = opts.scores || appScores(model);
+    const ls = lengthStats(model.readings);
+    const lastRead = fandomLastRead(model);
+    const goTo = goToAuthorCounts(model);
+    const cands = model.fics.filter(f => UP_NEXT_STATUSES.includes(f.status) && scores.has(f.key));
+    const pctOf = new Map();
+    for (const src of new Set(cands.map(f => f.source))) {
+      const list = cands.filter(f => f.source === src);
+      const p = appPercentileRanks(list.map(f => scores.get(f.key).score));
+      list.forEach((f, i) => pctOf.set(f.key, list.length === 1 ? 100 : p[i]));
+    }
+    const out = [];
+    for (const f of cands) {
+      const s = scores.get(f.key), pct = pctOf.get(f.key), band = ls.bandOf(f.words);
+      const ratio = ls.overall > 0 ? band.fit / ls.overall : 1;
+      const raw = pct * (0.6 + 0.4 * ratio);
+      const base = Math.max(0, Math.min(100, raw));
+      const reasons = [];
+      const top = Math.max(1, Math.ceil(100 - pct));
+      const fandomShort = shortFandom(f.fandom);
+      reasons.push({ key: 'top', text: `Top ${top}% in ${fandomShort}`, value: pct });
+      if (band.closed > 0) reasons.push({ key: 'length', text: `You finish ${Math.round((band.rate ?? band.fit) * 100)}% of fics this length`, value: band.fit });
+      let boost = 0;
+      if (f.recommended) { boost += 5; reasons.push({ key: 'rec', text: f.recSource ? `Recommended · ${f.recSource}` : 'Recommended', boost: 5 }); }
+      const lr = lastRead.get(f.fandom);
+      const gap = lr ? dayDiff(lr, today) : null;
+      if (gap !== null && gap >= 21) { boost += 5; reasons.push({ key: 'rotation', text: `Haven’t read ${fandomShort} in ${gap >= 35 ? Math.floor(gap / 7) + ' weeks' : gap + ' days'}`, boost: 5 }); }
+      const ga = realAuthors(f.authors).filter(a => goTo.has(a)).sort((a, b) => goTo.get(b) - goTo.get(a))[0];
+      const snoozedUntil = snoozes[f.key] && snoozes[f.key] >= today ? snoozes[f.key] : null;
+      out.push({ fic: f, key: f.key, appScore: s.score, appPercentile: pct, topPct: top, lengthFit: band.fit, band, overall: ls.overall, base, boost,
+        upNextScore: base + boost, raw, reasons, goToAuthor: ga ? { author: ga, read: goTo.get(ga) } : null, snoozedUntil });
+    }
+    // Ties (several picks capped at 100): the uncapped value, then the app score, then title.
+    out.sort((a, b) => b.upNextScore - a.upNextScore || b.raw - a.raw || b.appScore - a.appScore || a.fic.title.localeCompare(b.fic.title));
+    return { picks: out, lengthStats: ls, lastRead, goTo };
+  }
+  // Quick filters: { scope: 'f:<fandom>' | 'p:<pairing key>' | null, length: 'short'|'medium'|'long'|null,
+  // tbrOnly, tagsInc: [], tagsExc: [], showSnoozed }. Tags match the cleaned tags (AO3 warnings removed).
+  function filterUpNext(picks, flt) {
+    const F = flt || {};
+    return picks.filter(p => {
+      const f = p.fic;
+      if (p.snoozedUntil && !F.showSnoozed) return false;
+      if (F.scope && (F.scope.startsWith('p:') ? f.pairingKey !== F.scope.slice(2) : f.fandom !== F.scope.slice(2))) return false;
+      if (F.length) { const L = LENGTH_FILTERS[F.length]; if (!(f.words >= L.min && f.words < L.max)) return false; }
+      if (F.tbrOnly && f.status !== 'TBR') return false;
+      if (F.tagsInc && F.tagsInc.length && !F.tagsInc.every(t => f.tags.includes(t))) return false;
+      if (F.tagsExc && F.tagsExc.length && F.tagsExc.some(t => f.tags.includes(t))) return false;
+      return true;
+    });
+  }
+
+  // ==========================================================================================
+  // 12. NUDGES: pattern-based prompts
+  // ------------------------------------------------------------------------------------------
+  // Each nudge: { id (unique; dismissals are keyed by it), type, priority (higher first),
+  //   text, numbers [{label, value}], why (the rule, for "Why am I seeing this?"),
+  //   where (['dashboard', 'card', 'upnext', 'goals', 'badges']), expires (ISO date it lapses
+  //   on its own; it is recomputed every time anyway), link?, ficKey?, pick? }.
+  // The Dashboard shows at most 3 (highest priority first) of those with 'dashboard' in where.
+  // Dismissed nudges (dismissed[id] >= today) and switched-off types are left out by the caller.
+  // ==========================================================================================
+  const NUDGE_TYPES = [
+    { id: 'long-fic', label: 'Long fics you rarely finish', where: 'Up Next and fic cards', priority: 30,
+      rule: 'Shown on a fic in a length band where you finish under 40% of fics, once that band has 5+ closed reads.' },
+    { id: 'dnf-tag', label: 'Tags you often DNF', where: 'Up Next and fic cards', priority: 30,
+      rule: 'Shown on a fic with a tag you DNF at least 15 points more often than overall, with 10+ readings (as in “Tags that predict a DNF”).' },
+    { id: 'stalled', label: 'Stalled reads', where: 'Dashboard (Currently reading)', priority: 70,
+      rule: 'A Currently Reading or Paused fic you haven’t touched (Last Read or a Reading Log event) in over 14 days.' },
+    { id: 'fandom-gap', label: 'Fandom gaps', where: 'Dashboard and Up Next', priority: 50,
+      rule: 'A fandom you read in the last 6 months but not in the last 21 days.' },
+    { id: 'goal-pace', label: 'Goals behind pace', where: 'Dashboard and Goals', priority: 80,
+      rule: 'An active goal whose progress is behind the share of its period that has gone.' },
+    { id: 'streak-risk', label: 'Streak at risk', where: 'Dashboard and Habits', priority: 90,
+      rule: 'Your weekly streak is 4+ weeks, it’s Friday or later (Melbourne time) and this week has no reading day yet.' },
+    { id: 'go-to-author', label: 'Go-to authors', where: 'Up Next chips; Dashboard once a week', priority: 40,
+      rule: 'An unread or TBR fic by an author you’ve finished 3+ fics by.' },
+    { id: 'badge-close', label: 'Close to a badge', where: 'Dashboard and Badges', priority: 60,
+      rule: 'You’re within 5% of the next badge in a group.' },
+  ];
+  const NUDGE_BY_ID = Object.fromEntries(NUDGE_TYPES.map(t => [t.id, t]));
+  const BADGE_UNITS = { words: 'words', finished: 'fics', authors: 'authors', logged: 'logged reads', fives: '5/5 ratings', fandoms: 'fandoms' };
+  const fmtWordsShort = (n) => n >= 1e6 ? fmtK(n) : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n);
+
+  // Card-level nudges for one fic (long-fic, dnf-tag). ctx: { lengthStats, dnfTags (Map tag -> row), overallDnf }.
+  function ficNudges(fic, ctx) {
+    const out = [];
+    const b = ctx.lengthStats.bandOf(fic.words);
+    if (b.closed >= 5 && b.rate !== null && b.rate < 0.4)
+      out.push({ id: `long-fic:${fic.key}`, type: 'long-fic', priority: 30, where: ['card'], ficKey: fic.key,
+        text: `You finish ${Math.round(b.rate * 100)}% of ${b.label} fics; this one is ${fmtWordsShort(fic.words)}.`,
+        numbers: [{ label: `${b.label} finished`, value: `${b.finished} of ${b.closed}` }, { label: 'This fic', value: fmtWordsShort(fic.words) + ' words' }],
+        why: NUDGE_BY_ID['long-fic'].rule, expires: null });
+    const hit = fic.tags.map(t => ctx.dnfTags.get(t)).filter(Boolean).sort((x, y) => y.rate - x.rate)[0];
+    if (hit)
+      out.push({ id: `dnf-tag:${fic.key}`, type: 'dnf-tag', priority: 30, where: ['card'], ficKey: fic.key,
+        text: `You DNF ${Math.round(hit.rate * 100)}% of fics tagged ${hit.tag}.`,
+        numbers: [{ label: 'DNFs', value: `${hit.dnfs} of ${hit.readings}` }, { label: 'Overall DNF rate', value: Math.round(ctx.overallDnf * 100) + '%' }],
+        why: NUDGE_BY_ID['dnf-tag'].rule, expires: null });
+    return out;
+  }
+  function nudgeContext(model, isVisible, lengthStatsIn) {
+    const d = dnfPredictorTags(model.readings, isVisible);
+    return { lengthStats: lengthStatsIn || lengthStats(model.readings), dnfTags: new Map(d.rows.map(r => [r.tag, r])), overallDnf: d.overall };
+  }
+  // Page-level nudges. opts: { today, goals, up (from upNextRank), sources (SOURCES, for app links) }
+  function pageNudges(model, opts) {
+    const today = opts.today, out = [];
+    const appOf = (src) => (opts.sources || []).find(s => s.id === src) || {};
+    const appName = (src) => { const s = appOf(src); return s.fandom ? `the ${shortFandom(s.fandom)} app` : 'the fandom app'; };
+    // 3. stalled
+    for (const f of model.fics.filter(x => x.status === 'Currently Reading' || x.status === 'Paused')) {
+      const evs = model.eventsByKey.get(f.key) || [];
+      const dates = [f.lastReadDate, ...evs.map(e => e.date)].filter(Boolean).sort();
+      const last = dates[dates.length - 1];
+      if (!last) continue;
+      const gap = dayDiff(last, today);
+      if (gap > 14) out.push({ id: `stalled:${f.key}:${last}`, type: 'stalled', priority: 70, where: ['dashboard', 'reading'], ficKey: f.key,
+        text: `You haven’t opened ${f.title} in ${gap} days. Pick it back up, pause it or DNF it in ${appName(f.source)}.`,
+        numbers: [{ label: 'Status', value: f.status }, { label: 'Last activity', value: last }, { label: 'Days since', value: gap }],
+        link: appOf(f.source).appUrl ? { href: appOf(f.source).appUrl, label: `Open ${appName(f.source)}` } : null,
+        why: NUDGE_BY_ID['stalled'].rule, expires: null });
+    }
+    // 4. fandom-gap
+    const lastRead = opts.up ? opts.up.lastRead : fandomLastRead(model);
+    for (const [fandom, last] of lastRead) {
+      const gap = dayDiff(last, today);
+      if (last >= addDays(today, -183) && gap >= 21) {
+        const pick = opts.up ? opts.up.picks.find(p => p.fic.fandom === fandom && !p.snoozedUntil) : null;
+        out.push({ id: `fandom-gap:${fandom}:${last}`, type: 'fandom-gap', priority: 50, where: ['dashboard', 'upnext'], pick: pick || null,
+          text: `It’s been ${gap >= 35 ? Math.floor(gap / 7) + ' weeks' : gap + ' days'} since your last ${shortFandom(fandom)} read.`,
+          numbers: [{ label: 'Last read', value: last }, { label: 'Days since', value: gap }],
+          why: NUDGE_BY_ID['fandom-gap'].rule, expires: null });
+      }
+    }
+    // 5. goal-pace
+    for (const g of (opts.goals || []).filter(x => !x.archived && x.start <= today && x.end >= today)) {
+      const pr = goalProgress(g, model, today);
+      if (pr.status !== 'behind pace') continue;
+      const unit = { words: 'words', finished: 'fics', newAuthors: 'new authors', scoped: 'fics', long: 'long fics', weeks: 'weeks' }[g.type];
+      const text = g.type === 'completion'
+        ? `Your completion rate is ${pr.value}%, under your ${pr.target}% goal for ${describeGoal(g, model).replace(/^Keep completion at \d+%\+$/, 'this period')}.`
+        : `You need ${g.type === 'words' ? fmtWordsShort(pr.needed) : pr.needed} more ${unit} a week to hit “${describeGoal(g, model)}”.`;
+      out.push({ id: `goal-pace:${g.id}`, type: 'goal-pace', priority: 80, where: ['dashboard', 'goals'], goalId: g.id, text,
+        numbers: [{ label: 'Progress', value: `${g.type === 'words' ? fmtWordsShort(pr.value) : pr.value} of ${g.type === 'words' ? fmtWordsShort(pr.target) : pr.target}${g.type === 'completion' ? '%' : ''}` },
+          { label: 'Period gone', value: Math.round(pr.share * 100) + '%' }, { label: 'Days left', value: pr.daysLeft }],
+        why: NUDGE_BY_ID['goal-pace'].rule, expires: g.end });
+    }
+    // 6. streak-risk
+    const st = streaks(model, today);
+    const wk = weekStart(today), dow = weekdayOf(today);
+    const daysThisWeek = [...readingDays(model, today).keys()].filter(d => d >= wk && d <= today).length;
+    if (st.currentWeekly.len >= 4 && dow >= 4 && daysThisWeek === 0)
+      out.push({ id: `streak-risk:${wk}`, type: 'streak-risk', priority: 90, where: ['dashboard', 'habits'],
+        text: `Read anything this weekend to keep your ${st.currentWeekly.len}-week streak.`,
+        numbers: [{ label: 'Weekly streak', value: st.currentWeekly.len + ' weeks' }, { label: 'Reading days this week', value: 0 }],
+        why: NUDGE_BY_ID['streak-risk'].rule, expires: addDays(wk, 6) });
+    // 7. go-to-author (Dashboard: one per week, the top-ranked such pick; Up Next shows chips instead)
+    if (opts.up) {
+      const p = opts.up.picks.find(x => x.goToAuthor && !x.snoozedUntil);
+      if (p) out.push({ id: `go-to-author:${wk}`, type: 'go-to-author', priority: 40, where: ['dashboard'], pick: p, ficKey: p.key,
+        text: `A ${p.goToAuthor.author} fic you haven’t read (you’ve read ${p.goToAuthor.read}).`,
+        numbers: [{ label: `${p.goToAuthor.author} fics finished`, value: p.goToAuthor.read }],
+        why: NUDGE_BY_ID['go-to-author'].rule, expires: addDays(wk, 6) });
+    }
+    // 8. badge-close
+    const bl = badges(model, today).list;
+    const seen = new Set();
+    for (const b of bl) {
+      if (b.earned || seen.has(b.group)) continue;
+      seen.add(b.group);   // only the next locked badge in each group
+      const prefix = String(b.key).split('-')[0];
+      const unit = BADGE_UNITS[prefix];
+      if (!unit || !(b.threshold > 1)) continue;
+      const left = b.threshold - b.value;
+      if (left > 0 && left <= 0.05 * b.threshold)
+        out.push({ id: `badge-close:${b.key}`, type: 'badge-close', priority: 60, where: ['dashboard', 'badges'],
+          text: `${prefix === 'words' ? fmtWordsShort(left) : left} more ${left === 1 && unit.endsWith('s') ? unit.slice(0, -1) : unit} until your ${b.title} badge.`,
+          numbers: [{ label: 'So far', value: prefix === 'words' ? fmtWordsShort(b.value) : b.value }, { label: 'Badge at', value: prefix === 'words' ? fmtWordsShort(b.threshold) : b.threshold }, { label: 'Left', value: `${Math.round(left / b.threshold * 1000) / 10}%` }],
+          why: NUDGE_BY_ID['badge-close'].rule, expires: null });
+    }
+    return out.sort((a, b) => b.priority - a.priority);
+  }
+  const nudgeVisible = (n, off, dismissed, today) => !(off && off[n.type] === false) && !(dismissed && dismissed[n.id] && dismissed[n.id] >= today);
+  function dashboardNudges(list, off, dismissed, today) {
+    return list.filter(n => n.where.includes('dashboard') && nudgeVisible(n, off, dismissed, today)).slice(0, 3);
+  }
+
   return {
+    APP_SCORES, appScores, appPercentileRanks,
+    UP_NEXT_STATUSES, LENGTH_FILTERS, lengthStats, fandomLastRead, goToAuthorCounts, upNextRank, filterUpNext,
+    NUDGE_TYPES, NUDGE_BY_ID, ficNudges, nudgeContext, pageNudges, nudgeVisible, dashboardNudges,
     TZ, MONTHS, MON, KNOWN_STATUSES, NO_PAIRING,
     pairingKey, pairingFor, assignGroups, shortFandom, sourceLabel,
     num, splitList, normIsoDate, cellDate, serialToIso, serialToStamp, parseFicDate, workIdFromLink, realAuthors, parseChapters,
@@ -2244,7 +2672,7 @@ const CLIENT_ID = '765897251156-e328g6jmu2obg8l0855km0iqsps062n5.apps.googleuser
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const TOKEN_KEY = 'shelflife-gtoken';
 const THEME_KEY = 'shelflife-theme';
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;   // 4: fics carry the raw fields the app scores use
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets/';
 // The Sheets themselves are listed in SOURCES at the top of the file.
 const SOURCE_BY_ID = Object.fromEntries(SOURCES.map(s => [s.id, s]));
@@ -2529,7 +2957,9 @@ function parseShelfData(raw) {
   const settings = Object.fromEntries((raw.Settings || []).map(r => [r.key, r.value]));
   let overrides = {};
   try { overrides = settings.tagOverrides ? JSON.parse(settings.tagOverrides) : {}; } catch (e) { overrides = {}; }
+  const json = (k) => { try { const v = settings[k] ? JSON.parse(settings[k]) : {}; return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } };
   return {
+    snoozes: json('snoozes'), dismissed: json('dismissed'), nudgeTypes: json('nudgeTypes'),
     goals: (raw.Goals || []).filter(r => r.id).map(goalFromRow),
     notes: (raw.Notes || []).filter(r => r.period).map(noteFromRow),
     settingsRows: raw.Settings || [], overrides: overrides && typeof overrides === 'object' ? overrides : {},
@@ -2707,6 +3137,8 @@ const ICONS = {
   table: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
   settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   back: 'M15 18l-6-6 6-6',
+  upnext: 'M4 6h10M4 12h7M4 18h10M15 9l5 3-5 3z',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
   chevron: 'M9 18l6-6-6-6',
   flame: 'M12 22c4 0 7-2.7 7-6.6 0-3.4-2.3-5.6-4-7.4-.4 2-1.4 3.2-2.6 3.8.3-3.3-1.1-6.4-4.4-8.8.2 3.6-3 6.1-3 10.6C5 19.4 8 22 12 22z',
 };
@@ -3088,7 +3520,9 @@ function RecentlyFinished({ stats, onOpen, today }) {
   </div>`;
 }
 
-function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy, openRecap, store, openGoals, openBadges }) {
+function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, groupBy, setGroupBy, openRecap, store, openGoals, openBadges, p4, openUpNext }) {
+  const dashN = useMemo(() => R.dashboardNudges(p4.nudges, store.nudgeTypes, store.dismissed, today), [p4.nudges, store.nudgeTypes, store.dismissed, today]);
+  const readingN = p4.nudges.filter(n => n.where.includes('reading') && !dashN.includes(n) && R.nudgeVisible(n, store.nudgeTypes, store.dismissed, today));
   const streak = useMemo(() => R.streaks(model, today), [model, today]);
   const bdg = useMemo(() => R.badges(model, today), [model, today]);
   const nEarned = bdg.list.filter(b => b.earned).length;
@@ -3131,12 +3565,15 @@ function Dashboard({ model, today, themeTick, onOpen, onTag, dash, setDash, grou
         note="Words, finished fics" />
     </div>
 
+    <${NudgeList} list=${dashN} store=${store} today=${today} onOpen=${onOpen} />
     <${ReflectionCard} model=${model} today=${today} store=${store} />
     <${GoalRings} model=${model} today=${today} store=${store} openGoals=${openGoals} />
 
     <${RecapTeaser} model=${model} today=${today} openRecap=${openRecap} />
 
     <${CurrentlyReading} model=${model} onOpen=${onOpen} />
+    ${readingN.length ? html`<div className="nudge-list" style=${{ marginTop: 4 }}>${readingN.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${store} today=${today} onOpen=${onOpen} />`)}</div>` : null}
+    <${UpNextStrip} p4=${p4} onOpen=${onOpen} openUpNext=${openUpNext} />
 
     <div className="group-row"><span className="small faint">Break down by</span><${GroupToggle} value=${groupBy} onChange=${setGroupBy} /></div>
     <div className="section" style=${{ marginTop: 14 }}>
@@ -3394,8 +3831,11 @@ function DetailTags({ fic }) {
   </div>`;
 }
 
-function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
+function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today, p4 }) {
   const fic = model.ficByKey.get(ficKey);
+  const isCand = !!(fic && p4 && R.UP_NEXT_STATUSES.includes(fic.status));
+  const ficN = useFicNudges(isCand ? fic : null, p4 || { nctx: null, store: { nudgeTypes: {}, dismissed: {} }, today });
+  const pick = isCand && p4.up ? p4.up.picks.find(x => x.key === fic.key) : null;
   const [sum, setSum] = useState({ state: 'loading', text: '' });
   useEffect(() => {
     let live = true;
@@ -3459,6 +3899,11 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today }) {
         <div className="card"><div className="meta-grid">${meta.map(([k, v]) => html`<div key=${k}><b>${k}</b><span className="num">${v}</span></div>`)}</div></div>
       </div>
 
+      ${pick ? html`<div className="section"><div className="section-head"><h3 className="section-title">Up Next</h3><span className="small faint num">#${p4.up.picks.indexOf(pick) + 1} · score ${Math.round(pick.upNextScore)}</span></div>
+        <div className="why-chips" style=${{ marginTop: 0 }}>${whyChips(pick).map(r => html`<span key=${r.key} className=${'why why-' + r.key}>${r.text}</span>`)}</div>
+        ${ficN.length ? html`<div className="nudge-list" style=${{ marginTop: 10 }}>${ficN.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${p4.store} today=${today} compact=${true} />`)}</div>` : null}
+        ${appFor(fic).appUrl ? html`<a className="pill-btn" style=${{ marginTop: 10 }} href=${appFor(fic).appUrl} target="_blank" rel="noopener">${appLabel(fic)}</a>` : null}
+      </div>` : null}
       ${fic.ships.length || fic.tags.length ? html`<${DetailTags} fic=${fic} />` : null}
 
       <div className="section"><div className="section-head"><h3 className="section-title">Summary</h3></div>
@@ -3817,7 +4262,8 @@ function CalendarHeat({ cal, year, today }) {
     <div className="row tiny faint" style=${{ justifyContent: 'flex-end', gap: 4, marginTop: 8 }}>Less ${[0, 1, 2, 3, 4].map(l => html`<i key=${l} className="cal-key" style=${{ background: heat(l) }}></i>`)} More</div>
   </div>`;
 }
-function HabitsTab({ model, today, themeTick }) {
+function HabitsTab({ model, today, themeTick, p4 }) {
+  const habitN = p4 ? p4.nudges.filter(n => n.where.includes('habits') && R.nudgeVisible(n, p4.store.nudgeTypes, p4.store.dismissed, today)) : [];
   const st = useMemo(() => R.streaks(model, today), [model, today]);
   const wd = useMemo(() => R.weekdayCounts(model.readings), [model]);
   const clock = useMemo(() => R.readingClock(model), [model]);
@@ -3838,6 +4284,7 @@ function HabitsTab({ model, today, themeTick }) {
   const clockMax = Math.max(1, ...clockGrid.flat());
   const clockFinding = bySessions && sst.peak ? `You read most on ${R.WEEKDAYS[sst.peak.d]}s around ${sst.peak.h % 12 || 12}${sst.peak.h < 12 ? 'am' : 'pm'} (${fmtMins(sst.peak.v)} of sessions).` : clock.finding;
   return html`<div>
+    ${habitN.length ? html`<div className="nudge-list" style=${{ marginTop: 16 }}>${habitN.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${p4.store} today=${today} />`)}</div>` : null}
     <${TSection} title="Streaks" finding=${st.finding}>
       <div className="tiles">
         <${StreakTile} label="Current weekly streak" s=${st.currentWeekly} unit="week" today=${today} />
@@ -3889,10 +4336,10 @@ function BestsTab({ model, today, onOpen, onRange, onAuthor }) {
   </div>`;
 }
 
-function TrendsScreen({ model, today, themeTick, onAuthor, onTag, onOpen, onRange, groupBy, setGroupBy, tab, setTab, openRecap }) {
+function TrendsScreen({ model, today, themeTick, onAuthor, onTag, onOpen, onRange, groupBy, setGroupBy, tab, setTab, openRecap, p4 }) {
   const barRef = useRef(null);
   useEffect(() => { const el = barRef.current && barRef.current.querySelector('.on'); if (el && el.scrollIntoView) el.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [tab]);
-  const props = { model, today, themeTick, onAuthor, onTag, onOpen, onRange, groupBy, setGroupBy };
+  const props = { model, today, themeTick, onAuthor, onTag, onOpen, onRange, groupBy, setGroupBy, p4 };
   return html`<div>
     <h1 className="page-title">Trends</h1>
     <${RecapLauncher} model=${model} today=${today} openRecap=${openRecap} />
@@ -4219,7 +4666,8 @@ function GoalCard({ g, model, today, store, onEdit, past }) {
   </div>`;
 }
 
-function GoalsScreen({ model, today, store, onBack }) {
+function GoalsScreen({ model, today, store, onBack, p4 }) {
+  const placeN = p4 ? p4.nudges.filter(n => n.where.includes('goals') && R.nudgeVisible(n, store.nudgeTypes, store.dismissed, today)) : [];
   const [form, setForm] = useState(null);   // null | {} (new) | goal (edit)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -4230,6 +4678,7 @@ function GoalsScreen({ model, today, store, onBack }) {
     <${BackHead} title="Goals" onBack=${onBack} label="Back to Dashboard" />
     <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Progress uses the same numbers as the dashboard. Each goal has fixed dates. Pace compares your progress with how much of the period has gone.</div>
     <${StorageNotice} store=${store} />
+    <${NudgeList} list=${placeN} store=${store} today=${today} />
     ${err ? html`<div className="banner err">${err}</div>` : null}
     ${form ? html`<div style=${{ marginTop: 12 }}><${GoalForm} model=${model} today=${today} initial=${form.id ? form : null} onSave=${save} onCancel=${() => setForm(null)} busy=${busy} /></div>`
       : store.editable ? html`<button className="big-btn" style=${{ marginTop: 12 }} onClick=${() => setForm({})}><span aria-hidden="true">+</span> Add a goal</button>` : null}
@@ -4245,8 +4694,9 @@ function GoalsScreen({ model, today, store, onBack }) {
 }
 
 // ---------- Badges ----------
-function BadgesScreen({ model, today, onBack }) {
+function BadgesScreen({ model, today, onBack, p4 }) {
   const b = useMemo(() => R.badges(model, today), [model, today]);
+  const placeN = p4 ? p4.nudges.filter(n => n.where.includes('badges') && R.nudgeVisible(n, p4.store.nudgeTypes, p4.store.dismissed, today)) : [];
   const groups = [];
   b.list.forEach(x => { let g = groups.find(y => y.name === x.group); if (!g) groups.push(g = { name: x.group, items: [] }); g.items.push(x); });
   const earned = b.list.filter(x => x.earned).length;
@@ -4254,6 +4704,7 @@ function BadgesScreen({ model, today, onBack }) {
   return html`<div>
     <${BackHead} title="Badges" onBack=${onBack} label="Back to Dashboard" />
     <${Finding} text=${`You’ve earned ${earned} of ${b.list.length} badges.${b.recent.length ? ` New this week: ${b.recent.map(x => x.title).join(', ')}.` : ''}`} />
+    ${placeN.length ? html`<div className="nudge-list" style=${{ marginBottom: 12 }}>${placeN.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${p4.store} today=${today} />`)}</div>` : null}
     <div className="tiny faint" style=${{ margin: '-4px 2px 4px' }}>Progress counts every read, like All time. The date is when you crossed the line, from your dated reads; est. means that read’s date was backfilled.</div>
     ${groups.map((g, gi) => html`<div key=${g.name} className="section">
       <div className="section-head"><h2 className="section-title">${g.name}</h2><span className="small faint">${g.items.filter(x => x.earned).length} of ${g.items.length}</span></div>
@@ -4391,9 +4842,262 @@ function SessionsSection({ ss, st }) {
 }
 
 // ============================================================================================
+// PHASE 4: UP NEXT, NUDGES, MORE
+// Rankings and nudges come from ShelfRules (upNextRank, pageNudges, ficNudges). Snoozes and
+// dismissals are saved only through useShelfStore → writeShelfData() (Settings tab). Shelf Life
+// never changes a fic's status: "Open in app" sends you to the fandom app for that.
+// ============================================================================================
+const SNOOZE_DAYS = 30, DISMISS_DAYS = 14;
+const appFor = (fic) => SOURCE_BY_ID[fic.source] || {};
+const appLabel = (fic) => `Open in ${shortName(appFor(fic).fandom)} app`;
+const shortName = (fandom) => R.shortFandom(fandom || '');
+
+// ---------- nudges ----------
+function NudgeCard({ n, store, today, onOpen, compact }) {
+  const [why, setWhy] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const canDismiss = store.status === 'ready';
+  const dismiss = async () => { setBusy(true); try { await store.dismiss(n.id, R.addDays(today, DISMISS_DAYS)); } catch (e) {} finally { setBusy(false); } };
+  return html`<div className=${'nudge t-' + n.type + (compact ? ' compact' : '')}>
+    <div className="nudge-text">${n.text}</div>
+    <div className="nudge-nums">${n.numbers.map((x, i) => html`<span key=${i}><b>${x.label}</b> ${x.value}</span>`)}</div>
+    ${n.pick ? html`<button className="nudge-pick" onClick=${() => onOpen && onOpen(n.pick.key)}><span className="tiny" style=${{ fontWeight: 800 }}>${n.type === 'fandom-gap' ? 'Top pick' : 'The fic'}</span> ${n.pick.fic.title}</button>` : null}
+    <div className="row nudge-actions">
+      ${n.link ? html`<a className="link-btn" href=${n.link.href} target="_blank" rel="noopener">${n.link.label}</a>` : null}
+      <button className="link-btn" onClick=${() => setWhy(w => !w)} aria-expanded=${why}>Why am I seeing this?</button>
+      ${canDismiss ? html`<button className="link-btn" disabled=${busy} onClick=${dismiss}>Dismiss</button>` : null}
+    </div>
+    ${why ? html`<div className="tiny nudge-why">${n.why}${canDismiss ? ` Dismissing hides it for ${DISMISS_DAYS} days.` : ' Dismissing needs goals and notes turned on (Settings), since it’s saved to Shelf Life Data.'}</div>` : null}
+  </div>`;
+}
+function NudgeList({ list, store, today, onOpen, title }) {
+  if (!list.length) return null;
+  return html`<div className="section">
+    ${title ? html`<div className="section-head"><h2 className="section-title">${title}</h2></div>` : null}
+    <div className="nudge-list">${list.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${store} today=${today} onOpen=${onOpen} />`)}</div>
+  </div>`;
+}
+// Card nudges (long-fic, dnf-tag) for one fic, filtered by switches and dismissals.
+function useFicNudges(fic, p4) {
+  return useMemo(() => fic ? R.ficNudges(fic, p4.nctx).filter(n => R.nudgeVisible(n, p4.store.nudgeTypes, p4.store.dismissed, p4.today)) : [], [fic, p4.nctx, p4.store.nudgeTypes, p4.store.dismissed, p4.today]);
+}
+
+// ---------- Up Next cards ----------
+function whyChips(p) {
+  const extras = p.reasons.filter(r => r.key === 'rec');
+  if (p.goToAuthor) extras.push({ key: 'goto', text: `A ${p.goToAuthor.author} fic (you’ve read ${p.goToAuthor.read})` });
+  extras.push(...p.reasons.filter(r => r.key === 'rotation'));
+  return [...p.reasons.filter(r => r.key === 'top' || r.key === 'length'), ...extras].slice(0, 3);
+}
+function UpNextCard({ p, p4, onOpen, rank }) {
+  const f = p.fic, store = p4.store;
+  const nn = useFicNudges(f, p4);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const app = appFor(f);
+  const snooze = async () => {
+    if (store.status !== 'ready') { setMsg('“Not now” needs goals and notes turned on (Settings), because snoozes are saved to Shelf Life Data.'); return; }
+    setBusy(true); try { await store.snooze(f.key, R.addDays(p4.today, SNOOZE_DAYS)); } catch (e) { setMsg('Couldn’t snooze: ' + (e.message || e)); } finally { setBusy(false); }
+  };
+  const unsnooze = async () => { setBusy(true); try { await store.unsnooze(f.key); } catch (e) {} finally { setBusy(false); } };
+  return html`<div className="up-card">
+    <button className="up-main" onClick=${() => onOpen(f.key)}>
+      <div className="row" style=${{ justifyContent: 'space-between', flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+        <div style=${{ minWidth: 0 }}>
+          <div className="dtitle">${rank ? html`<span className="up-rank num">${rank}</span>` : null}${f.title}</div>
+          <div className="small muted" style=${{ marginTop: 2 }}>${f.authors.join(', ') || 'Anonymous'}</div>
+        </div>
+        <span className="up-score num" title="Up Next score">${Math.round(p.upNextScore)}</span>
+      </div>
+      <${SourceLine} fic=${f} mode="one" style=${{ marginTop: 6 }} />
+      <div className="dmeta">
+        <span className="num">${fmtWords(f.words)} words</span><span className="num">${f.chapters}/${f.chaptersPlanned === null ? '?' : f.chaptersPlanned} ch</span>
+        ${f.rating ? html`<span className="badge rating">${f.rating}</span>` : null}
+        ${f.status === 'TBR' ? html`<span className="badge" style=${{ background: 'var(--blue)', color: 'var(--on-blue)' }}>TBR</span>` : null}
+        ${f.recommended ? html`<span className="badge" style=${{ background: 'var(--lime)', color: 'var(--on-bright)' }}>Recommended</span>` : null}
+        ${p.snoozedUntil ? html`<span className="badge est">Snoozed until ${R.fmtDay(p.snoozedUntil, p4.today)}</span>` : null}
+      </div>
+      <div className="why-chips">${whyChips(p).map(r => html`<span key=${r.key} className=${'why why-' + r.key}>${r.text}</span>`)}</div>
+    </button>
+    ${nn.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${store} today=${p4.today} compact=${true} />`)}
+    <div className="up-actions">
+      <a className="pill-btn" href=${f.link} target="_blank" rel="noopener">Open on AO3 <${Icon} name="ext" size=${13} /></a>
+      ${app.appUrl ? html`<a className="pill-btn" href=${app.appUrl} target="_blank" rel="noopener">${appLabel(f)}</a>` : null}
+      ${p.snoozedUntil ? html`<button className="pill-btn" disabled=${busy} onClick=${unsnooze}>Bring back</button>`
+        : html`<button className="pill-btn" disabled=${busy} onClick=${snooze} title=${store.status === 'ready' ? `Hide for ${SNOOZE_DAYS} days` : 'Needs goals and notes turned on'}>Not now</button>`}
+    </div>
+    ${msg ? html`<div className="tiny faint" style=${{ marginTop: 6 }}>${msg}</div>` : null}
+  </div>`;
+}
+function UpNextStrip({ p4, onOpen, openUpNext }) {
+  const top = useMemo(() => p4.up.picks.filter(p => !p.snoozedUntil).slice(0, 3), [p4.up]);
+  if (!top.length) return null;
+  return html`<div className="section">
+    <div className="section-head"><h2 className="section-title">Up next</h2><button className="link-btn" onClick=${openUpNext}>See all</button></div>
+    <div className="hscroll">${top.map(p => html`<button key=${p.key} className="mini up-mini" onClick=${() => onOpen(p.key)}>
+      <div className="reading-top">
+        <${FandomSquare} fandom=${p.fic.fandom} />
+        <div style=${{ minWidth: 0 }}><div className="mini-title">${p.fic.title}</div>
+          <div className="small muted" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${p.fic.authors.join(', ') || 'Anonymous'} · ${fmtWords(p.fic.words)}</div></div>
+      </div>
+      <div className="why-chips">${whyChips(p).slice(0, 2).map(r => html`<span key=${r.key} className=${'why why-' + r.key}>${r.text}</span>`)}</div>
+    </button>`)}</div>
+  </div>`;
+}
+
+// ---------- Up Next screen ----------
+const UP_PAGE = 20;
+function UpNextScreen({ p4, model, onOpen }) {
+  const ctx = useContext(TagCtx);
+  const [flt, setFlt] = useState({ scope: null, length: null, tbrOnly: false, tagsInc: [], tagsExc: [], showSnoozed: false });
+  const [open, setOpen] = useState(false);
+  const [limit, setLimit] = useState(UP_PAGE);
+  const set = (patch) => { setFlt(f => ({ ...f, ...patch })); setLimit(UP_PAGE); };
+  const list = useMemo(() => R.filterUpNext(p4.up.picks, flt), [p4.up, flt]);
+  const nSnoozed = p4.up.picks.filter(p => p.snoozedUntil).length;
+  const scopes = useMemo(() => {
+    const byF = new Map();
+    for (const p of p4.up.picks) { const f = p.fic; if (!byF.has(f.fandom)) byF.set(f.fandom, new Map()); const m = byF.get(f.fandom); m.set(f.pairingKey, (m.get(f.pairingKey) || 0) + 1); }
+    const out = [];
+    for (const [fandom, pairs] of byF) {
+      out.push({ key: 'f:' + fandom, label: shortName(fandom), color: fandomColor(fandom) });
+      if (pairs.size > 1) [...pairs].sort((a, b) => b[1] - a[1]).slice(0, 8).forEach(([pk]) => out.push({ key: 'p:' + pk, label: (model.pairingByKey.get(pk) || {}).name || pk, color: pairingColor(model, pk), sub: true }));
+    }
+    return out;
+  }, [p4.up, model]);
+  const vocab = useMemo(() => { const tags = new Map(); for (const p of p4.up.picks) for (const t of p.fic.tags) tags.set(t, (tags.get(t) || 0) + 1); return { tags }; }, [p4.up]);
+  const pageN = p4.nudges.filter(n => n.where.includes('upnext') && R.nudgeVisible(n, p4.store.nudgeTypes, p4.store.dismissed, p4.today));
+  const nf = (flt.tagsInc.length ? 1 : 0) + (flt.tagsExc.length ? 1 : 0);
+  const ls = p4.up.lengthStats;
+  return html`<div>
+    <h1 className="page-title">Up Next</h1>
+    <div className="small faint" style=${{ margin: '0 2px 10px' }}>Unread and TBR fics from all your fandoms, ranked by each app’s own score (as a percentile within its fandom) and how often you finish fics that long. Shelf Life never changes a status; use the fandom app for that.</div>
+    <${NudgeList} list=${pageN} store=${p4.store} today=${p4.today} onOpen=${onOpen} />
+    <div className="chips" style=${{ marginTop: 6 }}>
+      <button className=${'chip sm' + (!flt.scope ? ' on' : '')} onClick=${() => set({ scope: null })}>All fandoms</button>
+      ${scopes.map(o => html`<button key=${o.key} className=${'chip sm' + (flt.scope === o.key ? ' on' : '')} onClick=${() => set({ scope: flt.scope === o.key ? null : o.key })}><span className="cdot" style=${{ background: o.color }}></span>${o.label}</button>`)}
+    </div>
+    <div className="seg full" role="group" aria-label="Length" style=${{ marginTop: 4 }}>
+      ${[[null, 'Any length'], ['short', 'Short tonight'], ['medium', 'Medium'], ['long', 'Long haul']].map(([k, l]) => html`<button key=${String(k)} className=${flt.length === k ? 'on' : ''} onClick=${() => set({ length: k })}>${l}</button>`)}
+    </div>
+    <div className="chips" style=${{ marginTop: 6 }}>
+      <button className=${'chip sm' + (flt.tbrOnly ? ' on' : '')} onClick=${() => set({ tbrOnly: !flt.tbrOnly })}>TBR only</button>
+      <button className=${'chip sm' + (open || nf ? ' on' : '')} onClick=${() => setOpen(o => !o)}><${Icon} name="filter" size=${14} /><span style=${{ marginLeft: 6 }}>Tags</span>${nf ? ` · ${flt.tagsInc.length + flt.tagsExc.length}` : ''}</button>
+      ${nSnoozed ? html`<button className=${'chip sm' + (flt.showSnoozed ? ' on' : '')} onClick=${() => set({ showSnoozed: !flt.showSnoozed })}>Show snoozed (${nSnoozed})</button>` : null}
+    </div>
+    ${open ? html`<div className="panel">
+      <${TagPicker} label="Must have" chosen=${flt.tagsInc} vocab=${vocab} exclude=${flt.tagsExc} onAdd=${t => set({ tagsInc: [...flt.tagsInc, t] })} onRemove=${t => set({ tagsInc: flt.tagsInc.filter(x => x !== t) })} />
+      <${TagPicker} label="Leave out" tone="dark" chosen=${flt.tagsExc} vocab=${vocab} exclude=${flt.tagsInc} onAdd=${t => set({ tagsExc: [...flt.tagsExc, t] })} onRemove=${t => set({ tagsExc: flt.tagsExc.filter(x => x !== t) })} />
+      <${SexTagToggle} compact=${true} />
+    </div>` : null}
+    <div className="row" style=${{ justifyContent: 'space-between', margin: '12px 2px 8px' }}>
+      <span className="small faint num">${fmtInt(list.length)} pick${list.length === 1 ? '' : 's'}</span>
+      <span className="tiny faint">You finish ${Math.round(ls.overall * 100)}% of fics overall</span>
+    </div>
+    ${list.length ? html`<div className="up-list">${list.slice(0, limit).map((p, i) => html`<${UpNextCard} key=${p.key} p=${p} p4=${p4} onOpen=${onOpen} rank=${i + 1} />`)}</div>
+      <${ShowMore} total=${list.length} shown=${Math.min(limit, list.length)} onMore=${() => setLimit(l => l + UP_PAGE * 2)} />`
+      : html`<div className="card empty">${p4.up.picks.length ? 'Nothing matches these filters.' : 'No unread or TBR fics with an app score yet.'}</div>`}
+    <details className="card tiny faint up-how" style=${{ marginTop: 16 }}><summary style=${{ fontWeight: 800, cursor: 'pointer' }}>How the ranking works</summary>
+      <p>Each fic’s app score is the score its fandom app shows. Shelf Life turns it into a percentile among that fandom’s unread and TBR fics, so the fandoms are comparable.</p>
+      <p>That percentile is multiplied by 0.6 + 0.4 × (how often you finish fics this length ÷ how often you finish fics overall) and capped at 100. Your length rate is pulled towards your overall rate when a length has few closed reads: (finished + 5 × overall) ÷ (closed + 5).</p>
+      <p>Then +5 if the fic is Recommended in its app, and +5 if you haven’t read in its fandom for 21+ days. There’s no author boost, because the app score already includes the authors you like.</p>
+    </details>
+  </div>`;
+}
+
+// ---------- More ----------
+function MoreScreen({ model, today, store, p4, go, needsAttention }) {
+  const b = useMemo(() => R.badges(model, today), [model, today]);
+  const earned = b.list.filter(x => x.earned).length;
+  const next = b.list.filter(x => !x.earned).sort((x, y) => (x.value / x.threshold > y.value / y.threshold ? -1 : 1))[0];
+  const live = store.goals.filter(g => !g.archived && g.start <= today && g.end >= today);
+  const behind = live.filter(g => R.goalProgress(g, model, today).status === 'behind pace').length;
+  const rows = [
+    ['goals', 'Goals', store.status === 'off' ? 'Not set up yet' : live.length ? `${live.length} running${behind ? ` · ${behind} behind pace` : ''}` : 'None running', behind > 0],
+    ['badges', 'Badges', `${earned} earned${next ? ` · next: ${next.title}` : ''}`, false],
+    ['notes', 'Notes', store.status === 'off' ? 'Not set up yet' : `${store.notes.length} note${store.notes.length === 1 ? '' : 's'}`, false],
+    ['export', 'Export', 'CSV or JSON of your reads', false],
+    ['settings', 'Settings', store.status === 'unavailable' ? 'Goals and notes need attention' : 'Tags, nudges, storage and account', store.status === 'unavailable'],
+  ];
+  return html`<div>
+    <h1 className="page-title">More</h1>
+    <div className="card" style=${{ marginTop: 14, paddingTop: 4, paddingBottom: 4 }}>
+      ${rows.map(([k, label, sub, dot]) => html`<button key=${k} className="set-row" onClick=${() => go(k)}>
+        <span><b style=${{ fontWeight: 700, fontSize: 15 }}>${label}</b>${dot ? html`<span className="attn-dot" aria-label="needs attention"></span>` : null}<div className="tiny faint">${sub}</div></span>
+        <span className="faint" style=${{ display: 'inline-grid' }}><${Icon} name="chevron" size=${18} /></span>
+      </button>`)}
+    </div>
+  </div>`;
+}
+const moreNeedsAttention = (store, model, today) => store.status === 'unavailable' ||
+  store.goals.some(g => !g.archived && g.start <= today && g.end >= today && R.goalProgress(g, model, today).status === 'behind pace');
+
+// ---------- Notes page (with "Add a note" for any month or year) ----------
+function NotesScreen({ model, store, today, onBack }) {
+  const [adding, setAdding] = useState(false);
+  const [kind, setKind] = useState('month');
+  const months = useMemo(() => { const first = (model.firstDate || today).slice(0, 7); return R.monthKeys(first < today.slice(0, 7) ? first : today.slice(0, 7), today.slice(0, 7)).reverse(); }, [model, today]);
+  const years = useMemo(() => [...new Set([...R.yearsWithReads(model.readings), +today.slice(0, 4)])].sort((a, b) => b - a), [model, today]);
+  const [period, setPeriod] = useState(today.slice(0, 7));
+  const pick = kind === 'year' ? String(period).slice(0, 4) : (String(period).length === 7 ? period : today.slice(0, 7));
+  const exists = store.notes.find(n => n.period === pick);
+  return html`<div>
+    <${BackHead} title="Notes" onBack=${onBack} label="Back to More" />
+    <div className="small faint" style=${{ margin: '8px 2px 12px' }}>A note per month or year. They’re saved to Shelf Life Data, and a year’s note shows as an “In your words” card in its recap.</div>
+    <${StorageNotice} store=${store} />
+    ${store.editable && !adding ? html`<button className="big-btn" style=${{ marginTop: 12 }} onClick=${() => setAdding(true)}><span aria-hidden="true">+</span> Add a note</button>` : null}
+    ${adding ? html`<div className="card goal-form" style=${{ marginTop: 12 }}>
+      <div className="flabel">New note</div>
+      <div className="seg full" role="group" aria-label="Note for">${[['month', 'A month'], ['year', 'A year']].map(([k, l]) => html`<button key=${k} className=${kind === k ? 'on' : ''} onClick=${() => { setKind(k); setPeriod(k === 'year' ? today.slice(0, 4) : today.slice(0, 7)); }}>${l}</button>`)}</div>
+      <select className="plain-input" value=${pick} onChange=${e => setPeriod(e.target.value)} aria-label="Which period">
+        ${(kind === 'year' ? years.map(String) : months).map(k => html`<option key=${k} value=${k}>${kind === 'year' ? k : R.monthName(k)}${store.notes.find(n => n.period === k) ? ' (has a note)' : ''}</option>`)}
+      </select>
+      <${NoteEditor} key=${pick} store=${store} period=${pick} prompt=${kind === 'year' ? R.yearPrompt(pick) : `What do you want to remember about ${R.monthName(pick)}?`} onDone=${() => setAdding(false)} />
+      ${exists ? html`<div className="tiny faint">This replaces your existing note for that period.</div>` : null}
+    </div>` : null}
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Your notes</h2><span className="small faint">${store.notes.length}</span></div>
+      <${NotesList} store=${store} today=${today} />
+    </div>
+  </div>`;
+}
+
+// ---------- Settings: nudge switches + score check ----------
+function NudgeSettings({ store }) {
+  const types = store.nudgeTypes || {};
+  return html`<div className="card">
+    ${R.NUDGE_TYPES.map(t => html`<label key=${t.id} className="switch-row set-row" style=${{ alignItems: 'flex-start' }}>
+      <span style=${{ minWidth: 0 }}><b style=${{ fontWeight: 700 }}>${t.label}</b><div className="tiny faint" style=${{ marginTop: 2 }}>${t.rule} Shows on: ${t.where}.</div></span>
+      <input type="checkbox" role="switch" className="switch" aria-label=${t.label} checked=${types[t.id] !== false} onChange=${e => store.setNudgeType(t.id, e.target.checked).catch(() => {})} />
+    </label>`)}
+    <div className="tiny faint" style=${{ marginTop: 6 }}>${store.status === 'ready' ? 'Saved to Shelf Life Data, so every device uses the same switches.' : 'Saved on this device until goals and notes are turned on.'}</div>
+  </div>`;
+}
+function ScoreCheck({ model, scores, onBack }) {
+  // The fandom apps open on Unread fics sorted by Score, so the first 5 here are the first 5 there.
+  const bySource = useMemo(() => SOURCES.map(src => {
+    const fics = model.fics.filter(f => f.source === src.id && !['Read', 'DNF', 'Skipped', 'Not Interested', 'Currently Reading', 'TBR', 'Paused'].includes(f.status) && scores.has(f.key));
+    fics.sort((a, b) => scores.get(b.key).score - scores.get(a.key).score);
+    return { src, total: model.fics.filter(f => f.source === src.id).length, top: fics.slice(0, 5) };
+  }), [model, scores]);
+  return html`<div>
+    <${BackHead} title="Score check" onBack=${onBack} label="Back to Settings" />
+    <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Each fandom app opens on Unread fics sorted by Score. These should be the same 5 fics at the top of that list, with the same scores. Shelf Life uses a port of each app’s own scoring (last synced 12 Oct 2026).</div>
+    ${bySource.map(({ src, total, top }) => html`<div key=${src.id} className="section">
+      <div className="section-head"><h2 className="section-title">${shortName(src.fandom)}</h2>${src.appUrl ? html`<a className="link-btn" href=${src.appUrl} target="_blank" rel="noopener">Open app</a>` : null}</div>
+      ${top.length ? html`<div className="card">${top.map((f, i) => html`<div key=${f.key} className="hbar-row" style=${{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
+          <span className="hbar-label" style=${{ whiteSpace: 'normal' }}>${i + 1}. ${f.title} <span className="faint" style=${{ fontWeight: 500 }}>— ${f.authors.join(', ') || 'Anonymous'}</span></span>
+          <span className="value-chip" style=${{ background: 'var(--lime)', fontSize: 15, padding: '4px 10px' }}>${Math.round(scores.get(f.key).score)}</span>
+        </div>`)}<div className="tiny faint" style=${{ marginTop: 6 }}>Scored across all ${fmtInt(total)} rows of this Sheet, as the app does.</div></div>`
+        : html`<div className="card empty">${total ? 'No Unread fics in this Sheet.' : 'This Sheet hasn’t loaded yet.'}</div>`}
+    </div>`)}
+  </div>`;
+}
+
+// ============================================================================================
 // EXPORT + ACCOUNT
 // ============================================================================================
-function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onReset, today }) {
+function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onReset, today, onBack }) {
   const [excludeE, setExcludeE] = useState(false);
   const readings = useMemo(() => R.sortDiary(R.filterReadings(model.readings, filters, { excludeE })), [model, filters, excludeE]);
   const n = R.filterCount(filters) + (filters.q ? 1 : 0);
@@ -4404,7 +5108,7 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
     download(`shelf-life-${today}.json`, JSON.stringify(out, null, 2), 'application/json');
   };
   return html`<div>
-    <h1 className="page-title">Export</h1>
+    ${onBack ? html`<${BackHead} title="Export" onBack=${onBack} label="Back to More" />` : html`<h1 className="page-title">Export</h1>`}
     <div className="card" style=${{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div className="row" style=${{ justifyContent: 'space-between' }}>
         <span><b className="num" style=${{ fontSize: 20 }}>${fmtInt(readings.length)}</b> <span className="muted">reads</span></span>
@@ -4446,14 +5150,15 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
 // ============================================================================================
 // SETTINGS + TAG REVIEW
 // ============================================================================================
-function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setView, store, today }) {
+function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setView, store, today, scores, onBack }) {
   const ctx = useContext(TagCtx);
   if (view === 'tags') return html`<${TagReview} model=${model} onBack=${() => { setView('main'); window.scrollTo(0, 0); }} />`;
+  if (view === 'scores') return html`<${ScoreCheck} model=${model} scores=${scores} onBack=${() => { setView('main'); window.scrollTo(0, 0); }} />`;
   const n = { sexual: 0, unsure: 0 };
   for (const i of model.tagInfo.values()) { const c = effectiveClass(i, ctx.overrides); if (n[c] !== undefined) n[c]++; }
   const nOver = Object.keys(ctx.overrides).length;
   return html`<div>
-    <h1 className="page-title">Settings</h1>
+    ${onBack ? html`<${BackHead} title="Settings" onBack=${onBack} label="Back to More" />` : html`<h1 className="page-title">Settings</h1>`}
     <div className="section">
       <div className="section-head"><h2 className="section-title">Tags</h2></div>
       <div className="card">
@@ -4477,8 +5182,15 @@ function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setVie
         </div>` : html`<${StorageNotice} store=${store} />`}
     </div>
     <div className="section">
-      <div className="section-head"><h2 className="section-title">Notes</h2><span className="small faint">${store.notes.length}</span></div>
-      <${NotesList} store=${store} today=${today} />
+      <div className="section-head"><h2 className="section-title">Nudges</h2></div>
+      <${NudgeSettings} store=${store} />
+    </div>
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Up Next</h2></div>
+      <div className="card"><button className="set-row" onClick=${() => { setView('scores'); window.scrollTo(0, 0); }}>
+        <span><b style=${{ fontWeight: 600 }}>Score check</b><div className="tiny faint">Compare Shelf Life’s app scores with each fandom app</div></span>
+        <span className="faint" style=${{ display: 'inline-grid' }}><${Icon} name="chevron" size=${18} /></span>
+      </button></div>
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Account</h2></div>
@@ -4611,20 +5323,25 @@ function Mark({ size }) {
 // status: 'off' (never switched on here) | 'connecting' | 'ready' | 'unavailable' (switched on,
 // but storage can't be reached: goals and notes show the copy on this device, read-only).
 const MERGED_LOCAL_KEY = 'shelflife-overrides-merged';
+const NUDGE_TYPES_LOCAL_KEY = 'shelflife-nudge-types';   // nudge on/off when Shelf Life Data isn't connected
+// Settings keys "snoozes" and "dismissed" hold { key: until date }; expired entries are dropped on save.
+const pruneUntil = (m, today) => Object.fromEntries(Object.entries(m || {}).filter(([, v]) => typeof v === 'string' && v >= today));
 const nowStamp = () => new Date().toISOString();
 const newId = () => 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 function useShelfStore(auth, localOverrides) {
   const [st, setSt] = useState(() => {
     let on = false; try { on = localStorage.getItem(STORAGE_FLAG_KEY) === '1'; } catch (e) {}
-    return { status: on ? 'unavailable' : 'off', message: on ? 'Connecting to Shelf Life Data…' : '', id: null, goals: [], notes: [], overrides: null, saving: false, cachedAt: null, created: false };
+    let localTypes = {}; try { localTypes = JSON.parse(localStorage.getItem(NUDGE_TYPES_LOCAL_KEY) || '{}') || {}; } catch (e) {}
+    return { status: on ? 'unavailable' : 'off', message: on ? 'Connecting to Shelf Life Data…' : '', id: null, goals: [], notes: [], overrides: null, saving: false, cachedAt: null, created: false,
+      snoozes: {}, dismissed: {}, nudgeTypes: localTypes };
   });
   const stRef = useRef(st); useEffect(() => { stRef.current = st; }, [st]);
   const localRef = useRef(localOverrides); useEffect(() => { localRef.current = localOverrides; }, [localOverrides]);
   const queue = useRef(Promise.resolve());
   const busy = useRef(false);
 
-  const cache = (d) => idb.put(SHELF_CACHE_KEY, { goals: d.goals, notes: d.notes, overrides: d.overrides, at: Date.now(), id: d.id });
-  useEffect(() => { idb.get(SHELF_CACHE_KEY).then(c => { if (c && stRef.current.status !== 'ready') setSt(s => ({ ...s, goals: c.goals || [], notes: c.notes || [], cachedAt: c.at || null })); }); }, []);
+  const cache = (d) => idb.put(SHELF_CACHE_KEY, { goals: d.goals, notes: d.notes, overrides: d.overrides, snoozes: d.snoozes, dismissed: d.dismissed, nudgeTypes: d.nudgeTypes, at: Date.now(), id: d.id });
+  useEffect(() => { idb.get(SHELF_CACHE_KEY).then(c => { if (c && stRef.current.status !== 'ready') setSt(s => ({ ...s, goals: c.goals || [], notes: c.notes || [], snoozes: c.snoozes || {}, dismissed: c.dismissed || {}, nudgeTypes: c.nudgeTypes || s.nudgeTypes, cachedAt: c.at || null })); }); }, []);
 
   const fail = (e) => {
     if (e && e.isAuthError) { auth.expire(); setSt(s => ({ ...s, status: 'unavailable', saving: false, message: 'Your Google sign-in expired. Sign in again to use goals and notes.' })); return; }
@@ -4659,7 +5376,12 @@ function useShelfStore(auth, localOverrides) {
         }
         try { localStorage.setItem(MERGED_LOCAL_KEY, id); } catch (e) {}
       }
-      const next = { status: 'ready', message: '', id, goals: d.goals, notes: d.notes, overrides: d.overrides, saving: false, cachedAt: Date.now(), created };
+      // Nudge on/off choices made on this device before connecting are kept unless the Sheet has its own.
+      if (!Object.keys(d.nudgeTypes).length && Object.keys(stRef.current.nudgeTypes || {}).length) {
+        await writeSettings(tok, id, d.settingsRows, { nudgeTypes: JSON.stringify(stRef.current.nudgeTypes) });
+        d = { ...d, nudgeTypes: { ...stRef.current.nudgeTypes } };
+      }
+      const next = { status: 'ready', message: '', id, goals: d.goals, notes: d.notes, overrides: d.overrides, snoozes: d.snoozes, dismissed: d.dismissed, nudgeTypes: d.nudgeTypes, saving: false, cachedAt: Date.now(), created };
       setSt(next); cache(next);
     } catch (e) { fail(e); }
     finally { busy.current = false; }
@@ -4679,7 +5401,7 @@ function useShelfStore(auth, localOverrides) {
       setSt(s => ({ ...s, saving: true }));
       const fresh = parseShelfData(await readShelfData(tok, s0.id));
       const res = await fn(tok, s0.id, fresh);
-      const next = { ...stRef.current, ...res, saving: false, status: 'ready', cachedAt: Date.now() };
+      const next = { ...stRef.current, snoozes: fresh.snoozes, dismissed: fresh.dismissed, nudgeTypes: fresh.nudgeTypes, ...res, saving: false, status: 'ready', cachedAt: Date.now() };
       setSt(next); cache(next);
     };
     const p = queue.current.then(run, run);
@@ -4725,8 +5447,27 @@ function useShelfStore(auth, localOverrides) {
     return { goals: fresh.goals, notes: fresh.notes, overrides: out };
   }), [mutate]);
 
+  // Snoozes, dismissals and nudge switches: one key of the Settings tab each, merged by entry.
+  const setSettingEntry = useCallback((key, entry, value) => mutate(async (tok, id, fresh) => {
+    const today = R.melbourneToday(new Date());
+    const cur = key === 'nudgeTypes' ? { ...fresh.nudgeTypes } : pruneUntil(fresh[key], today);
+    if (value === null) delete cur[entry]; else cur[entry] = value;
+    await writeSettings(tok, id, fresh.settingsRows, { [key]: JSON.stringify(cur) });
+    return { goals: fresh.goals, notes: fresh.notes, overrides: fresh.overrides, [key]: cur };
+  }), [mutate]);
+  const snooze = useCallback((ficKey, until) => setSettingEntry('snoozes', ficKey, until), [setSettingEntry]);
+  const unsnooze = useCallback((ficKey) => setSettingEntry('snoozes', ficKey, null), [setSettingEntry]);
+  const dismiss = useCallback((nudgeId, until) => setSettingEntry('dismissed', nudgeId, until), [setSettingEntry]);
+  const setNudgeType = useCallback((type, on) => {
+    if (stRef.current.status === 'ready') { setSt(s => ({ ...s, nudgeTypes: { ...s.nudgeTypes, [type]: !!on } })); return setSettingEntry('nudgeTypes', type, on ? true : false); }   // shown at once, then saved
+    const next = { ...stRef.current.nudgeTypes, [type]: !!on };
+    try { localStorage.setItem(NUDGE_TYPES_LOCAL_KEY, JSON.stringify(next)); } catch (e) {}
+    setSt(s => ({ ...s, nudgeTypes: next }));
+    return Promise.resolve();
+  }, [setSettingEntry]);
+
   const sheetUrl = st.id ? `https://docs.google.com/spreadsheets/d/${st.id}/edit` : null;
-  return { ...st, sheetUrl, connect, saveGoal, archiveGoal, deleteGoal, saveNote, saveOverridesRemote, editable: st.status === 'ready' && !st.saving };
+  return { ...st, sheetUrl, connect, saveGoal, archiveGoal, deleteGoal, saveNote, saveOverridesRemote, snooze, unsnooze, dismiss, setNudgeType, editable: st.status === 'ready' && !st.saving };
 }
 // Settings rows are key/value; replace the given keys, keep the rest.
 async function writeSettings(tok, id, rows, changes) {
@@ -4842,6 +5583,14 @@ function App() {
     isVisible: (t) => includeSex || !hiddenTags.has(t), overrides, saveOverrides, synced: store.status === 'ready',
   }), [includeSex, setIncludeSex, hiddenTags, overrides, saveOverrides, store.status]);
 
+  // Phase 4: app scores, Up Next ranking and nudges, shared by Home, Up Next, Goals, Badges and fic pages.
+  const scores = useMemo(() => model ? R.appScores(model) : new Map(), [model]);
+  const up = useMemo(() => model ? R.upNextRank(model, { today, snoozes: store.snoozes, scores }) : null, [model, today, store.snoozes, scores]);
+  const nctx = useMemo(() => model && up ? R.nudgeContext(model, tagCtx.isVisible, up.lengthStats) : null, [model, up, tagCtx.isVisible]);
+  const nudges = useMemo(() => model && up ? R.pageNudges(model, { today, goals: store.goals, up, sources: SOURCES }) : [], [model, up, today, store.goals]);
+  const p4 = { up, nctx, nudges, store, today, scores };
+  const backRef = useRef('home');
+
   const loadSummary = useCallback(async (fic) => {
     const ck = 'summary:' + fic.key;
     const cached = await idb.get(ck);
@@ -4863,7 +5612,9 @@ function App() {
   const openRange = (start, end) => { setDetail(null); setFilters({ ...R.emptyFilters(), from: start, to: end }); setUi(u => ({ ...u, sub: 'diary', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
   const openTag = (t) => { setFilters({ ...R.emptyFilters(), tagsInc: [t] }); setUi(u => ({ ...u, sub: 'diary', filtersOpen: true })); setTab('diary'); window.scrollTo(0, 0); };
   const reset = async () => { await idb.clearExcept([OVERRIDES_KEY, SHELF_CACHE_KEY]); dataRef.current = null; setData(null); setSync({ state: auth.signedIn ? 'idle' : 'needsAuth' }); if (auth.getToken()) doSync(false); };
-  const switchTab = (t) => { setTab(t); if (t !== 'settings') setSettingsView('main'); window.scrollTo(0, 0); };
+  const MORE_TABS = ['more', 'goals', 'badges', 'notes', 'export', 'settings'];
+  // Goals and Badges open from Home or More; their back button returns there.
+  const switchTab = (t) => { if (t === 'goals' || t === 'badges') backRef.current = tab === 'more' ? 'more' : 'home'; setTab(t); if (t !== 'settings') setSettingsView('main'); window.scrollTo(0, 0); };
 
   if (!booted) return html`<div className="center-screen faint">Opening your shelf…</div>`;
   if (!model) return html`<${SignInScreen} onSignIn=${() => doSync(true)} ready=${auth.ready || auth.signedIn} error=${auth.error || (sync.state === 'error' ? sync.message : '')} busy=${sync.state === 'syncing'} />`;
@@ -4887,21 +5638,26 @@ function App() {
         <span>${sync.message || 'Showing your saved copy.'}</span><button className="pill-btn" onClick=${() => doSync(true)}>Sign in to sync</button></div>` : null}
       ${sync.state === 'error' || sync.state === 'partial' ? html`<div className="banner err">Sync ${sync.state === 'partial' ? 'partly ' : ''}failed — showing the last copy. ${sync.message}</div>` : null}
 
-      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} openRecap=${setRecapScope} store=${store} openGoals=${() => switchTab('goals')} openBadges=${() => switchTab('badges')} />` : null}
-      ${tab === 'goals' ? html`<${GoalsScreen} model=${model} today=${today} store=${store} onBack=${() => switchTab('home')} />` : null}
-      ${tab === 'badges' ? html`<${BadgesScreen} model=${model} today=${today} onBack=${() => switchTab('home')} />` : null}
+      ${tab === 'home' ? html`<${Dashboard} model=${model} today=${today} themeTick=${theme.tick} onOpen=${setDetail} onTag=${openTag} dash=${dash} setDash=${setDash} groupBy=${groupBy} setGroupBy=${setGroupBy} openRecap=${setRecapScope} store=${store} openGoals=${() => switchTab('goals')} openBadges=${() => switchTab('badges')} p4=${p4} openUpNext=${() => switchTab('upnext')} />` : null}
+      ${tab === 'upnext' ? html`<${UpNextScreen} p4=${p4} model=${model} onOpen=${setDetail} />` : null}
+      ${tab === 'more' ? html`<${MoreScreen} model=${model} today=${today} store=${store} p4=${p4} go=${switchTab} />` : null}
+      ${tab === 'notes' ? html`<${NotesScreen} model=${model} today=${today} store=${store} onBack=${() => switchTab('more')} />` : null}
+      ${tab === 'goals' ? html`<${GoalsScreen} model=${model} today=${today} store=${store} p4=${p4} onBack=${() => switchTab(backRef.current)} />` : null}
+      ${tab === 'badges' ? html`<${BadgesScreen} model=${model} today=${today} p4=${p4} onBack=${() => switchTab(backRef.current)} />` : null}
       ${tab === 'diary' ? html`<${DiaryScreen} model=${model} filters=${filters} setFilters=${setFilters} onOpen=${setDetail} today=${today} ui=${ui} setUi=${setUi} />` : null}
-      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} onTag=${openTag} onOpen=${setDetail} onRange=${openRange} groupBy=${groupBy} setGroupBy=${setGroupBy} tab=${trendsTab} setTab=${setTrendsTab} openRecap=${setRecapScope} />` : null}
-      ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today}
+      ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} onTag=${openTag} onOpen=${setDetail} onRange=${openRange} groupBy=${groupBy} setGroupBy=${setGroupBy} tab=${trendsTab} setTab=${setTrendsTab} openRecap=${setRecapScope} p4=${p4} />` : null}
+      ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today} onBack=${() => switchTab('more')}
         goFilters=${() => { setUi(u => ({ ...u, filtersOpen: true })); switchTab('diary'); }} />` : null}
-      ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} store=${store} today=${today} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} />` : null}
+      ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} store=${store} today=${today} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} scores=${scores} onBack=${() => switchTab('more')} />` : null}
     </main>
 
     <nav className="nav"><div className="nav-inner">
-      ${[['home', 'home', 'Dashboard'], ['diary', 'diary', 'Diary'], ['trends', 'trends', 'Trends'], ['export', 'export', 'Export'], ['settings', 'settings', 'Settings']].map(([k, ic, label]) => html`<button key=${k} className=${tab === k ? 'on' : ''} onClick=${() => switchTab(k)} aria-current=${tab === k ? 'page' : null}><span className="nav-ic"><${Icon} name=${ic} size=${20} /></span>${label}</button>`)}
+      ${[['home', 'home', 'Home'], ['upnext', 'upnext', 'Up Next'], ['diary', 'diary', 'Diary'], ['trends', 'trends', 'Trends'], ['more', 'more', 'More']].map(([k, ic, label]) => { const on = k === 'more' ? MORE_TABS.includes(tab) : tab === k;
+        const attn = k === 'more' && moreNeedsAttention(store, model, today);
+        return html`<button key=${k} className=${on ? 'on' : ''} onClick=${() => switchTab(k)} aria-current=${on ? 'page' : null} aria-label=${label} title=${attn ? 'More: something needs attention' : null}><span className="nav-ic"><${Icon} name=${ic} size=${20} sw=${ic === 'more' ? 3.2 : 2} />${attn ? html`<span className="nav-dot" aria-hidden="true"></span>` : null}</span>${label}</button>`; })}
     </div></nav>
 
-    ${detail ? html`<${FicDetail} ficKey=${detail} model=${model} onClose=${() => setDetail(null)} loadSummary=${loadSummary} onAuthor=${openAuthor} today=${today} />` : null}
+    ${detail ? html`<${FicDetail} ficKey=${detail} model=${model} onClose=${() => setDetail(null)} loadSummary=${loadSummary} onAuthor=${openAuthor} today=${today} p4=${p4} />` : null}
     ${recapScope ? html`<${RecapStory} model=${model} scope=${recapScope} today=${today} store=${store} onClose=${() => setRecapScope(null)} />` : null}
   </div></${TagCtx.Provider}>`;
 }

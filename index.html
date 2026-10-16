@@ -425,6 +425,15 @@
   .attn-dot { margin-left: 8px; vertical-align: 2px; }
   .nav button .nav-ic { position: relative; }
   .nav-dot { position: absolute; top: 3px; right: 7px; box-shadow: 0 0 0 2px var(--surface); }
+
+  /* ---------- cross-Sheet duplicates, per-Sheet sync ---------- */
+  .also-in { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .also-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; background: var(--surface-2); color: var(--ink); }
+  .also-chip i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .also-chip.conflict { box-shadow: inset 0 0 0 1.5px var(--coral); }
+  .sync-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 9px 0; }
+  .sync-row + .sync-row { border-top: 1px solid var(--line); }
+  .sync-dot { width: 10px; height: 10px; border-radius: 50%; }
 </style>
 </head>
 <body>
@@ -477,6 +486,89 @@ const SOURCES = [
     color: { light: '#D4F55B', dark: '#D4F55B' },
     initials: 'HP',
     appUrl: 'https://ameliacatanach-boop.github.io/Drarry-Fics-List/',
+  },  // ---- Added 16 Oct 2026. No app scorer yet (APP_SCORES), so these stay out of Up Next for now.
+  // Colours were tuned so all 10 fandoms stay apart (CIEDE2000 ≥ 19 in light and dark mode) and
+  // white or #111111 text on each meets 4.5:1. Marauders shares "Harry Potter (All)" with Drarry,
+  // so it uses Harry Potter's colour (the first Sheet's).
+  {
+    id: 'strangerthings',
+    sheetId: '1s_9bQ-c5oPtOsBwGqfNqM0uvW7j_Tlmd9Bd5BZvxImI',
+    fandom: 'Stranger Things (All)',
+    pairing: 'Steve Harrington ships',
+    pairingMode: 'perFic',
+    color: { light: '#A020C8', dark: '#C060E0' },
+    initials: 'ST',
+    appUrl: '',
+  },
+  {
+    id: '911',
+    sheetId: '10e0f3_-d-wE7PXuaLzGUwSlfH_wTZkemoBiJ7XGxFRM',
+    fandom: '9-1-1 (All)',
+    pairing: 'Evan "Buck" Buckley/Eddie Diaz',
+    pairingMode: 'fixed',
+    color: { light: '#FFB020', dark: '#FFB020' },
+    initials: '911',
+    appUrl: '',
+  },
+  {
+    id: 'merlin',
+    sheetId: '1BBMVuyRjt68rzE4gSQyyaGvq_6RHp3qsT04kzlzpung',
+    fandom: 'Merlin (All)',
+    pairing: 'Merlin/Arthur Pendragon',
+    pairingMode: 'fixed',
+    color: { light: '#14B8A6', dark: '#14B8A6' },
+    initials: 'MER',
+    appUrl: '',
+  },
+  {
+    id: 'marauders',
+    sheetId: '12h89MJFpmBsLZxjeWWnke9Y95W4c1MX66XbSkzcuShw',
+    fandom: 'Harry Potter (All)',
+    pairing: 'Marauders ships',
+    pairingMode: 'perFic',
+    color: { light: '#D4F55B', dark: '#D4F55B' },   // not used: Drarry comes first in this fandom
+    initials: 'HP',
+    appUrl: '',
+  },
+  {
+    id: 'suits',
+    sheetId: '1Ob86vFTIif45SmVyAUp4WhOYlg4EnWkIyvi63WnhoGY',
+    fandom: 'Suits (All)',
+    pairing: 'Mike Ross/Harvey Specter',
+    pairingMode: 'fixed',
+    color: { light: '#78716C', dark: '#A8A29E' },
+    initials: 'SU',
+    appUrl: '',
+  },
+  {
+    id: 'ofmd',
+    sheetId: '1-hnHNHphzHeUFj_Xiaj4D8K17uggxbOBizDMqzjr0tY',
+    fandom: 'Our Flag Means Death (All)',
+    pairing: 'Edward Teach/Stede Bonnet',
+    pairingMode: 'fixed',
+    color: { light: '#FF5DA2', dark: '#FF5DA2' },
+    initials: 'OFMD',
+    appUrl: '',
+  },
+  {
+    id: 'lesmis',
+    sheetId: '1qKQYUFuLLJ-cUXmeKCgdbkyTu1Pg7aD0agddIukm2OA',
+    fandom: 'Les Misérables (All)',
+    pairing: 'Enjolras/Grantaire',
+    pairingMode: 'fixed',
+    color: { light: '#B91C1C', dark: '#C42B2B' },
+    initials: 'LM',
+    appUrl: '',
+  },
+  {
+    id: 'rwrb',
+    sheetId: '1CkS3NvLCjBVOsuoCRTmJTa8sX-huPtvC-X5ILIlSsxo',
+    fandom: 'Red, White & Royal Blue (All)',
+    pairing: 'Alex Claremont-Diaz/Henry Fox-Mountchristen-Windsor',
+    pairingMode: 'fixed',
+    color: { light: '#38BDF8', dark: '#38BDF8' },
+    initials: 'RWRB',
+    appUrl: '',
   },
 ];
 </script>
@@ -1255,6 +1347,69 @@ const ShelfRules = (() => {
   // ------------------------------------------------------------------------------------------
   const REQUIRED_COLS = ['Status', 'Title', 'Link', 'Author', 'Words', 'Chapters', 'Date Read', 'Last Read', 'Chapters Read', 'Times Read'];
   // sourceData: { [source id]: loaded sheet }. sources: the SOURCES list.
+  // Folds items whose share of `total` is under `min` into one { key: OTHER_KEY, words, folded: [...] } at the end.
+  const OTHER_KEY = '\u0000other';
+  function foldSmall(items, total, min) {
+    if (!total) return items;
+    const keep = items.filter(x => x.words / total >= min), small = items.filter(x => x.words / total < min);
+    if (small.length < 2) return items;   // folding a single fandom into "Other" would only hide its name
+    return [...keep, { key: OTHER_KEY, words: small.reduce((t, x) => t + x.words, 0), folded: small.map(x => x.key) }];
+  }
+
+  // CROSS-SHEET DUPLICATES. Rows in different Sheets with the same AO3 work ID are one fic.
+  // Home row (the one every count, chart and reading uses):
+  //   1. a row with a reading status (Read, DNF, Currently Reading, Paused) beats one without;
+  //   2. then the most recent reading date (Date Read, Last Read or Date Started, whichever is latest);
+  //   3. then the Sheet that comes first in SOURCES.
+  // The home fic keeps its own fields and gains `copies` (the other rows: source, status, row).
+  // Reading Log events from every copy are merged onto the home fic (exact repeats dropped).
+  // Rows without a work ID (no AO3 link) are never merged.
+  function dedupeWorks(fics, events, sources) {
+    const order = new Map(sources.map((s, i) => [s.id, i]));
+    const label = (id) => { const s = sources.find(x => x.id === id); return s ? sourceLabel(s, sources) : id; };
+    const READINGISH = new Set(['Read', 'DNF', 'Currently Reading', 'Paused']);
+    const latest = (f) => [f.dateRead, f.lastReadDate, f.dateStarted].filter(Boolean).sort().pop() || '';
+    const byWork = new Map();
+    for (const f of fics) {
+      const w = /^\d+$/.test(f.id) ? f.id : f.key;
+      if (!byWork.has(w)) byWork.set(w, []);
+      byWork.get(w).push(f);
+    }
+    const out = [], alias = new Map(), homeKeys = new Set(), conflicts = [];
+    let groups = 0, copies = 0;
+    const homeOfKey = new Map();
+    for (const rows of byWork.values()) {
+      if (rows.length === 1) { rows[0].copies = []; out.push(rows[0]); homeKeys.add(rows[0].key); continue; }
+      const sorted = rows.slice().sort((a, b) => (READINGISH.has(b.status) - READINGISH.has(a.status)) || latest(b).localeCompare(latest(a)) || order.get(a.source) - order.get(b.source));
+      const home = sorted[0];
+      home.copies = sorted.slice(1).map(c => ({ key: c.key, source: c.source, label: label(c.source), status: c.status, rowNumber: c.rowNumber }));
+      out.push(home); homeKeys.add(home.key);
+      groups++; copies += rows.length - 1;
+      for (const c of sorted.slice(1)) { alias.set(c.key, home.key); homeOfKey.set(c.key, home.key); }
+      if (new Set(rows.map(r => r.status)).size > 1) conflicts.push({ title: home.title, key: home.key, rows: sorted.map(r => ({ source: r.source, label: label(r.source), status: r.status })) });
+    }
+    // Events: copies' events move to the home key; merged groups are put in time order.
+    const merged = new Map();
+    const evOut = [];
+    for (const e of events) {
+      const hk = homeOfKey.get(e.key);
+      if (!hk && !alias.size) { evOut.push(e); continue; }
+      const homeKey = hk || e.key;
+      if (!merged.has(homeKey)) merged.set(homeKey, []);
+      merged.get(homeKey).push(hk ? { ...e, key: homeKey, origin: e.source } : e);
+    }
+    let g = 0;
+    for (const [hk, list] of merged) {
+      const multi = new Set(list.map(e => e.origin || e.source)).size > 1;
+      if (!multi) { evOut.push(...list); continue; }
+      g++;
+      const seen = new Set();
+      list.sort((a, b) => (a.ts || '').localeCompare(b.ts || '') || order.get(a.origin || a.source) - order.get(b.origin || b.source) || a.seq - b.seq)
+        .forEach((e, i) => { const sig = [e.ts, e.event, e.readNumber, e.chaptersRead].join('|'); if (seen.has(sig)) return; seen.add(sig); evOut.push({ ...e, seq: 1e9 + g * 1e4 + i }); });
+    }
+    return { fics: out, events: evOut, alias, homeKeys, groups, copies, conflicts };
+  }
+
   function buildModel(sourceData, sources) {
     const fics = [], events = [], notes = [];
     for (const src of sources) {
@@ -1269,7 +1424,16 @@ const ShelfRules = (() => {
       if (d.duplicateHeaders && d.duplicateHeaders.length) notes.push(`${name}: more than one column is headed ${d.duplicateHeaders.map(c => `"${c}"`).join(', ')}; Shelf Life uses the right-most one, like the fandom apps.`);
       if (d.stale) notes.push(`${name}: the last sync failed, so this is the copy from the sync before.`);
     }
+    // ---- One AO3 work, one fic: rows for the same work ID in several Sheets are merged. ----
+    const allFics = fics.slice();                      // every row of every Sheet (APP_SCORES needs these)
+    const rawEvents = events.slice();                  // every Reading Log row, for the per-Sheet counts
+    const dd = dedupeWorks(fics, events, sources);
+    fics.length = 0; fics.push(...dd.fics);
+    events.length = 0; events.push(...dd.events);
     const ficByKey = new Map(fics.map(f => [f.key, f]));
+    for (const [copyKey, homeKey] of dd.alias) ficByKey.set(copyKey, ficByKey.get(homeKey));   // a copy's key finds its fic
+    if (dd.groups) notes.push(`${dd.groups} AO3 work${dd.groups === 1 ? ' is' : 's are'} in more than one Sheet (${dd.copies} extra row${dd.copies === 1 ? '' : 's'}); each counts once, from its home row.`);
+    if (dd.conflicts.length) notes.push(`${dd.conflicts.length} of them ${dd.conflicts.length === 1 ? 'has' : 'have'} different statuses in different Sheets (listed below). The home row decides: a reading status first, then the latest reading date, then the earlier Sheet.`);
     const eventsByKey = new Map();
     let unmatched = 0;
     for (const e of events) {
@@ -1344,16 +1508,19 @@ const ShelfRules = (() => {
     // Per-Sheet counts, to check against the Sheets (Export → Readings per Sheet).
     const counts = sources.map(src => {
       const rs = readings.filter(r => r.source === src.id);
-      const fs = fics.filter(f => f.source === src.id);
+      const fs = allFics.filter(f => f.source === src.id);   // Status counts match the Sheet's own rows
       return {
         key: src.id, name: sourceLabel(src, sources), loaded: !!sourceData[src.id],
         statusRead: fs.filter(f => f.status === 'Read').length, statusDnf: fs.filter(f => f.status === 'DNF').length,
         readings: rs.length, read: rs.filter(r => r.kind === 'Read').length, dnf: rs.filter(r => r.kind === 'DNF').length,
         logged: rs.filter(r => !r.est).length, est: rs.filter(r => r.est).length, undated: rs.filter(r => !r.date).length,
-        rereads: rs.filter(r => r.readNumber > 1).length, logEvents: events.filter(e => e.source === src.id).length,
+        rereads: rs.filter(r => r.readNumber > 1).length, logEvents: rawEvents.filter(e => e.source === src.id).length,
+        copies: fs.filter(f => !dd.homeKeys.has(f.key)).length,
       };
     });
     return {
+      allFics, dupes: { groups: dd.groups, copies: dd.copies, conflicts: dd.conflicts },
+      fandomWords: Object.fromEntries(fandomList.map(fd => [fd.name, fd.pairings.reduce((t, p) => t + p.words, 0)])),
       fics, ficByKey, eventsByKey, readings, inProgress, notes, statusCounts, counts, fandomList, pairingByKey, tagInfo,
       authorFirst: authorFirstDates(readings), authors: authorRanking(readings), vocab,
       firstDate: dated[0] || null, lastDate: dated[dated.length - 1] || null,
@@ -1850,7 +2017,9 @@ const ShelfRules = (() => {
     const byF = new Map(), byP = new Map();
     for (const r of rs) { byF.set(r.fandom, (byF.get(r.fandom) || 0) + (r.words || 0)); byP.set(r.pairingKey, (byP.get(r.pairingKey) || 0) + (r.words || 0)); }
     const tf = [...byF].sort((a, b) => b[1] - a[1])[0], tp = [...byP].sort((a, b) => b[1] - a[1])[0];
-    if (tf && tf[1] > 0) { const p = model.pairingByKey.get(tp[0]) || {}; add({ n: 3, type: 'fandom', fandom: tf[0], fandomShare: tf[1] / words, pairing: p.name, pairingFandom: p.fandom, pairingShare: tp[1] / words }); }
+    // split: every fandom's share of words, fandoms under 3% folded into "Other" (shown when 2+ fandoms).
+    const split = foldSmall([...byF].filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1]).map(([k, w]) => ({ key: k, words: w })), words, 0.03);
+    if (tf && tf[1] > 0) { const p = model.pairingByKey.get(tp[0]) || {}; add({ n: 3, type: 'fandom', fandom: tf[0], fandomShare: tf[1] / words, pairing: p.name, pairingFandom: p.fandom, pairingShare: tp[1] / words, split }); }
     else skip(3, 'Top fandom and pairing', 'no words read in this period');
     // 4 top tags
     const tags = [...tagTotals(rs, isVisible)].filter(([, v]) => v.readings >= MIN_RANK && v.words > 0).sort((a, b) => b[1].words - a[1].words).slice(0, 5).map(([tag, v]) => ({ tag, words: v.words, readings: v.readings }));
@@ -2391,9 +2560,10 @@ const ShelfRules = (() => {
   // All sources: Map fic key -> { score, qScore }. A Sheet with no scorer gets none.
   function appScores(model) {
     const all = new Map();
-    for (const src of new Set(model.fics.map(f => f.source))) {
+    const rows = model.allFics || model.fics;   // every Sheet row, duplicates included, as each app sees its Sheet
+    for (const src of new Set(rows.map(f => f.source))) {
       const scorer = APP_SCORES[src]; if (!scorer) continue;
-      for (const [k, v] of scorer(model.fics.filter(f => f.source === src))) all.set(k, v);
+      for (const [k, v] of scorer(rows.filter(f => f.source === src))) all.set(k, v);
     }
     return all;
   }
@@ -2451,23 +2621,29 @@ const ShelfRules = (() => {
     const ls = lengthStats(model.readings);
     const lastRead = fandomLastRead(model);
     const goTo = goToAuthorCounts(model);
-    const cands = model.fics.filter(f => UP_NEXT_STATUSES.includes(f.status) && scores.has(f.key));
-    const pctOf = new Map();
-    for (const src of new Set(cands.map(f => f.source))) {
-      const list = cands.filter(f => f.source === src);
-      const p = appPercentileRanks(list.map(f => scores.get(f.key).score));
+    // A work in several Sheets is a candidate only if EVERY copy is blank or TBR. Its score comes
+    // from its home row's app, or else from the first copy whose Sheet has a scorer; percentiles
+    // are taken within that scoring Sheet. Works with no scored copy (new Sheets) are left out.
+    const scoreKey = (f) => scores.has(f.key) ? f.key : ((f.copies || []).find(c => scores.has(c.key)) || {}).key;
+    const srcOfKey = (k) => k.slice(0, k.indexOf('|'));
+    const cands = model.fics.filter(f => UP_NEXT_STATUSES.includes(f.status) && (f.copies || []).every(c => UP_NEXT_STATUSES.includes(c.status)) && scoreKey(f));
+    const pctOf = new Map(), skOf = new Map(cands.map(f => [f.key, scoreKey(f)]));
+    for (const src of new Set(cands.map(f => srcOfKey(skOf.get(f.key))))) {
+      const list = cands.filter(f => srcOfKey(skOf.get(f.key)) === src);
+      const p = appPercentileRanks(list.map(f => scores.get(skOf.get(f.key)).score));
       list.forEach((f, i) => pctOf.set(f.key, list.length === 1 ? 100 : p[i]));
     }
     const out = [];
     for (const f of cands) {
-      const s = scores.get(f.key), pct = pctOf.get(f.key), band = ls.bandOf(f.words);
+      const s = scores.get(skOf.get(f.key)), pct = pctOf.get(f.key), band = ls.bandOf(f.words);
       const ratio = ls.overall > 0 ? band.fit / ls.overall : 1;
       const raw = pct * (0.6 + 0.4 * ratio);
       const base = Math.max(0, Math.min(100, raw));
       const reasons = [];
       const top = Math.max(1, Math.ceil(100 - pct));
       const fandomShort = shortFandom(f.fandom);
-      reasons.push({ key: 'top', text: `Top ${top}% in ${fandomShort}`, value: pct });
+      const scoredIn = (model.fandomList.find(fd => fd.sourceIds.includes(srcOfKey(skOf.get(f.key)))) || {}).short || fandomShort;
+      reasons.push({ key: 'top', text: `Top ${top}% in ${scoredIn}`, value: pct });
       if (band.closed > 0) reasons.push({ key: 'length', text: `You finish ${Math.round((band.rate ?? band.fit) * 100)}% of fics this length`, value: band.fit });
       let boost = 0;
       if (f.recommended) { boost += 5; reasons.push({ key: 'rec', text: f.recSource ? `Recommended · ${f.recSource}` : 'Recommended', boost: 5 }); }
@@ -2606,7 +2782,16 @@ const ShelfRules = (() => {
         why: NUDGE_BY_ID['streak-risk'].rule, expires: addDays(wk, 6) });
     // 7. go-to-author (Dashboard: one per week, the top-ranked such pick; Up Next shows chips instead)
     if (opts.up) {
-      const p = opts.up.picks.find(x => x.goToAuthor && !x.snoozedUntil);
+      // Prefer the best-ranked Up Next pick; Sheets without an app scorer aren't in Up Next, so fall
+      // back to any unread/TBR fic (every copy unread/TBR) by a go-to author, most kudos first.
+      let p = opts.up.picks.find(x => x.goToAuthor && !x.snoozedUntil);
+      if (!p) {
+        const goTo = opts.up.goTo, snz = opts.snoozes || {};
+        const f = model.fics.filter(x => UP_NEXT_STATUSES.includes(x.status) && (x.copies || []).every(c => UP_NEXT_STATUSES.includes(c.status)) && !(snz[x.key] >= today))
+          .map(x => ({ x, a: realAuthors(x.authors).filter(a => goTo.has(a)).sort((m, n) => goTo.get(n) - goTo.get(m))[0] })).filter(o => o.a)
+          .sort((m, n) => n.x.kudos - m.x.kudos)[0];
+        if (f) p = { key: f.x.key, fic: f.x, goToAuthor: { author: f.a, read: goTo.get(f.a) } };
+      }
       if (p) out.push({ id: `go-to-author:${wk}`, type: 'go-to-author', priority: 40, where: ['dashboard'], pick: p, ficKey: p.key,
         text: `A ${p.goToAuthor.author} fic you haven’t read (you’ve read ${p.goToAuthor.read}).`,
         numbers: [{ label: `${p.goToAuthor.author} fics finished`, value: p.goToAuthor.read }],
@@ -2636,7 +2821,7 @@ const ShelfRules = (() => {
   }
 
   return {
-    APP_SCORES, appScores, appPercentileRanks,
+    APP_SCORES, appScores, appPercentileRanks, foldSmall, OTHER_KEY, dedupeWorks,
     UP_NEXT_STATUSES, LENGTH_FILTERS, lengthStats, fandomLastRead, goToAuthorCounts, upNextRank, filterUpNext,
     NUDGE_TYPES, NUDGE_BY_ID, ficNudges, nudgeContext, pageNudges, nudgeVisible, dashboardNudges,
     TZ, MONTHS, MON, KNOWN_STATUSES, NO_PAIRING,
@@ -2701,6 +2886,33 @@ async function readOnlyGet(url, token, timeoutMs) {
     throw err;
   }
   return res.json();
+}
+
+// LOADING MANY SHEETS: at most SYNC_CONCURRENCY Sheets load at once (Google's per-user read quota
+// is easy to hit with 11 Sheets × 3 requests). A Sheet that answers HTTP 429 (rate limited) or 5xx
+// is retried with exponential backoff: 1s, 2s, 4s (plus a little jitter), then given up on; the
+// previous copy of that Sheet keeps showing. Other errors (401, 403, 404, bad range) aren't retried.
+const SYNC_CONCURRENCY = 3, SYNC_RETRIES = 3, SYNC_BACKOFF_MS = 1000;
+// "HTTP 503: {"error": {"message": "Backend Error"}}" -> "HTTP 503 (Backend Error)".
+const tidyError = (m) => { const t = String(m || ''); const h = /^HTTP (\d{3})/.exec(t), msg = /"message"\s*:\s*"([^"]+)"/.exec(t); return h ? `HTTP ${h[1]}${msg ? ` (${msg[1]})` : ''}` : t.slice(0, 160); };
+const isRetryable = (e) => !!e && (e.status === 429 || (e.status >= 500 && e.status <= 599));
+async function withRetry(fn, onRetry) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await fn(attempt); }
+    catch (e) {
+      if (!isRetryable(e) || attempt >= SYNC_RETRIES) { e.attempts = attempt + 1; throw e; }
+      const wait = SYNC_BACKOFF_MS * Math.pow(2, attempt) + Math.round(Math.random() * 250);
+      if (onRetry) onRetry(attempt + 1, wait, e);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+}
+// Runs fn over items with at most `limit` running at once; resolves like Promise.allSettled, in item order.
+async function settledPool(items, limit, fn) {
+  const out = new Array(items.length); let next = 0;
+  const worker = async () => { while (next < items.length) { const i = next++; try { out[i] = { status: 'fulfilled', value: await fn(items[i], i) }; } catch (e) { out[i] = { status: 'rejected', reason: e }; } } };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
 }
 
 // One source Sheet: header row first (to find columns by name), then a single values.batchGet for
@@ -3059,16 +3271,20 @@ const OTHER_PREFIX = '\u0000other:';
 // Pairings beyond the top `max` are folded into one "Other" series per fandom.
 function makeGroups(model, level, totals, present, max) {
   totals = totals || {}; max = max || 8;
+  // Fandoms in order of all-time words read, largest first: in stacked charts the first series sits
+  // at the bottom, and legends and lists read biggest to smallest. Ties keep SOURCES order.
+  const fw = model.fandomWords || {};
+  const fandomsByWords = model.fandomList.map((f, i) => ({ f, i })).sort((a, b) => (fw[b.f.name] || 0) - (fw[a.f.name] || 0) || a.i - b.i).map(x => x.f);
   if (level !== 'pairing') {
-    return { level: 'fandom', keys: model.fandomList.map(f => f.name), of: r => r.fandom,
+    return { level: 'fandom', keys: fandomsByWords.map(f => f.name), of: r => r.fandom,
       label: k => k, short: k => R.shortFandom(k), color: k => fandomColor(k), fandomOf: k => k };
   }
-  const all = model.fandomList.flatMap(f => f.pairings.map(p => p.key));
+  const all = fandomsByWords.flatMap(f => f.pairings.map(p => p.key));
   const live = all.filter(k => (totals[k] || 0) > 0 || (present && present.has(k)));
   const ranked = live.slice().sort((a, b) => (totals[b] || 0) - (totals[a] || 0));
   const keep = new Set(ranked.length > max ? ranked.slice(0, max - 1) : ranked);
   const map = new Map(), keys = [];
-  for (const f of model.fandomList) {
+  for (const f of fandomsByWords) {
     for (const p of f.pairings) if (keep.has(p.key)) { keys.push(p.key); map.set(p.key, p.key); }
     const folded = f.pairings.filter(p => !keep.has(p.key) && live.includes(p.key));
     if (folded.length) { const ok = OTHER_PREFIX + f.name; keys.push(ok); folded.forEach(p => map.set(p.key, ok)); }
@@ -3409,8 +3625,10 @@ function WordsPerMonth({ model, p, today, themeTick, level }) {
       if (!r.date) continue; const mk = r.date.slice(0, 7); if (mk < from || mk > to) continue;
       present.add(r.pairingKey); if (r.words !== null) totals[r.pairingKey] = (totals[r.pairingKey] || 0) + r.words;
     }
-    const groups = makeGroups(model, level, totals, present);
-    const s = R.monthlySeries(model.readings, keys, groups.keys, groups.of);
+    const g0 = makeGroups(model, level, totals, present);
+    const s = R.monthlySeries(model.readings, keys, g0.keys, g0.of);
+    // With many fandoms, only the series that have words in this range get a bar segment and a legend entry.
+    const groups = { ...g0, keys: g0.keys.filter(k => (s.words[k] || []).some(v => v > 0)) };
     const multiYear = keys[0].slice(0, 4) !== keys[keys.length - 1].slice(0, 4);
     return { groups, config: {
       type: 'bar',
@@ -3465,6 +3683,23 @@ function GroupSplit({ model, stats, themeTick, level }) {
     for (const r of stats.readings) {
       const g = groups.of(r); if (g === undefined) continue;
       counts[g] = (counts[g] || 0) + 1; if (r.words !== null) words[g] = (words[g] || 0) + r.words;
+    }
+    // Fandom view: fandoms with no reads in the period are left out, and fandoms under 3% of the
+    // period's words are folded into one "Other" slice (when there are at least two of them).
+    if (groups.level === 'fandom') {
+      const tot = Object.values(words).reduce((a, b) => a + b, 0);
+      const folded = R.foldSmall(groups.keys.filter(k => counts[k]).map(k => ({ key: k, words: words[k] || 0 })), tot, 0.03);
+      const other = folded.find(x => x.key === R.OTHER_KEY);
+      if (other) {
+        words[R.OTHER_KEY] = other.words; counts[R.OTHER_KEY] = other.folded.reduce((t, k) => t + (counts[k] || 0), 0);
+        const base = groups;
+        const g2 = { ...base, keys: folded.map(x => x.key), otherOf: other.folded,
+          label: k => k === R.OTHER_KEY ? `Other: ${other.folded.length} fandoms under 3%` : base.label(k),
+          short: k => k === R.OTHER_KEY ? 'Other' : base.short(k),
+          color: k => k === R.OTHER_KEY ? cssVar('--ink-2') : base.color(k) };
+        return { groups: g2, words, counts };
+      }
+      return { groups: { ...groups, keys: groups.keys.filter(k => counts[k]) }, words, counts };
     }
     return { groups, words, counts };
   }, [model, stats, level]);
@@ -3692,6 +3927,13 @@ function DnfPill({ fic }) {
   return html`<span className="row" style=${{ gap: 6, flexWrap: 'nowrap', display: 'inline-flex' }}><span className="badge dnf">DNF</span>${fic.dnrReason ? html`<span className="dnf-reason">${fic.dnrReason}</span>` : null}</span>`;
 }
 const fmtKudos = (n) => (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n || 0));
+// "Also in": the same AO3 work is in another Sheet too. Shows that Sheet's status when it differs.
+function AlsoIn({ c, home }) {
+  const src = SOURCE_BY_ID[c.source] || {};
+  const diff = (c.status || '') !== (home.status || '');
+  return html`<span className=${'also-chip' + (diff ? ' conflict' : '')} title=${`Also row ${c.rowNumber} of the ${c.label} Sheet${diff ? `, where its status is ${c.status || 'blank'}` : ''}. Counted once, from the ${(SOURCE_BY_ID[home.source] || {}).fandom || ''} row.`}>
+    <i style=${{ background: sourceAccent(src, isDarkMode()) }}></i>Also in ${c.label}${diff ? ` · ${c.status || 'blank'}` : ''}</span>`;
+}
 function DiaryRow({ r, onOpen }) {
   const d = r.date ? r.date.split('-').map(Number) : null;
   const wd = d ? WEEKDAYS[new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay()] : '';
@@ -3707,6 +3949,7 @@ function DiaryRow({ r, onOpen }) {
         <span>·</span><span className="num">${fmtKudos(r.fic.kudos)} kudos</span>
       </div>
       <${SourceLine} fic=${r.fic} mode="one" style=${{ marginTop: 4 }} />
+      ${r.fic.copies && r.fic.copies.length ? html`<div className="also-in">${r.fic.copies.map(c => html`<${AlsoIn} key=${c.key} c=${c} home=${r.fic} />`)}</div>` : null}
       ${dnf || r.readNumber > 1 || (r.origin === 'dataList' && r.fic.timesRead > r.readNumber) || r.est || r.fic.kg || r.fic.bk ? html`<div className="dmeta">
         ${dnf ? html`<${DnfPill} fic=${r.fic} />` : null}
         ${r.readNumber > 1 ? html`<span className="badge plain">${ordinal(r.readNumber)} read</span>` : null}
@@ -3872,6 +4115,7 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today, p4 })
       </div>
       <${SourceLine} fic=${fic} mode="full" style=${{ marginTop: 14, fontSize: 13.5 }} />
       <h2 className=${'detail-title' + (fic.status === 'DNF' ? ' struck' : '')}>${fic.title}</h2>
+      ${fic.copies && fic.copies.length ? html`<div className="also-in">${fic.copies.map(c => html`<${AlsoIn} key=${c.key} c=${c} home=${fic} />`)}</div>` : null}
       ${fic.status === 'DNF' ? html`<div className="dnf-banner"><${DnfPill} fic=${fic} />${fic.lastReadDate ? html`<span className="tiny faint">${R.fmtDay(fic.lastReadDate, today)}</span>` : null}</div>` : null}
       <div className="muted">by ${fic.authors.length ? fic.authors.map((a, i) => html`<span key=${a}>${i ? ', ' : ''}<button className="link-btn" style=${{ fontSize: 15 }} onClick=${() => onAuthor(a)}>${a}</button></span>`) : '—'}</div>
 
@@ -4000,12 +4244,14 @@ function RecapLauncher({ model, today, openRecap }) {
 // ---------- VOLUME ----------
 function VolumeTab({ model, today, themeTick, groupBy, setGroupBy }) {
   const keys = useMemo(() => R.monthKeys((model.firstDate || today).slice(0, 7), today.slice(0, 7)), [model, today]);
-  const groups = useMemo(() => {
+  const groups0 = useMemo(() => {
     const totals = {}, present = new Set();
     for (const r of model.readings) { if (!r.date) continue; present.add(r.pairingKey); if (r.words !== null) totals[r.pairingKey] = (totals[r.pairingKey] || 0) + r.words; }
     return makeGroups(model, groupBy, totals, present);
   }, [model, groupBy, themeTick]);
-  const s = useMemo(() => R.monthlySeries(model.readings, keys, groups.keys, groups.of), [model, keys, groups]);
+  const s = useMemo(() => R.monthlySeries(model.readings, keys, groups0.keys, groups0.of), [model, keys, groups0]);
+  // Only series with words get a bar segment and a legend entry (10 fandoms would otherwise list empties).
+  const groups = useMemo(() => ({ ...groups0, keys: groups0.keys.filter(k => (s.words[k] || []).some(v => v > 0)) }), [groups0, s]);
   const multiYear = keys[0].slice(0, 4) !== keys[keys.length - 1].slice(0, 4);
   const labels = keys.map(k => R.monthLabel(k, multiYear));
   const f = useMemo(() => R.volumeFindings(model.readings), [model]);
@@ -4378,7 +4624,8 @@ function RecapCard({ card, rc, redact, model, ctx, total, index }) {
     case 'counts': body = html`<div className="rc-kicker">You finished</div>${big(card.finished)}<div className="rc-unit">${hl(`fic${card.finished === 1 ? '' : 's'}`)}</div>
       ${rows([['DNFs', card.dnfs], ['Started', card.finished + card.dnfs]])}`; break;
     case 'fandom': body = html`<div className="rc-kicker">Your top fandom</div><div className="rc-title">${hl(card.fandom)}</div>
-      ${rows([['Share of your words', Math.round(card.fandomShare * 100) + '%'], ['Top pairing', card.pairing], ['Pairing’s share', Math.round(card.pairingShare * 100) + '%']])}`; break;
+      ${rows([['Share of your words', Math.round(card.fandomShare * 100) + '%'], ['Top pairing', card.pairing], ['Pairing’s share', Math.round(card.pairingShare * 100) + '%']])}
+      ${card.split && card.split.length > 1 ? html`<div className="rc-small">All your fandoms: ${card.split.map(x => `${x.key === R.OTHER_KEY ? `Other (${x.folded.length})` : R.shortFandom(x.key)} ${Math.max(1, Math.round(x.words / card.split.reduce((t, y) => t + y.words, 0) * 100))}%`).join(' · ')}</div>` : null}`; break;
     case 'tags': { const tags = card.tags.filter(t => !tagHidden(t.tag));
       body = html`<div className="rc-kicker">Your top tags</div>${tags.length ? rows(tags.map((t, i) => [`${i + 1}. ${t.tag}`, fmtWords(t.words)])) : html`<div className="rc-line">${hl('Kept private.')}</div>`}
         ${tags.length < card.tags.length ? html`<div className="rc-small">${card.tags.length - tags.length} sex-related tag${card.tags.length - tags.length === 1 ? '' : 's'} hidden</div>` : null}`; break; }
@@ -4968,11 +5215,14 @@ function UpNextScreen({ p4, model, onOpen }) {
   const vocab = useMemo(() => { const tags = new Map(); for (const p of p4.up.picks) for (const t of p.fic.tags) tags.set(t, (tags.get(t) || 0) + 1); return { tags }; }, [p4.up]);
   const pageN = p4.nudges.filter(n => n.where.includes('upnext') && R.nudgeVisible(n, p4.store.nudgeTypes, p4.store.dismissed, p4.today));
   const nf = (flt.tagsInc.length ? 1 : 0) + (flt.tagsExc.length ? 1 : 0);
+  // Sheets with no APP_SCORES scorer yet (their fics can't be ranked).
+  const unscored = SOURCES.filter(src => !R.APP_SCORES[src.id]).map(src => R.sourceLabel(src, SOURCES));
   const ls = p4.up.lengthStats;
   return html`<div>
     <h1 className="page-title">Up Next</h1>
     <div className="small faint" style=${{ margin: '0 2px 10px' }}>Unread and TBR fics from all your fandoms, ranked by each app’s own score (as a percentile within its fandom) and how often you finish fics that long. Shelf Life never changes a status; use the fandom app for that.</div>
     <${NudgeList} list=${pageN} store=${p4.store} today=${p4.today} onOpen=${onOpen} />
+    ${unscored.length ? html`<div className="card small" style=${{ marginTop: 10 }}><b style=${{ fontWeight: 700 }}>Up Next for these fandoms arrives when their app is built:</b> <span className="muted">${unscored.join(', ')}.</span></div>` : null}
     <div className="chips" style=${{ marginTop: 6 }}>
       <button className=${'chip sm' + (!flt.scope ? ' on' : '')} onClick=${() => set({ scope: null })}>All fandoms</button>
       ${scopes.map(o => html`<button key=${o.key} className=${'chip sm' + (flt.scope === o.key ? ' on' : '')} onClick=${() => set({ scope: flt.scope === o.key ? null : o.key })}><span className="cdot" style=${{ background: o.color }}></span>${o.label}</button>`)}
@@ -5129,6 +5379,7 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
         <tbody>${[
           ['Status = Read', 'statusRead'], ['Status = DNF', 'statusDnf'], ['Readings', 'readings'], ['  finished', 'read'], ['  DNF', 'dnf'],
           ['Logged', 'logged'], ['Estimated', 'est'], ['No date', 'undated'], ['Extra re-reads (from the log)', 'rereads'], ['Reading Log events', 'logEvents'],
+          ['Rows counted in another Sheet', 'copies'],
         ].map(([label, k]) => html`<tr key=${k}><td style=${{ fontWeight: k === 'readings' ? 700 : 400, paddingLeft: label.startsWith('  ') ? 24 : 12 }}>${label.trim()}</td>
           ${model.counts.map(c => html`<td key=${c.key} className="num" style=${{ fontWeight: k === 'readings' ? 700 : 400 }}>${c.loaded ? fmtInt(c[k]) : '—'}</td>`)}
           <td className="num" style=${{ fontWeight: k === 'readings' ? 700 : 400 }}>${fmtInt(model.counts.reduce((t, c) => t + c[k], 0))}</td></tr>`)}</tbody>
@@ -5141,6 +5392,13 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
         <ul className="notes" style=${{ margin: 0, paddingLeft: 18 }}>
           ${model.notes.length ? model.notes.map((t, i) => html`<li key=${i}>${t}</li>`) : html`<li>Nothing unusual found.</li>`}
         </ul>
+        ${model.dupes && model.dupes.conflicts.length ? html`<div style=${{ marginTop: 12 }}>
+          <div className="flabel">Status conflicts across Sheets (${model.dupes.conflicts.length})</div>
+          ${model.dupes.conflicts.map(c => html`<div key=${c.key} className="set-row" style=${{ display: 'block', padding: '8px 0' }}>
+            <b style=${{ fontWeight: 700 }}>${c.title}</b>
+            <div className="tiny faint">${c.rows.map((x, i) => `${x.status || 'blank'} in ${x.label}${i === 0 ? ' (counted)' : ''}`).join(' · ')}</div>
+          </div>`)}
+        </div>` : null}
       </div>
     </div>
 
@@ -5150,7 +5408,7 @@ function ExportScreen({ model, filters, goFilters, auth, syncedAt, onSignIn, onR
 // ============================================================================================
 // SETTINGS + TAG REVIEW
 // ============================================================================================
-function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setView, store, today, scores, onBack }) {
+function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setView, store, today, scores, onBack, data, sheetLive, onSync, syncing }) {
   const ctx = useContext(TagCtx);
   if (view === 'tags') return html`<${TagReview} model=${model} onBack=${() => { setView('main'); window.scrollTo(0, 0); }} />`;
   if (view === 'scores') return html`<${ScoreCheck} model=${model} scores=${scores} onBack=${() => { setView('main'); window.scrollTo(0, 0); }} />`;
@@ -5172,6 +5430,10 @@ function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setVie
         </button>
         <div className="set-row" style=${{ display: 'block' }}><${OverrideFileButtons} /></div>
       </div>
+    </div>
+    <div className="section">
+      <div className="section-head"><h2 className="section-title">Sheets</h2>${data && data.syncMs ? html`<span className="small faint num">last full sync ${(data.syncMs / 1000).toFixed(1)}s</span>` : null}</div>
+      <${SheetStatus} data=${data} live=${sheetLive} model=${model} onSync=${onSync} syncing=${syncing} />
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Goals and notes storage</h2></div>
@@ -5203,6 +5465,29 @@ function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setVie
         <div className="tiny faint">Clearing cached data keeps your tag overrides and the offline copy of your goals and notes.</div>
       </div>
     </div>
+  </div>`;
+}
+
+// Per-Sheet sync status: live progress during a sync, otherwise the result of the last one.
+function SheetStatus({ data, live, model, onSync, syncing }) {
+  const st = (data && data.sheetStatus) || {};
+  const tone = { ok: 'var(--lime)', failed: 'var(--coral)', loading: 'var(--blue)', retrying: 'var(--pink)', waiting: 'var(--surface-2)' };
+  return html`<div className="card">
+    ${SOURCES.map(src => {
+      const lv = live && live[src.id], s = st[src.id], d = data && data.sources && data.sources[src.id];
+      const state = lv ? lv.state : s ? s.state : d ? 'ok' : 'never';
+      const c = model.counts.find(x => x.key === src.id) || {};
+      const text = lv ? (lv.state === 'waiting' ? 'Waiting (3 load at a time)' : lv.state === 'loading' ? 'Loading…' : lv.state === 'retrying' ? `Retrying (${lv.lastError}, try ${lv.retry + 1} of ${SYNC_RETRIES + 1})` : lv.state === 'ok' ? `Loaded in ${(lv.ms / 1000).toFixed(1)}s` : 'Failed')
+        : !s ? (d ? `${fmtInt(d.fics.length)} rows` : 'Not loaded yet')
+        : s.state === 'ok' ? `${fmtInt(s.rows)} rows · ${fmtInt(c.readings || 0)} readings · ${(s.ms / 1000).toFixed(1)}s${s.retries ? ` · ${s.retries} retr${s.retries === 1 ? 'y' : 'ies'}` : ''}`
+        : `Failed${s.retries ? ` after ${s.retries + 1} tries` : ''}: ${s.error}${s.cached ? ` — showing the copy from ${s.lastOk ? ago(s.lastOk, Date.now()) : 'before'}` : ' — no saved copy yet'}`;
+      return html`<div key=${src.id} className="sync-row">
+        <span className="sync-dot" style=${{ background: tone[state] || 'var(--surface-2)' }} aria-hidden="true"></span>
+        <span style=${{ minWidth: 0 }}><b style=${{ fontWeight: 700 }}>${R.sourceLabel(src, SOURCES)}</b><div className="tiny faint" style=${{ overflowWrap: 'anywhere' }}>${text}</div></span>
+        <span className="tiny faint num">${state === 'failed' ? 'Failed' : state === 'ok' ? 'OK' : state === 'never' ? '—' : ''}</span>
+      </div>`;
+    })}
+    <button className="pill-btn" style=${{ marginTop: 10 }} disabled=${syncing} onClick=${onSync}>${syncing ? 'Syncing…' : 'Sync all now'}</button>
   </div>`;
 }
 
@@ -5482,6 +5767,7 @@ function App() {
   const [data, setData] = useState(null);
   const [booted, setBooted] = useState(false);
   const [sync, setSync] = useState({ state: 'idle' });
+  const [sheetLive, setSheetLive] = useState(null);   // per-Sheet progress during a sync
   const [tab, setTab] = useState('home');
   const [detail, setDetail] = useState(null);
   const [filters, setFilters] = useState(R.emptyFilters);
@@ -5522,18 +5808,34 @@ function App() {
     }
     syncingRef.current = true;
     setSync({ state: 'syncing' });
+    const t0 = performance.now();
+    const prevStatus = (dataRef.current && dataRef.current.sheetStatus) || {};
+    const live = {};   // per-Sheet progress while syncing (shown in Settings)
+    const bump = (id, patch) => { live[id] = { ...(live[id] || {}), ...patch }; setSheetLive({ ...live }); };
+    SOURCES.forEach(src => bump(src.id, { state: 'waiting' }));
     try {
-      const results = await Promise.allSettled(SOURCES.map(src => loadSource(tok, src)));
+      const results = await settledPool(SOURCES, SYNC_CONCURRENCY, async (src) => {
+        const s0 = performance.now();
+        bump(src.id, { state: 'loading' });
+        try {
+          const v = await withRetry(() => loadSource(tok, src), (n, wait, e) => bump(src.id, { state: 'retrying', retry: n, lastError: `HTTP ${e.status}` }));
+          bump(src.id, { state: 'ok', ms: Math.round(performance.now() - s0) });
+          return v;
+        } catch (e) { bump(src.id, { state: 'failed', ms: Math.round(performance.now() - s0) }); throw e; }
+      });
       const prev = dataRef.current;
-      const sources = {}, errors = [];
+      const sources = {}, errors = [], sheetStatus = {};
       let authFailed = false;
       results.forEach((r, i) => {
-        const src = SOURCES[i];
-        if (r.status === 'fulfilled') sources[src.id] = r.value;
+        const src = SOURCES[i], lv = live[src.id] || {};
+        if (r.status === 'fulfilled') { sources[src.id] = r.value; sheetStatus[src.id] = { state: 'ok', at: Date.now(), ms: lv.ms, retries: lv.retry || 0, rows: r.value.fics.length }; }
         else {
           if (r.reason && r.reason.isAuthError) authFailed = true;
           errors.push(`${R.sourceLabel(src, SOURCES)}: ${(r.reason && r.reason.message) || r.reason}`);
-          if (prev && prev.sources && prev.sources[src.id]) sources[src.id] = { ...prev.sources[src.id], stale: true };
+          const had = prev && prev.sources && prev.sources[src.id];
+          if (had) sources[src.id] = { ...prev.sources[src.id], stale: true };
+          sheetStatus[src.id] = { state: 'failed', at: Date.now(), ms: lv.ms, retries: lv.retry || 0, error: tidyError((r.reason && r.reason.message) || r.reason),
+            lastOk: (prevStatus[src.id] && (prevStatus[src.id].state === 'ok' ? prevStatus[src.id].at : prevStatus[src.id].lastOk)) || (had ? prev.syncedAt : null), cached: !!had };
         }
       });
       if (authFailed) auth.expire();
@@ -5541,13 +5843,13 @@ function App() {
         setSync(authFailed ? { state: 'needsAuth', message: 'Your Google sign-in expired. Sign in again to sync.' } : { state: 'error', message: errors.join(' · ') });
         return;
       }
-      const next = { version: DATA_VERSION, syncedAt: Date.now(), sources };
+      const next = { version: DATA_VERSION, syncedAt: Date.now(), sources, sheetStatus, syncMs: Math.round(performance.now() - t0) };
       dataRef.current = next;
       setData(next);
       setNow(Date.now());
       idb.put('dataset', next);
       setSync(errors.length ? { state: 'partial', message: errors.join(' · ') } : { state: 'ok' });
-    } finally { syncingRef.current = false; }
+    } finally { syncingRef.current = false; setSheetLive(null); }
   }, [auth.getToken, auth.signIn, auth.expire]);
 
   // Open instantly from the cache, then refresh in the background when there's a valid sign-in.
@@ -5587,7 +5889,7 @@ function App() {
   const scores = useMemo(() => model ? R.appScores(model) : new Map(), [model]);
   const up = useMemo(() => model ? R.upNextRank(model, { today, snoozes: store.snoozes, scores }) : null, [model, today, store.snoozes, scores]);
   const nctx = useMemo(() => model && up ? R.nudgeContext(model, tagCtx.isVisible, up.lengthStats) : null, [model, up, tagCtx.isVisible]);
-  const nudges = useMemo(() => model && up ? R.pageNudges(model, { today, goals: store.goals, up, sources: SOURCES }) : [], [model, up, today, store.goals]);
+  const nudges = useMemo(() => model && up ? R.pageNudges(model, { today, goals: store.goals, up, sources: SOURCES, snoozes: store.snoozes }) : [], [model, up, today, store.goals, store.snoozes]);
   const p4 = { up, nctx, nudges, store, today, scores };
   const backRef = useRef('home');
 
@@ -5648,7 +5950,7 @@ function App() {
       ${tab === 'trends' ? html`<${TrendsScreen} model=${model} today=${today} themeTick=${theme.tick} onAuthor=${openAuthor} onTag=${openTag} onOpen=${setDetail} onRange=${openRange} groupBy=${groupBy} setGroupBy=${setGroupBy} tab=${trendsTab} setTab=${setTrendsTab} openRecap=${setRecapScope} p4=${p4} />` : null}
       ${tab === 'export' ? html`<${ExportScreen} model=${model} filters=${filters} today=${today} onBack=${() => switchTab('more')}
         goFilters=${() => { setUi(u => ({ ...u, filtersOpen: true })); switchTab('diary'); }} />` : null}
-      ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} store=${store} today=${today} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} scores=${scores} onBack=${() => switchTab('more')} />` : null}
+      ${tab === 'settings' ? html`<${SettingsScreen} model=${model} syncedAt=${data.syncedAt} auth=${auth} store=${store} today=${today} onSignIn=${() => doSync(true)} onReset=${reset} view=${settingsView} setView=${setSettingsView} scores=${scores} onBack=${() => switchTab('more')} data=${data} sheetLive=${sheetLive} onSync=${() => doSync(true)} syncing=${syncing} />` : null}
     </main>
 
     <nav className="nav"><div className="nav-inner">

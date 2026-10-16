@@ -452,10 +452,17 @@
 //               or { light: '#RRGGBB', dark: '#RRGGBB' }. Pairings use shades of it. When two
 //               Sheets share a fandom, the first one's colour is used.
 //   initials    optional: the short label on the fandom's coloured square (display only).
-//   appUrl      the fandom app's GitHub Pages address ("Open in app" links and nudges).
-//   App scores: each Sheet's score is computed by APP_SCORES[id] (in ShelfRules), a port of
-//               that fandom app's own scoring. A new Sheet needs its scorer added there too.
+//   appUrl      optional: the fandom app's address. "Open <appTitle>" buttons and nudge links use
+//               it; blank hides them. The app opens on the fandom, not on one fic.
+//   appTitle    the app's own name, for those buttons ("Open Merthur").
+//   App scores: every Sheet is scored by the one shared copy of the apps' scoring (SharedScoring
+//               in ShelfRules), with ships on for perFic Sheets. Nothing to add for a new Sheet.
 // ============================================================================================
+// The shared Fics app (fics.html) serves the 8 newer fandoms, each chosen with ?fandom=<app id>.
+// TODO: replace <repo> with the GitHub repository that hosts fics.html. Until then the
+// "Open …" buttons for these fandoms stay hidden (a URL containing "<" counts as blank).
+const FICS_APP_URL = 'https://ameliacatanach-boop.github.io/<repo>/fics.html';
+const ficsAppUrl = (appId) => FICS_APP_URL + '?fandom=' + encodeURIComponent(appId);
 const SOURCES = [
   {
     id: 'hollanov',
@@ -465,7 +472,8 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#2D5BFF', dark: '#2D5BFF' },
     initials: 'GC',
-    appUrl: 'https://ameliacatanach-boop.github.io/Hollanov-Fics-List/',
+    appUrl: 'https://ameliacatanach-boop.github.io/Hollanov-Fics-List/',   // optional; '' hides "Open Hollanov"
+    appTitle: 'Hollanov',
   },
   {
     id: 'asoiaf',
@@ -475,7 +483,8 @@ const SOURCES = [
     pairingMode: 'perFic',
     color: { light: '#FF6B4A', dark: '#FF6B4A' },
     initials: 'ASOIAF',
-    appUrl: 'https://ameliacatanach-boop.github.io/ASOIAF-Fics-List/',
+    appUrl: 'https://ameliacatanach-boop.github.io/ASOIAF-Fics-List/',     // optional; '' hides "Open ASOIAF"
+    appTitle: 'ASOIAF',
   },
   {
     id: 'drarry',
@@ -485,8 +494,9 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#D4F55B', dark: '#D4F55B' },
     initials: 'HP',
-    appUrl: 'https://ameliacatanach-boop.github.io/Drarry-Fics-List/',
-  },  // ---- Added 16 Oct 2026. No app scorer yet (APP_SCORES), so these stay out of Up Next for now.
+    appUrl: 'https://ameliacatanach-boop.github.io/Drarry-Fics-List/',     // optional; '' hides "Open Drarry"
+    appTitle: 'Drarry',
+  },  // ---- Added 16 Oct 2026; run by the shared Fics app (fics.html) since 17 Oct 2026.
   // Colours were tuned so all 10 fandoms stay apart (CIEDE2000 ≥ 19 in light and dark mode) and
   // white or #111111 text on each meets 4.5:1. Marauders shares "Harry Potter (All)" with Drarry,
   // so it uses Harry Potter's colour (the first Sheet's).
@@ -498,7 +508,8 @@ const SOURCES = [
     pairingMode: 'perFic',
     color: { light: '#A020C8', dark: '#C060E0' },
     initials: 'ST',
-    appUrl: '',
+    appUrl: ficsAppUrl('strangerthings'),
+    appTitle: 'Stranger Things',
   },
   {
     id: '911',
@@ -508,7 +519,8 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#FFB020', dark: '#FFB020' },
     initials: '911',
-    appUrl: '',
+    appUrl: ficsAppUrl('911'),
+    appTitle: 'Buddie',
   },
   {
     id: 'merlin',
@@ -518,7 +530,8 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#14B8A6', dark: '#14B8A6' },
     initials: 'MER',
-    appUrl: '',
+    appUrl: ficsAppUrl('merlin'),
+    appTitle: 'Merthur',
   },
   {
     id: 'marauders',
@@ -528,7 +541,8 @@ const SOURCES = [
     pairingMode: 'perFic',
     color: { light: '#D4F55B', dark: '#D4F55B' },   // not used: Drarry comes first in this fandom
     initials: 'HP',
-    appUrl: '',
+    appUrl: ficsAppUrl('marauders'),
+    appTitle: 'Marauders',
   },
   {
     id: 'suits',
@@ -538,17 +552,19 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#78716C', dark: '#A8A29E' },
     initials: 'SU',
-    appUrl: '',
+    appUrl: ficsAppUrl('suits'),
+    appTitle: 'Suits',
   },
   {
     id: 'ofmd',
     sheetId: '1-hnHNHphzHeUFj_Xiaj4D8K17uggxbOBizDMqzjr0tY',
     fandom: 'Our Flag Means Death (All)',
-    pairing: 'Edward Teach/Stede Bonnet',
+    pairing: 'Blackbeard | Edward Teach/Stede Bonnet',
     pairingMode: 'fixed',
     color: { light: '#FF5DA2', dark: '#FF5DA2' },
     initials: 'OFMD',
-    appUrl: '',
+    appUrl: ficsAppUrl('ofmd'),
+    appTitle: 'OFMD',
   },
   {
     id: 'lesmis',
@@ -558,7 +574,8 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#B91C1C', dark: '#C42B2B' },
     initials: 'LM',
-    appUrl: '',
+    appUrl: ficsAppUrl('lesmis'),
+    appTitle: 'E/R',
   },
   {
     id: 'rwrb',
@@ -568,7 +585,8 @@ const SOURCES = [
     pairingMode: 'fixed',
     color: { light: '#38BDF8', dark: '#38BDF8' },
     initials: 'RWRB',
-    appUrl: '',
+    appUrl: ficsAppUrl('rwrb'),
+    appTitle: 'RWRB',
   },
 ];
 </script>
@@ -1357,18 +1375,23 @@ const ShelfRules = (() => {
   }
 
   // CROSS-SHEET DUPLICATES. Rows in different Sheets with the same AO3 work ID are one fic.
-  // Home row (the one every count, chart and reading uses):
-  //   1. a row with a reading status (Read, DNF, Currently Reading, Paused) beats one without;
-  //   2. then the most recent reading date (Date Read, Last Read or Date Started, whichever is latest);
-  //   3. then the Sheet that comes first in SOURCES.
+  // Kept ("home") copy: the one with the most reading data. Every count, chart and reading uses it,
+  // and the work belongs to its Sheet.
+  //   1. a Read or DNF status beats any other status;
+  //   2. then the most Reading Log events;
+  //   3. then the latest Last Read;
+  //   4. then the Sheet that comes first in SOURCES.
   // The home fic keeps its own fields and gains `copies` (the other rows: source, status, row).
-  // Reading Log events from every copy are merged onto the home fic (exact repeats dropped).
+  // Reading Log events from every copy are merged onto the home fic; exact duplicates (same
+  // timestamp and same event) are dropped.
   // Rows without a work ID (no AO3 link) are never merged.
   function dedupeWorks(fics, events, sources) {
     const order = new Map(sources.map((s, i) => [s.id, i]));
     const label = (id) => { const s = sources.find(x => x.id === id); return s ? sourceLabel(s, sources) : id; };
-    const READINGISH = new Set(['Read', 'DNF', 'Currently Reading', 'Paused']);
-    const latest = (f) => [f.dateRead, f.lastReadDate, f.dateStarted].filter(Boolean).sort().pop() || '';
+    const READ_DNF = new Set(['Read', 'DNF']);
+    const evCount = new Map();
+    for (const e of events) evCount.set(e.key, (evCount.get(e.key) || 0) + 1);
+    const lastRead = (f) => f.lastReadDate ? `${f.lastReadDate} ${(String(f.lastRead || '').split(/\s+/)[1] || '')}` : '';
     const byWork = new Map();
     for (const f of fics) {
       const w = /^\d+$/.test(f.id) ? f.id : f.key;
@@ -1380,7 +1403,8 @@ const ShelfRules = (() => {
     const homeOfKey = new Map();
     for (const rows of byWork.values()) {
       if (rows.length === 1) { rows[0].copies = []; out.push(rows[0]); homeKeys.add(rows[0].key); continue; }
-      const sorted = rows.slice().sort((a, b) => (READINGISH.has(b.status) - READINGISH.has(a.status)) || latest(b).localeCompare(latest(a)) || order.get(a.source) - order.get(b.source));
+      const sorted = rows.slice().sort((a, b) => (READ_DNF.has(b.status) - READ_DNF.has(a.status)) || (evCount.get(b.key) || 0) - (evCount.get(a.key) || 0)
+        || lastRead(b).localeCompare(lastRead(a)) || order.get(a.source) - order.get(b.source));
       const home = sorted[0];
       home.copies = sorted.slice(1).map(c => ({ key: c.key, source: c.source, label: label(c.source), status: c.status, rowNumber: c.rowNumber }));
       out.push(home); homeKeys.add(home.key);
@@ -1405,7 +1429,7 @@ const ShelfRules = (() => {
       g++;
       const seen = new Set();
       list.sort((a, b) => (a.ts || '').localeCompare(b.ts || '') || order.get(a.origin || a.source) - order.get(b.origin || b.source) || a.seq - b.seq)
-        .forEach((e, i) => { const sig = [e.ts, e.event, e.readNumber, e.chaptersRead].join('|'); if (seen.has(sig)) return; seen.add(sig); evOut.push({ ...e, seq: 1e9 + g * 1e4 + i }); });
+        .forEach((e, i) => { const sig = e.ts + '|' + e.event; if (seen.has(sig)) return; seen.add(sig); evOut.push({ ...e, seq: 1e9 + g * 1e4 + i }); });
     }
     return { fics: out, events: evOut, alias, homeKeys, groups, copies, conflicts };
   }
@@ -1433,7 +1457,7 @@ const ShelfRules = (() => {
     const ficByKey = new Map(fics.map(f => [f.key, f]));
     for (const [copyKey, homeKey] of dd.alias) ficByKey.set(copyKey, ficByKey.get(homeKey));   // a copy's key finds its fic
     if (dd.groups) notes.push(`${dd.groups} AO3 work${dd.groups === 1 ? ' is' : 's are'} in more than one Sheet (${dd.copies} extra row${dd.copies === 1 ? '' : 's'}); each counts once, from its home row.`);
-    if (dd.conflicts.length) notes.push(`${dd.conflicts.length} of them ${dd.conflicts.length === 1 ? 'has' : 'have'} different statuses in different Sheets (listed below). The home row decides: a reading status first, then the latest reading date, then the earlier Sheet.`);
+    if (dd.conflicts.length) notes.push(`${dd.conflicts.length} of them ${dd.conflicts.length === 1 ? 'has' : 'have'} different statuses in different Sheets (listed below). The copy with the most reading data counts: Read or DNF first, then the most Reading Log events, then the latest Last Read.`);
     const eventsByKey = new Map();
     let unmatched = 0;
     for (const e of events) {
@@ -1520,6 +1544,7 @@ const ShelfRules = (() => {
     });
     return {
       allFics, dupes: { groups: dd.groups, copies: dd.copies, conflicts: dd.conflicts },
+      sourceModes: Object.fromEntries(sources.map(x => [x.id, x.pairingMode])),
       fandomWords: Object.fromEntries(fandomList.map(fd => [fd.name, fd.pairings.reduce((t, p) => t + p.words, 0)])),
       fics, ficByKey, eventsByKey, readings, inProgress, notes, statusCounts, counts, fandomList, pairingByKey, tagInfo,
       authorFirst: authorFirstDates(readings), authors: authorRanking(readings), vocab,
@@ -2434,35 +2459,30 @@ const ShelfRules = (() => {
   }
 
   // ==========================================================================================
-  // 10. APP_SCORES: the fandom apps' own recommendation score, ported (not reinvented)
+  // 10. APP SCORES: one shared copy of the fandom apps' scoring
   // ------------------------------------------------------------------------------------------
-  // Each scorer takes ALL of one Sheet's fics (as Shelf Life parsed them) and returns a Map of
-  // fic key -> { score, qScore } that matches what that app shows (the app shows score rounded).
-  // Inputs are the raw Data List fields the apps read, kept on fic.app (raw tags with AO3
-  // warnings and duplicates, raw DNR fields, chapters by parseInt) plus Kudos, Hits, Bookmarks,
-  // Comments, Status, DNR Reason, K, B, Enjoyment and Author.
-  //
-  // The algorithm (identical in all three apps except where noted):
-  //   qScore   popularity: percentile ranks (ties share the average rank, scaled 0-100) across
-  //            EVERY titled row in the Sheet, of kudos/(hits+1) x1, kudos per chapter x1,
-  //            bookmarks x1.5 and comments x1; weighted mean (÷ 4.5).
-  //   evidence per tag / ship / category / author, from Read, DNF and Not Interested rows:
-  //            Read adds readW = 1 + 0.5·K + 1·B (author readW also × ENJOYMENT_MULTIPLIER);
-  //            DNF adds 1 to dnf; Not Interested adds 1 to notInt. Which tags/ships/category a
-  //            DNF or Not Interested penalises depends on DNR Reason (contentTargets below);
-  //            the author is penalised unless the reason is a Content one.
-  //   affinity (readW − dnf·dnfWeight − notInt) ÷ total, × confidence total ÷ (total + 3).
-  //            dnfWeight 0.5 (ships: 0.15).
-  //   per fic  each dimension = Σ a·|a| ÷ Σ |a| over its rated items (strength-weighted mean).
-  //            Category and author are floored at 0 (boost only); tags and ships can be negative.
-  //   blend    weighted mean of the dimensions that have data: tags 0.6, ships 0.6 (ASOIAF),
-  //            category 0.3, author 0.9.   score = qScore × (1 + blend).
+  // Every Sheet is scored by computeScores() from fics.html (the shared Fics app), which is the
+  // exact Hollanov/Drarry scoring with ships off and the exact ASOIAF scoring with ships on.
+  // Each Sheet is scored on its own full list (percentiles are within a Sheet, as in the apps),
+  // with ships = (pairingMode === 'perFic'). The block below is a verbatim copy; don't edit it.
   // ==========================================================================================
-  const APP_STATUS = { '': 0, 'Read': 1, 'DNF': 2, 'Skipped': 3, 'Not Interested': 4, 'Currently Reading': 5, 'TBR': 6, 'Paused': 7 };
-  const APP_ENJOYMENT_MULTIPLIER = { 0: 1, 1: 0.25, 2: 0.6, 3: 1, 4: 1.5, 5: 2 };
-  const APP_ANON = new Set(['anonymous', 'orphan_account', 'orphan account']);
-  const appRealAuthors = (f) => f.authors.filter(a => !APP_ANON.has(a.trim().toLowerCase()));
-  function appPercentileRanks(values) {
+  const SharedScoring = (() => {
+    // ┌──────────────────────────────────────────────────────────────────────────────────────┐
+    // │ SHARED SCORING (copied from fics.html — replace the whole block when the app's scoring │
+    // │ changes). Copied 17 Oct 2026. Everything from here to "end of SHARED SCORING" below is │
+    // │ fics.html's own code, unchanged: its STATUS_* / DNR_* constants, ENJOYMENT_MULTIPLIER,   │
+    // │ computePercentileRanks, ANONYMOUS_AUTHORS, realAuthors and computeScores.                │
+    // └──────────────────────────────────────────────────────────────────────────────────────┘
+  const STATUS_UNREAD=0, STATUS_READ=1, STATUS_DNF=2, STATUS_SKIPPED=3, STATUS_NOTINT=4, STATUS_READING=5, STATUS_TBR=6, STATUS_PAUSED=7;
+  const DNR_LABELS = { 0: '—', 1: 'Writing/Pacing', 2: 'Content', 3: 'Other', 10: 'Content/Tags', 11: 'Content/Ships', 12: 'Content/Category' };
+  const DNR_WRITING=1, DNR_CONTENT=2, DNR_OTHER=3;
+  const DNR_LEGACY_CONTENT_TAGS=10, DNR_LEGACY_CONTENT_SHIPS=11, DNR_LEGACY_CONTENT_CAT=12;
+  const STATUS_CODE_MAP = { '': 0, 'Read': 1, 'DNF': 2, 'Skipped': 3, 'Not Interested': 4, 'Currently Reading': 5, 'TBR': 6, 'Paused': 7 };
+  const DNR_CODE_MAP_SINGLE = { '': 0, 'Writing/Pacing': 1, 'Content': 2, 'Other': 3, 'Content/Tags': 10, 'Content/Category': 12 };
+  const DNR_CODE_MAP_MULTI = { ...DNR_CODE_MAP_SINGLE, 'Content/Ships': 11 };
+  const ENJOYMENT_MULTIPLIER = { 0: 1, 1: 0.25, 2: 0.6, 3: 1, 4: 1.5, 5: 2 };
+
+  function computePercentileRanks(values) {
     const n = values.length;
     const sorted = values.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]);
     const ranks = new Array(n);
@@ -2470,100 +2490,217 @@ const ShelfRules = (() => {
     while (i < n) {
       let j = i;
       while (j + 1 < n && sorted[j + 1][0] === sorted[i][0]) j++;
-      const avg = (i + j) / 2;
-      for (let k = i; k <= j; k++) ranks[sorted[k][1]] = avg;
+      const avgRank = (i + j) / 2;
+      for (let k = i; k <= j; k++) ranks[sorted[k][1]] = avgRank;
       i = j + 1;
     }
     const denom = n > 1 ? n - 1 : 1;
     return ranks.map(r => (r / denom) * 100);
   }
-  // opts.ships: false (Hollanov, Drarry) | true (ASOIAF). dnrCodes: the app's DNR_CODE_MAP.
-  function appScoreCore(fics, opts) {
-    const n = fics.length, out = new Map();
-    if (!n) return out;
-    const DNR = opts.dnrCodes;
-    const status = fics.map(f => APP_STATUS[String(f.status || '').trim()] ?? 0);
-    const dnr = fics.map(f => DNR[String(f.dnrReason || '').trim()] ?? 0);
-    const pKH = appPercentileRanks(fics.map(f => f.kudos / (f.hits + 1)));
-    const pKC = appPercentileRanks(fics.map(f => f.kudos / Math.max(1, f.app.chapters)));
-    const pBM = appPercentileRanks(fics.map(f => f.bookmarks));
-    const pCO = appPercentileRanks(fics.map(f => f.comments));
-    const q = fics.map((_, i) => (pKH[i] * 1 + pKC[i] * 1 + pBM[i] * 1.5 + pCO[i] * 1) / 4.5);
-    const tagS = new Map(), shipS = new Map(), catS = new Map(), auS = new Map();
-    const bump = (m, k, field, amt) => { if (!m.has(k)) m.set(k, { readW: 0, dnf: 0, notInt: 0 }); m.get(k)[field] += amt; };
-    // DNR Reason codes: 1 Writing/Pacing, 2 Content, 3 Other, 10 Content/Tags, 11 Content/Ships (ASOIAF), 12 Content/Category.
-    const contentTargets = (f, d) => {
-      if (d === 2) return { tags: f.app.dnrTags.length ? f.app.dnrTags : [], ships: opts.ships && f.app.dnrShips.length ? f.app.dnrShips : [], category: !!f.app.dnrCategory };
-      if (d === 10) return { tags: f.app.tags, ships: [], category: false };
-      if (opts.ships && d === 11) return { tags: [], ships: f.app.ships, category: false };
-      if (d === 12) return { tags: [], ships: [], category: true };
-      if (d === 3) return { tags: f.app.tags, ships: opts.ships ? f.app.ships : [], category: true };
-      return { tags: [], ships: [], category: false };
-    };
-    const authorExcluded = (d) => d === 2 || d === 10 || d === 12 || (opts.ships && d === 11);
+
+  const ANONYMOUS_AUTHORS = new Set(['anonymous', 'orphan_account', 'orphan account']);
+  function realAuthors(fic) { return fic.authors.filter(a => !ANONYMOUS_AUTHORS.has(a.trim().toLowerCase())); }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // SHARED SCORING: Shelf Life copies this.
+  // One scoring module for every fandom. Plain JS, no React: computeScores(fics, { ships }).
+  //   ships: false → single-pairing scoring (exactly the original Hollanov / Drarry apps)
+  //   ships: true  → multi-ship scoring (exactly the original ASOIAF app): adds the ships
+  //                  dimension (Relationships column, DNR Ships, legacy "Content/Ships").
+  // Each fic needs: status, dnr, kg, bk, kudos, hits, chapters, bookmarks, comments, tags,
+  // category, authors, enjoyment, dnrTags, dnrCategory (and ships, dnrShips when ships is on).
+  // Returns { status, dnr, kg, bk, pScore, qScore }, arrays in the same order as `fics`.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  function computeScores(fics, options) {
+    const useShips = !!(options && options.ships);
+    if (fics.length === 0) return null;
+    const n = fics.length;
+
+    const status = fics.map(f => f.status);
+    const dnr = fics.map(f => f.dnr);
+    const kg = fics.map(f => f.kg);
+    const bk = fics.map(f => f.bk);
+
+    // Q-Score: popularity, from percentile ranks within this fandom's list.
+    const khVals = fics.map(f => f.kudos / (f.hits + 1));
+    const kchVals = fics.map(f => f.kudos / Math.max(1, f.chapters));
+    const bmVals = fics.map(f => f.bookmarks);
+    const coVals = fics.map(f => f.comments);
+    const pctlKH = computePercentileRanks(khVals);
+    const pctlKCH = computePercentileRanks(kchVals);
+    const pctlBM = computePercentileRanks(bmVals);
+    const pctlCO = computePercentileRanks(coVals);
+    const qScore = new Array(n);
     for (let i = 0; i < n; i++) {
-      const f = fics[i], s = status[i], d = dnr[i];
-      if (s === 1) {
-        const w = 1 + 0.5 * (f.kg ? 1 : 0) + 1 * (f.bk ? 1 : 0);
-        for (const t of f.app.tags) bump(tagS, t, 'readW', w);
-        if (opts.ships) for (const sh of f.app.ships) bump(shipS, sh, 'readW', w);
-        bump(catS, f.app.category, 'readW', w);
-        const aw = w * (APP_ENJOYMENT_MULTIPLIER[f.enjoyment] ?? 1);
-        for (const a of appRealAuthors(f)) bump(auS, a, 'readW', aw);
-      } else if (s === 2 || s === 4) {
-        const field = s === 2 ? 'dnf' : 'notInt', tg = contentTargets(f, d);
-        for (const t of tg.tags) bump(tagS, t, field, 1);
-        for (const sh of tg.ships) bump(shipS, sh, field, 1);
-        if (tg.category) bump(catS, f.app.category, field, 1);
-        if (!authorExcluded(d)) for (const a of appRealAuthors(f)) bump(auS, a, field, 1);
+      qScore[i] = (pctlKH[i] * 1 + pctlKCH[i] * 1 + pctlBM[i] * 1.5 + pctlCO[i] * 1) / 4.5;
+    }
+
+    // Full vocabulary — every tag/ship/category/author that appears, no top-N cap
+    const tagStats = new Map(); // tag -> {readW, dnf, notInt}
+    const shipStats = new Map();
+    const catStats = new Map();
+    const authorStats = new Map();
+
+    function bump(map, key, field, amount) {
+      if (!map.has(key)) map.set(key, { readW: 0, dnf: 0, notInt: 0 });
+      map.get(key)[field] += amount;
+    }
+
+    // Given a fic and its DNF/Not Interested reason, work out which specific tags/ships/
+    // category should take the penalty. The unified "Content" reason only penalizes
+    // whatever the user explicitly isolated; the legacy single-dimension reasons
+    // (kept for fics marked before this was merged) fall back to blanket-penalizing
+    // that whole dimension, exactly as they did before.
+    function contentPenaltyTargets(f, d) {
+      const fShips = useShips ? f.ships : [];
+      if (d === DNR_CONTENT) {
+        return {
+          tags: (f.dnrTags && f.dnrTags.length) ? f.dnrTags : [],
+          ships: (useShips && f.dnrShips && f.dnrShips.length) ? f.dnrShips : [],
+          category: !!f.dnrCategory,
+        };
+      }
+      if (d === DNR_LEGACY_CONTENT_TAGS) return { tags: f.tags, ships: [], category: false };
+      if (useShips && d === DNR_LEGACY_CONTENT_SHIPS) return { tags: [], ships: fShips, category: false };
+      if (d === DNR_LEGACY_CONTENT_CAT) return { tags: [], ships: [], category: true };
+      if (d === DNR_OTHER) return { tags: f.tags, ships: fShips, category: true };
+      return { tags: [], ships: [], category: false }; // Writing/Pacing or unset: no content penalty
+    }
+    // Author affinity is protected from any "Content" reason (old or new) since that's
+    // about tags/ships/category, not the writing — but IS penalized by Writing/Pacing
+    // and Other, matching the flipped logic used for tags.
+    function authorExcluded(d) {
+      return d === DNR_CONTENT || d === DNR_LEGACY_CONTENT_TAGS || (useShips && d === DNR_LEGACY_CONTENT_SHIPS) || d === DNR_LEGACY_CONTENT_CAT;
+    }
+
+    for (let i = 0; i < n; i++) {
+      const s = status[i], d = dnr[i], f = fics[i];
+      if (s === STATUS_READ) {
+        const w = 1 + 0.5 * (kg[i] ? 1 : 0) + 1 * (bk[i] ? 1 : 0);
+        for (const t of f.tags) bump(tagStats, t, 'readW', w);
+        if (useShips) for (const sh of f.ships) bump(shipStats, sh, 'readW', w);
+        bump(catStats, f.category, 'readW', w);
+        // Enjoyment (1-5, optional) only scales the author's signal — tags, ships, and
+        // category keep using the plain kudos/bookmark weight regardless of rating.
+        const authorW = w * (ENJOYMENT_MULTIPLIER[f.enjoyment] ?? 1);
+        for (const a of realAuthors(f)) bump(authorStats, a, 'readW', authorW);
+      } else if (s === STATUS_DNF) {
+        const targets = contentPenaltyTargets(f, d);
+        for (const t of targets.tags) bump(tagStats, t, 'dnf', 1);
+        for (const sh of targets.ships) bump(shipStats, sh, 'dnf', 1);
+        if (targets.category) bump(catStats, f.category, 'dnf', 1);
+        if (!authorExcluded(d)) for (const a of realAuthors(f)) bump(authorStats, a, 'dnf', 1);
+      } else if (s === STATUS_NOTINT) {
+        const targets = contentPenaltyTargets(f, d);
+        for (const t of targets.tags) bump(tagStats, t, 'notInt', 1);
+        for (const sh of targets.ships) bump(shipStats, sh, 'notInt', 1);
+        if (targets.category) bump(catStats, f.category, 'notInt', 1);
+        if (!authorExcluded(d)) for (const a of realAuthors(f)) bump(authorStats, a, 'notInt', 1);
       }
     }
-    const affinityOf = (m, k, dnfW) => {
-      const s = m.get(k); if (!s) return { affinity: 0, total: 0 };
-      const total = s.readW + s.dnf + s.notInt;
-      const raw = total === 0 ? 0 : (s.readW - s.dnf * dnfW - s.notInt) / total;
-      return { affinity: raw * (total / (total + 3)), total };
-    };
-    const dim = (m, keys, dnfW) => {
-      let sum = 0, wt = 0, cnt = 0;
-      for (const k of keys) { const { affinity, total } = affinityOf(m, k, dnfW); if (total > 0) { cnt++; sum += affinity * Math.abs(affinity); wt += Math.abs(affinity); } }
-      return { has: cnt > 0, v: wt > 0 ? sum / wt : 0 };
-    };
+
+    function affinityOf(map, key, dnfWeight) {
+      const s = map.get(key);
+      if (!s) return { affinity: 0, totalRated: 0 };
+      const totalRated = s.readW + s.dnf + s.notInt;
+      const rawAffinity = totalRated === 0 ? 0 : (s.readW - s.dnf * dnfWeight - s.notInt) / totalRated;
+      // Confidence shrinkage: a tag/ship/category/author with little evidence behind it
+      // gets pulled toward neutral, so one early DNF can't swing it as hard as a
+      // pattern backed by a dozen ratings. C=3 means ~1 rating -> 1/4 strength,
+      // ~3 ratings -> half strength, approaching full strength as evidence grows.
+      const C = 3;
+      const confidence = totalRated / (totalRated + C);
+      const affinity = rawAffinity * confidence;
+      return { affinity, totalRated };
+    }
+
+    const pScore = new Array(n);
     for (let i = 0; i < n; i++) {
       const f = fics[i];
-      const t = dim(tagS, f.app.tags, 0.5);
-      const sh = opts.ships ? dim(shipS, f.app.ships, 0.15) : { has: false, v: 0 };
-      const c = affinityOf(catS, f.app.category, 0.5);
-      const au = dim(auS, appRealAuthors(f), 0.5);
-      let ws = 0, as = 0;
-      if (t.has) { ws += 0.6; as += 0.6 * t.v; }
-      if (sh.has) { ws += 0.6; as += 0.6 * sh.v; }
-      if (c.total > 0) { ws += 0.3; as += 0.3 * Math.max(0, c.affinity); }
-      if (au.has) { ws += 0.9; as += 0.9 * Math.max(0, au.v); }
-      const adj = ws > 0 ? as / ws : 0;
-      out.set(f.key, { score: q[i] * (1 + adj), qScore: q[i] });
+
+      // Strength-weighted average — a tag/ship you feel strongly about (positive
+      // or negative) pulls harder than ones you're merely neutral on, instead of
+      // every rated item counting equally and averaging strong signals away.
+      let tSum = 0, tWeight = 0, tCount = 0;
+      for (const t of f.tags) {
+        const { affinity, totalRated } = affinityOf(tagStats, t, 0.5);
+        if (totalRated > 0) { tCount++; tSum += affinity * Math.abs(affinity); tWeight += Math.abs(affinity); }
+      }
+      const tagHasData = tCount > 0;
+      const ad = tWeight > 0 ? tSum / tWeight : 0;
+
+      let sSum = 0, sWeight = 0, sCount = 0;
+      if (useShips) {
+        for (const sh of f.ships) {
+          const { affinity, totalRated } = affinityOf(shipStats, sh, 0.15); // ships forgive a DNF more than tags do
+          if (totalRated > 0) { sCount++; sSum += affinity * Math.abs(affinity); sWeight += Math.abs(affinity); }
+        }
+      }
+      const shipHasData = sCount > 0;
+      const af = sWeight > 0 ? sSum / sWeight : 0;
+
+      const { affinity: aeRaw, totalRated: catTotalRated } = affinityOf(catStats, f.category, 0.5);
+      const catHasData = catTotalRated > 0;
+      const ae = Math.max(0, aeRaw);
+
+      let auSum = 0, auWeight = 0, auCount = 0;
+      for (const a of realAuthors(f)) {
+        const { affinity, totalRated } = affinityOf(authorStats, a, 0.5);
+        if (totalRated > 0) { auCount++; auSum += affinity * Math.abs(affinity); auWeight += Math.abs(affinity); }
+      }
+      const authorHasData = auCount > 0;
+      const auRaw = auWeight > 0 ? auSum / auWeight : 0;
+      const au = Math.max(0, auRaw);
+
+      // Combine the active dimensions into ONE weighted-average adjustment instead of
+      // multiplying independent (1 + weight*affinity) factors together. Multiplying let
+      // two negative signals compound harder than either alone intended.
+      let weightSum = 0, adjSum = 0;
+      if (tagHasData) { weightSum += 0.6; adjSum += 0.6 * ad; }
+      if (shipHasData) { weightSum += 0.6; adjSum += 0.6 * af; }
+      if (catHasData) { weightSum += 0.3; adjSum += 0.3 * ae; }
+      if (authorHasData) { weightSum += 0.9; adjSum += 0.9 * au; }
+      const combinedAdjustment = weightSum > 0 ? adjSum / weightSum : 0;
+
+      pScore[i] = qScore[i] * (1 + combinedAdjustment);
     }
+
+    return { status, dnr, kg, bk, pScore, qScore };
+  }
+  // ═════════════════════════════ end of SHARED SCORING ═════════════════════════════
+    return { computeScores, computePercentileRanks, STATUS_CODE_MAP, DNR_CODE_MAP_SINGLE, DNR_CODE_MAP_MULTI };
+  })();
+
+  // ADAPTER: Shelf Life's parsed fic -> the fic shape computeScores expects, read exactly the way
+  // fics.html reads its columns (raw tags with AO3 warnings and duplicates, chapters by parseInt,
+  // ships / DNR Ships only for perFic Sheets, numeric status and DNR Reason codes).
+  function toScoringFic(f, multi) {
+    return {
+      status: SharedScoring.STATUS_CODE_MAP[String(f.status || '').trim()] ?? 0,
+      dnr: (multi ? SharedScoring.DNR_CODE_MAP_MULTI : SharedScoring.DNR_CODE_MAP_SINGLE)[String(f.dnrReason || '').trim()] ?? 0,
+      kg: !!f.kg, bk: !!f.bk,
+      kudos: f.kudos, hits: f.hits, bookmarks: f.bookmarks, comments: f.comments,
+      chapters: f.app.chapters, category: f.app.category, authors: f.authors, enjoyment: f.enjoyment,
+      tags: f.app.tags, dnrTags: f.app.dnrTags, dnrCategory: f.app.dnrCategory,
+      ships: multi ? f.app.ships : [], dnrShips: multi ? f.app.dnrShips : [],
+    };
+  }
+  // One Sheet's fics (ALL its rows, duplicates of other Sheets included) -> Map key -> { score, qScore }.
+  function scoreSheet(fics, multi) {
+    const out = new Map();
+    const r = SharedScoring.computeScores(fics.map(f => toScoringFic(f, multi)), { ships: multi });
+    if (!r) return out;
+    fics.forEach((f, i) => out.set(f.key, { score: r.pScore[i], qScore: r.qScore[i] }));
     return out;
   }
-  const APP_DNR_CODES = { '': 0, 'Writing/Pacing': 1, 'Content': 2, 'Other': 3, 'Content/Tags': 10, 'Content/Category': 12 };
-  const APP_DNR_CODES_SHIPS = { ...APP_DNR_CODES, 'Content/Ships': 11 };
-  const APP_SCORES = {
-    // last synced with the Hollanov app (hollanov-fics-list-sync.html, useComputedScores) on 2026-10-12
-    hollanov: (fics) => appScoreCore(fics, { ships: false, dnrCodes: APP_DNR_CODES }),
-    // last synced with the ASOIAF app (asoiaf-fics-list-sync.html, useComputedScores) on 2026-10-12
-    // Differs from the others: ships (Relationships) as a 4th dimension, weight 0.6, DNF weight 0.15,
-    // DNR Ships for Content reasons, and the legacy "Content/Ships" reason.
-    asoiaf: (fics) => appScoreCore(fics, { ships: true, dnrCodes: APP_DNR_CODES_SHIPS }),
-    // last synced with the Drarry app (drarry-fics-list-sync.html, useComputedScores) on 2026-10-12
-    drarry: (fics) => appScoreCore(fics, { ships: false, dnrCodes: APP_DNR_CODES }),
-  };
-  // All sources: Map fic key -> { score, qScore }. A Sheet with no scorer gets none.
+  const appPercentileRanks = (values) => SharedScoring.computePercentileRanks(values);
+  // Every Sheet: Map fic key -> { score, qScore }. model.sourceModes holds each Sheet's pairingMode.
   function appScores(model) {
     const all = new Map();
     const rows = model.allFics || model.fics;   // every Sheet row, duplicates included, as each app sees its Sheet
     for (const src of new Set(rows.map(f => f.source))) {
-      const scorer = APP_SCORES[src]; if (!scorer) continue;
-      for (const [k, v] of scorer(rows.filter(f => f.source === src))) all.set(k, v);
+      const multi = (model.sourceModes || {})[src] === 'perFic';
+      for (const [k, v] of scoreSheet(rows.filter(f => f.source === src), multi)) all.set(k, v);
     }
     return all;
   }
@@ -2732,7 +2869,8 @@ const ShelfRules = (() => {
   function pageNudges(model, opts) {
     const today = opts.today, out = [];
     const appOf = (src) => (opts.sources || []).find(s => s.id === src) || {};
-    const appName = (src) => { const s = appOf(src); return s.fandom ? `the ${shortFandom(s.fandom)} app` : 'the fandom app'; };
+    const appName = (src) => { const s = appOf(src); return s.appTitle || (s.fandom ? `the ${shortFandom(s.fandom)} app` : 'the fandom app'); };
+    const appUrlOf = (src) => { const u = appOf(src).appUrl; return u && !/[<>]/.test(u) ? u : null; };
     // 3. stalled
     for (const f of model.fics.filter(x => x.status === 'Currently Reading' || x.status === 'Paused')) {
       const evs = model.eventsByKey.get(f.key) || [];
@@ -2743,7 +2881,7 @@ const ShelfRules = (() => {
       if (gap > 14) out.push({ id: `stalled:${f.key}:${last}`, type: 'stalled', priority: 70, where: ['dashboard', 'reading'], ficKey: f.key,
         text: `You haven’t opened ${f.title} in ${gap} days. Pick it back up, pause it or DNF it in ${appName(f.source)}.`,
         numbers: [{ label: 'Status', value: f.status }, { label: 'Last activity', value: last }, { label: 'Days since', value: gap }],
-        link: appOf(f.source).appUrl ? { href: appOf(f.source).appUrl, label: `Open ${appName(f.source)}` } : null,
+        link: appUrlOf(f.source) ? { href: appUrlOf(f.source), label: `Open ${appName(f.source)}` } : null,
         why: NUDGE_BY_ID['stalled'].rule, expires: null });
     }
     // 4. fandom-gap
@@ -2821,7 +2959,7 @@ const ShelfRules = (() => {
   }
 
   return {
-    APP_SCORES, appScores, appPercentileRanks, foldSmall, OTHER_KEY, dedupeWorks,
+    SharedScoring, toScoringFic, scoreSheet, appScores, appPercentileRanks, foldSmall, OTHER_KEY, dedupeWorks,
     UP_NEXT_STATUSES, LENGTH_FILTERS, lengthStats, fandomLastRead, goToAuthorCounts, upNextRank, filterUpNext,
     NUDGE_TYPES, NUDGE_BY_ID, ficNudges, nudgeContext, pageNudges, nudgeVisible, dashboardNudges,
     TZ, MONTHS, MON, KNOWN_STATUSES, NO_PAIRING,
@@ -2984,6 +3122,26 @@ async function fetchSummary(token, source, meta, fic) {
     const e = new Error('The sheet has changed since the last sync. Sync now, then open this fic again.'); e.moved = true; throw e;
   }
   return cell(0).trim();
+}
+
+// The synced data is cached per Sheet: "sheet:<id>" holds one Sheet's rows and log, and
+// "dataset-meta" the sync time and per-Sheet status. A Sheet that fails keeps its last copy.
+// (Older versions kept everything under one "dataset" key; that's still read once, then replaced.)
+async function saveDataset(d) {
+  const { sources, ...meta } = d;
+  await Promise.all(Object.entries(sources).map(([id, v]) => idb.put('sheet:' + id, v)));
+  await idb.put('dataset-meta', { ...meta, ids: Object.keys(sources) });
+  idb.put('dataset', undefined);
+}
+async function loadDataset() {
+  const meta = await idb.get('dataset-meta');
+  if (meta && meta.ids) {
+    const parts = await Promise.all(meta.ids.map(id => idb.get('sheet:' + id)));
+    const sources = {}; meta.ids.forEach((id, i) => { if (parts[i]) sources[id] = parts[i]; });
+    const { ids, ...rest } = meta;
+    return { ...rest, sources };
+  }
+  return idb.get('dataset');
 }
 
 // IndexedDB: a single key-value store. Holds the synced data and any summaries already opened.
@@ -4126,7 +4284,10 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today, p4 })
         </div>`)}
       </div>` : null}
 
-      <a className="big-btn" href=${fic.link} target="_blank" rel="noopener noreferrer" style=${{ marginTop: 14 }}>Open on AO3 <${Icon} name="ext" size=${16} /></a>
+      <div className="row" style=${{ marginTop: 14, flexWrap: 'nowrap' }}>
+        <a className="big-btn" href=${fic.link} target="_blank" rel="noopener noreferrer">Open on AO3 <${Icon} name="ext" size=${16} /></a>
+        <${OpenAppButton} src=${appFor(fic)} className="big-btn ghost" />
+      </div>
 
       <div className="section">
         <div className="section-head"><h3 className="section-title">Your reads</h3></div>
@@ -4146,7 +4307,6 @@ function FicDetail({ ficKey, model, onClose, loadSummary, onAuthor, today, p4 })
       ${pick ? html`<div className="section"><div className="section-head"><h3 className="section-title">Up Next</h3><span className="small faint num">#${p4.up.picks.indexOf(pick) + 1} · score ${Math.round(pick.upNextScore)}</span></div>
         <div className="why-chips" style=${{ marginTop: 0 }}>${whyChips(pick).map(r => html`<span key=${r.key} className=${'why why-' + r.key}>${r.text}</span>`)}</div>
         ${ficN.length ? html`<div className="nudge-list" style=${{ marginTop: 10 }}>${ficN.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${p4.store} today=${today} compact=${true} />`)}</div>` : null}
-        ${appFor(fic).appUrl ? html`<a className="pill-btn" style=${{ marginTop: 10 }} href=${appFor(fic).appUrl} target="_blank" rel="noopener">${appLabel(fic)}</a>` : null}
       </div>` : null}
       ${fic.ships.length || fic.tags.length ? html`<${DetailTags} fic=${fic} />` : null}
 
@@ -5096,7 +5256,16 @@ function SessionsSection({ ss, st }) {
 // ============================================================================================
 const SNOOZE_DAYS = 30, DISMISS_DAYS = 14;
 const appFor = (fic) => SOURCE_BY_ID[fic.source] || {};
-const appLabel = (fic) => `Open in ${shortName(appFor(fic).fandom)} app`;
+const appLabel = (fic) => `Open ${appFor(fic).appTitle || shortName(appFor(fic).fandom)}`;
+// A Sheet's app address, or null when it's blank or still a placeholder (contains "<").
+const appHref = (src) => { const u = src && src.appUrl; return u && !/[<>]/.test(u) ? u : null; };
+// Phones open the app in the same tab (it's a home-screen app); desktops get a new tab.
+const appTarget = () => (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ? '_self' : '_blank';
+// "Open <app title>": the fandom app, opened on that fandom (it can't jump to one fic). Hidden without an appUrl.
+function OpenAppButton({ src, className, style }) {
+  const href = appHref(src); if (!href) return null;
+  return html`<a className=${className || 'pill-btn'} style=${style} href=${href} target=${appTarget()} rel="noopener">Open ${src.appTitle || shortName(src.fandom)}</a>`;
+}
 const shortName = (fandom) => R.shortFandom(fandom || '');
 
 // ---------- nudges ----------
@@ -5110,7 +5279,7 @@ function NudgeCard({ n, store, today, onOpen, compact }) {
     <div className="nudge-nums">${n.numbers.map((x, i) => html`<span key=${i}><b>${x.label}</b> ${x.value}</span>`)}</div>
     ${n.pick ? html`<button className="nudge-pick" onClick=${() => onOpen && onOpen(n.pick.key)}><span className="tiny" style=${{ fontWeight: 800 }}>${n.type === 'fandom-gap' ? 'Top pick' : 'The fic'}</span> ${n.pick.fic.title}</button>` : null}
     <div className="row nudge-actions">
-      ${n.link ? html`<a className="link-btn" href=${n.link.href} target="_blank" rel="noopener">${n.link.label}</a>` : null}
+      ${n.link ? html`<a className="link-btn" href=${n.link.href} target=${appTarget()} rel="noopener">${n.link.label}</a>` : null}
       <button className="link-btn" onClick=${() => setWhy(w => !w)} aria-expanded=${why}>Why am I seeing this?</button>
       ${canDismiss ? html`<button className="link-btn" disabled=${busy} onClick=${dismiss}>Dismiss</button>` : null}
     </div>
@@ -5169,7 +5338,7 @@ function UpNextCard({ p, p4, onOpen, rank }) {
     ${nn.map(n => html`<${NudgeCard} key=${n.id} n=${n} store=${store} today=${p4.today} compact=${true} />`)}
     <div className="up-actions">
       <a className="pill-btn" href=${f.link} target="_blank" rel="noopener">Open on AO3 <${Icon} name="ext" size=${13} /></a>
-      ${app.appUrl ? html`<a className="pill-btn" href=${app.appUrl} target="_blank" rel="noopener">${appLabel(f)}</a>` : null}
+      <${OpenAppButton} src=${app} />
       ${p.snoozedUntil ? html`<button className="pill-btn" disabled=${busy} onClick=${unsnooze}>Bring back</button>`
         : html`<button className="pill-btn" disabled=${busy} onClick=${snooze} title=${store.status === 'ready' ? `Hide for ${SNOOZE_DAYS} days` : 'Needs goals and notes turned on'}>Not now</button>`}
     </div>
@@ -5215,14 +5384,11 @@ function UpNextScreen({ p4, model, onOpen }) {
   const vocab = useMemo(() => { const tags = new Map(); for (const p of p4.up.picks) for (const t of p.fic.tags) tags.set(t, (tags.get(t) || 0) + 1); return { tags }; }, [p4.up]);
   const pageN = p4.nudges.filter(n => n.where.includes('upnext') && R.nudgeVisible(n, p4.store.nudgeTypes, p4.store.dismissed, p4.today));
   const nf = (flt.tagsInc.length ? 1 : 0) + (flt.tagsExc.length ? 1 : 0);
-  // Sheets with no APP_SCORES scorer yet (their fics can't be ranked).
-  const unscored = SOURCES.filter(src => !R.APP_SCORES[src.id]).map(src => R.sourceLabel(src, SOURCES));
   const ls = p4.up.lengthStats;
   return html`<div>
     <h1 className="page-title">Up Next</h1>
     <div className="small faint" style=${{ margin: '0 2px 10px' }}>Unread and TBR fics from all your fandoms, ranked by each app’s own score (as a percentile within its fandom) and how often you finish fics that long. Shelf Life never changes a status; use the fandom app for that.</div>
     <${NudgeList} list=${pageN} store=${p4.store} today=${p4.today} onOpen=${onOpen} />
-    ${unscored.length ? html`<div className="card small" style=${{ marginTop: 10 }}><b style=${{ fontWeight: 700 }}>Up Next for these fandoms arrives when their app is built:</b> <span className="muted">${unscored.join(', ')}.</span></div>` : null}
     <div className="chips" style=${{ marginTop: 6 }}>
       <button className=${'chip sm' + (!flt.scope ? ' on' : '')} onClick=${() => set({ scope: null })}>All fandoms</button>
       ${scopes.map(o => html`<button key=${o.key} className=${'chip sm' + (flt.scope === o.key ? ' on' : '')} onClick=${() => set({ scope: flt.scope === o.key ? null : o.key })}><span className="cdot" style=${{ background: o.color }}></span>${o.label}</button>`)}
@@ -5334,7 +5500,7 @@ function ScoreCheck({ model, scores, onBack }) {
     <${BackHead} title="Score check" onBack=${onBack} label="Back to Settings" />
     <div className="small faint" style=${{ margin: '8px 2px 12px' }}>Each fandom app opens on Unread fics sorted by Score. These should be the same 5 fics at the top of that list, with the same scores. Shelf Life uses a port of each app’s own scoring (last synced 12 Oct 2026).</div>
     ${bySource.map(({ src, total, top }) => html`<div key=${src.id} className="section">
-      <div className="section-head"><h2 className="section-title">${shortName(src.fandom)}</h2>${src.appUrl ? html`<a className="link-btn" href=${src.appUrl} target="_blank" rel="noopener">Open app</a>` : null}</div>
+      <div className="section-head"><h2 className="section-title">${shortName(src.fandom)}</h2>${appHref(src) ? html`<a className="link-btn" href=${appHref(src)} target=${appTarget()} rel="noopener">Open ${src.appTitle}</a>` : null}</div>
       ${top.length ? html`<div className="card">${top.map((f, i) => html`<div key=${f.key} className="hbar-row" style=${{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
           <span className="hbar-label" style=${{ whiteSpace: 'normal' }}>${i + 1}. ${f.title} <span className="faint" style=${{ fontWeight: 500 }}>— ${f.authors.join(', ') || 'Anonymous'}</span></span>
           <span className="value-chip" style=${{ background: 'var(--lime)', fontSize: 15, padding: '4px 10px' }}>${Math.round(scores.get(f.key).score)}</span>
@@ -5434,6 +5600,7 @@ function SettingsScreen({ model, auth, syncedAt, onSignIn, onReset, view, setVie
     <div className="section">
       <div className="section-head"><h2 className="section-title">Sheets</h2>${data && data.syncMs ? html`<span className="small faint num">last full sync ${(data.syncMs / 1000).toFixed(1)}s</span>` : null}</div>
       <${SheetStatus} data=${data} live=${sheetLive} model=${model} onSync=${onSync} syncing=${syncing} />
+      ${model.dupes && model.dupes.groups ? html`<div className="tiny faint" style=${{ margin: '8px 2px 0' }}>${fmtInt(model.dupes.groups)} fic${model.dupes.groups === 1 ? ' appears' : 's appear'} in more than one Sheet; each counts once.</div>` : null}
     </div>
     <div className="section">
       <div className="section-head"><h2 className="section-title">Goals and notes storage</h2></div>
@@ -5847,7 +6014,7 @@ function App() {
       dataRef.current = next;
       setData(next);
       setNow(Date.now());
-      idb.put('dataset', next);
+      saveDataset(next);
       setSync(errors.length ? { state: 'partial', message: errors.join(' · ') } : { state: 'ok' });
     } finally { syncingRef.current = false; setSheetLive(null); }
   }, [auth.getToken, auth.signIn, auth.expire]);
@@ -5855,7 +6022,7 @@ function App() {
   // Open instantly from the cache, then refresh in the background when there's a valid sign-in.
   useEffect(() => {
     (async () => {
-      const cached = await idb.get('dataset');
+      const cached = await loadDataset();
       if (cached && cached.version === DATA_VERSION && cached.sources) { dataRef.current = cached; setData(cached); }
       setBooted(true);
       if (auth.getToken()) doSync(false);
